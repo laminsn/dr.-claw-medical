@@ -10,6 +10,8 @@ import Agents from "./pages/Agents";
 import Profile from "./pages/Profile";
 import SkillsCenter from "./pages/SkillsCenter";
 import TrainingCenter from "./pages/TrainingCenter";
+import Integrations from "./pages/Integrations";
+import AdminDashboard from "./pages/AdminDashboard";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -31,6 +33,8 @@ const App = () => (
             <Route path="/dashboard/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/dashboard/skills" element={<ProtectedRoute><SkillsCenter /></ProtectedRoute>} />
             <Route path="/dashboard/training" element={<ProtectedRoute><TrainingCenter /></ProtectedRoute>} />
+            <Route path="/dashboard/integrations" element={<ProtectedRoute><Integrations /></ProtectedRoute>} />
+            <Route path="/dashboard/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
             <Route path="/dashboard/*" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

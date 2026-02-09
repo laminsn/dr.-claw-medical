@@ -13,10 +13,14 @@ import {
   Plus,
   Zap,
   TrendingUp,
+  Rocket,
+  Users,
+  Stethoscope,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
 
 interface Agent {
   id: string;
@@ -27,6 +31,7 @@ interface Agent {
   active: boolean;
   calls: number;
   successRate: number;
+  skills: string[];
 }
 
 const defaultAgents: Agent[] = [
@@ -39,6 +44,7 @@ const defaultAgents: Agent[] = [
     active: true,
     calls: 342,
     successRate: 94,
+    skills: ["Empathetic Listening", "HIPAA Compliance"],
   },
   {
     id: "2",
@@ -49,6 +55,7 @@ const defaultAgents: Agent[] = [
     active: true,
     calls: 518,
     successRate: 97,
+    skills: ["Smart Scheduling", "Multi-Language"],
   },
   {
     id: "3",
@@ -59,6 +66,7 @@ const defaultAgents: Agent[] = [
     active: false,
     calls: 156,
     successRate: 89,
+    skills: ["Insurance Verification"],
   },
   {
     id: "4",
@@ -69,6 +77,7 @@ const defaultAgents: Agent[] = [
     active: true,
     calls: 89,
     successRate: 96,
+    skills: ["Clinical Documentation", "Referral Management"],
   },
   {
     id: "5",
@@ -79,6 +88,7 @@ const defaultAgents: Agent[] = [
     active: false,
     calls: 203,
     successRate: 72,
+    skills: ["Patient Re-engagement"],
   },
   {
     id: "6",
@@ -89,17 +99,79 @@ const defaultAgents: Agent[] = [
     active: true,
     calls: 127,
     successRate: 91,
+    skills: ["Patient Onboarding", "HIPAA Compliance"],
+  },
+];
+
+interface QuickStartTemplate {
+  name: string;
+  description: string;
+  icon: typeof Bot;
+  skills: string[];
+  category: string;
+}
+
+const quickStartTemplates: QuickStartTemplate[] = [
+  {
+    name: "Front Desk Agent",
+    description: "Handles calls, scheduling, and basic patient inquiries.",
+    icon: Phone,
+    skills: ["Smart Scheduling", "Empathetic Listening", "Multi-Language"],
+    category: "Receptionist",
+  },
+  {
+    name: "Clinical Coordinator",
+    description: "Manages referrals, documentation, and care coordination.",
+    icon: Stethoscope,
+    skills: ["Clinical Documentation", "Referral Management", "HIPAA Compliance"],
+    category: "Clinical",
+  },
+  {
+    name: "Patient Outreach",
+    description: "Follow-ups, no-show recovery, and satisfaction surveys.",
+    icon: Users,
+    skills: ["Empathetic Listening", "Patient Re-engagement", "No-Show Recovery"],
+    category: "Marketing",
+  },
+  {
+    name: "Admin Assistant",
+    description: "Insurance verification, billing support, and data entry.",
+    icon: Shield,
+    skills: ["Insurance Verification", "Data Entry", "Compliance Monitoring"],
+    category: "Admin",
   },
 ];
 
 const Agents = () => {
   const [agents, setAgents] = useState<Agent[]>(defaultAgents);
   const [configAgent, setConfigAgent] = useState<Agent | null>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const { toast } = useToast();
 
   const toggleAgent = (id: string) => {
     setAgents((prev) =>
       prev.map((a) => (a.id === id ? { ...a, active: !a.active } : a))
     );
+  };
+
+  const createFromTemplate = (template: QuickStartTemplate) => {
+    const newAgent: Agent = {
+      id: String(agents.length + 1),
+      name: template.name,
+      description: template.description,
+      icon: template.icon,
+      category: template.category,
+      active: true,
+      calls: 0,
+      successRate: 0,
+      skills: template.skills,
+    };
+    setAgents((prev) => [...prev, newAgent]);
+    setShowTemplates(false);
+    toast({
+      title: "Agent created! 🚀",
+      description: `${template.name} is live with ${template.skills.length} skills installed.`,
+    });
   };
 
   const activeCount = agents.filter((a) => a.active).length;
@@ -117,14 +189,63 @@ const Agents = () => {
                 AI Agents
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Configure and launch your medical AI assistants
+                Deploy, configure, and manage your healthcare AI agents
               </p>
             </div>
-            <Button className="gradient-primary text-primary-foreground rounded-xl shadow-glow hover:opacity-90 gap-2">
-              <Plus className="h-4 w-4" />
-              Create Agent
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                className="rounded-xl gap-2"
+                onClick={() => setShowTemplates(!showTemplates)}
+              >
+                <Rocket className="h-4 w-4" />
+                Quick Start
+              </Button>
+              <Button className="gradient-primary text-primary-foreground rounded-xl shadow-glow hover:opacity-90 gap-2">
+                <Plus className="h-4 w-4" />
+                Custom Agent
+              </Button>
+            </div>
           </div>
+
+          {/* Quick Start Templates */}
+          {showTemplates && (
+            <div className="mb-8 bg-primary/5 border border-primary/20 rounded-xl p-6">
+              <h2 className="font-display text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
+                <Rocket className="h-4 w-4 text-primary" /> Quick Start Templates
+              </h2>
+              <p className="text-xs text-muted-foreground mb-4">
+                Pre-configured agents with skills already installed. Deploy in one click.
+              </p>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {quickStartTemplates.map((template) => (
+                  <button
+                    key={template.name}
+                    onClick={() => createFromTemplate(template)}
+                    className="text-left bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-all group"
+                  >
+                    <div className="h-9 w-9 rounded-lg gradient-primary flex items-center justify-center mb-3 group-hover:shadow-glow transition-shadow">
+                      <template.icon className="h-4 w-4 text-primary-foreground" />
+                    </div>
+                    <h3 className="font-display font-semibold text-foreground text-sm">{template.name}</h3>
+                    <p className="text-xs text-muted-foreground mt-1 mb-3">{template.description}</p>
+                    <div className="flex flex-wrap gap-1">
+                      {template.skills.slice(0, 2).map((s) => (
+                        <span key={s} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                          {s}
+                        </span>
+                      ))}
+                      {template.skills.length > 2 && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                          +{template.skills.length - 2}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Summary stats */}
           <div className="grid sm:grid-cols-3 gap-6 mb-10">
@@ -185,9 +306,21 @@ const Agents = () => {
                     onCheckedChange={() => toggleAgent(agent.id)}
                   />
                 </div>
-                <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
+                <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
                   {agent.description}
                 </p>
+
+                {/* Installed skills */}
+                {agent.skills.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-4">
+                    {agent.skills.map((s) => (
+                      <span key={s} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-5 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1.5">
