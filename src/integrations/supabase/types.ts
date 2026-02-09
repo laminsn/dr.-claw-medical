@@ -77,6 +77,42 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_documents: {
+        Row: {
+          agent_key: string
+          created_at: string
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          agent_key: string
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          agent_key?: string
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       agent_skills: {
         Row: {
           agent_key: string
@@ -157,6 +193,63 @@ export type Database = {
         }
         Relationships: []
       }
+      marketplace_skills: {
+        Row: {
+          author_id: string
+          author_name: string | null
+          category: string
+          created_at: string
+          description: string | null
+          difficulty: string | null
+          downloads: number | null
+          icon: string | null
+          id: string
+          is_published: boolean | null
+          is_verified: boolean | null
+          name: string
+          rating_avg: number | null
+          rating_count: number | null
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          author_name?: string | null
+          category: string
+          created_at?: string
+          description?: string | null
+          difficulty?: string | null
+          downloads?: number | null
+          icon?: string | null
+          id?: string
+          is_published?: boolean | null
+          is_verified?: boolean | null
+          name: string
+          rating_avg?: number | null
+          rating_count?: number | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          author_name?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          difficulty?: string | null
+          downloads?: number | null
+          icon?: string | null
+          id?: string
+          is_published?: boolean | null
+          is_verified?: boolean | null
+          name?: string
+          rating_avg?: number | null
+          rating_count?: number | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -208,6 +301,41 @@ export type Database = {
         }
         Relationships: []
       }
+      skill_ratings: {
+        Row: {
+          created_at: string
+          id: string
+          rating: number
+          review: string | null
+          skill_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          rating: number
+          review?: string | null
+          skill_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          rating?: number
+          review?: string | null
+          skill_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_ratings_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       training_modules: {
         Row: {
           category: string
@@ -247,6 +375,36 @@ export type Database = {
           is_published?: boolean | null
           order_index?: number | null
           title?: string
+        }
+        Relationships: []
+      }
+      user_integrations: {
+        Row: {
+          api_key: string
+          created_at: string
+          id: string
+          integration_key: string
+          is_active: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_key: string
+          created_at?: string
+          id?: string
+          integration_key: string
+          is_active?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_key?: string
+          created_at?: string
+          id?: string
+          integration_key?: string
+          is_active?: boolean | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
