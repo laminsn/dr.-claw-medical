@@ -1,4 +1,5 @@
 import { useState } from "react";
+import AgentConfigModal from "@/components/AgentConfigModal";
 import {
   Bot,
   Phone,
@@ -93,6 +94,7 @@ const defaultAgents: Agent[] = [
 
 const Agents = () => {
   const [agents, setAgents] = useState<Agent[]>(defaultAgents);
+  const [configAgent, setConfigAgent] = useState<Agent | null>(null);
 
   const toggleAgent = (id: string) => {
     setAgents((prev) =>
@@ -198,7 +200,7 @@ const Agents = () => {
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setConfigAgent(agent)}>
                       <Settings className="h-4 w-4" />
                     </Button>
                     <Button
@@ -215,6 +217,14 @@ const Agents = () => {
             ))}
           </div>
         </div>
+
+        {configAgent && (
+          <AgentConfigModal
+            agent={{ id: configAgent.id, name: configAgent.name, category: configAgent.category }}
+            open={!!configAgent}
+            onClose={() => setConfigAgent(null)}
+          />
+        )}
       </main>
     </div>
   );
