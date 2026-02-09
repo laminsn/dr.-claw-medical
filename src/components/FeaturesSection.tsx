@@ -35,30 +35,34 @@ const features = [
 
 const FeaturesSection = () => {
   return (
-    <section id="features" className="py-24">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-16">
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">
+    <section id="features" className="py-32 relative">
+      {/* Ambient glow */}
+      <div className="absolute top-1/2 left-0 w-72 h-72 bg-primary/5 rounded-full blur-[100px]" />
+      
+      <div className="container mx-auto px-6 relative z-10">
+        <div className="text-center mb-20">
+          <p className="text-primary text-sm font-semibold tracking-widest uppercase mb-4">Capabilities</p>
+          <h2 className="font-display text-4xl md:text-5xl font-bold text-foreground">
             Everything Your Practice Needs
           </h2>
-          <p className="mt-4 text-muted-foreground max-w-xl mx-auto">
-            Purpose-built AI tools for healthcare professionals — not generic software adapted for medicine.
+          <p className="mt-5 text-muted-foreground max-w-lg mx-auto text-lg">
+            Purpose-built AI tools for healthcare — not generic software adapted for medicine.
           </p>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-16 max-w-5xl mx-auto">
           {features.map((feature, i) => (
             <div
               key={feature.title}
-              className="group p-6 rounded-2xl bg-card border border-border hover:shadow-glow hover:border-primary/30 transition-all duration-300"
+              className="group relative"
               style={{ animationDelay: `${i * 100}ms` }}
             >
-              <div className="h-12 w-12 rounded-xl gradient-primary flex items-center justify-center mb-4">
+              <div className="h-12 w-12 rounded-xl gradient-primary flex items-center justify-center mb-5 group-hover:shadow-glow transition-shadow duration-500">
                 <feature.icon className="h-6 w-6 text-primary-foreground" />
               </div>
-              <h3 className="font-display text-lg font-semibold text-foreground mb-2">
+              <h3 className="font-display text-lg font-semibold text-foreground mb-3">
                 {feature.title}
               </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className="text-muted-foreground leading-relaxed">
                 {feature.description}
               </p>
             </div>
