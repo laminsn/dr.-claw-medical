@@ -26,13 +26,13 @@ const Navbar = () => {
 
         <div className="flex items-center gap-3">
           <Link
-            to="/dashboard"
+            to="/auth"
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors hidden sm:block"
           >
             Log In
           </Link>
           <Link
-            to="/dashboard"
+            to="/auth"
             className="gradient-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity"
           >
             Get Started

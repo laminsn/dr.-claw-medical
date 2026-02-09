@@ -1,4 +1,5 @@
 import { Check } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface PricingTierProps {
   name: string;
@@ -11,44 +12,45 @@ interface PricingTierProps {
 
 const PricingCard = ({ name, price, description, features, highlighted, cta }: PricingTierProps) => (
   <div
-    className={`relative rounded-2xl p-8 flex flex-col ${
+    className={`relative flex flex-col ${
       highlighted
-        ? "gradient-primary text-primary-foreground shadow-glow scale-105"
-        : "bg-card border border-border"
+        ? "border border-primary/40 rounded-2xl bg-primary/5 shadow-glow p-8"
+        : "p-8"
     }`}
   >
     {highlighted && (
-      <span className="absolute -top-3 left-1/2 -translate-x-1/2 gradient-accent text-accent-foreground text-xs font-bold px-4 py-1 rounded-full">
+      <span className="absolute -top-3 left-8 gradient-primary text-primary-foreground text-xs font-bold px-4 py-1 rounded-full">
         Most Popular
       </span>
     )}
-    <h3 className="font-display text-xl font-bold">{name}</h3>
-    <p className={`text-sm mt-1 ${highlighted ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+    <h3 className="font-display text-xl font-bold text-foreground">{name}</h3>
+    <p className="text-sm mt-1 text-muted-foreground">
       {description}
     </p>
-    <div className="mt-6 mb-6">
-      <span className="font-display text-4xl font-bold">{price}</span>
-      <span className={`text-sm ${highlighted ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-        /month
-      </span>
+    <div className="mt-6 mb-8">
+      <span className="font-display text-5xl font-bold text-foreground">{price}</span>
+      {price !== "Custom" && (
+        <span className="text-sm text-muted-foreground ml-1">/month</span>
+      )}
     </div>
     <ul className="space-y-3 flex-1">
       {features.map((feature) => (
-        <li key={feature} className="flex items-start gap-2 text-sm">
-          <Check className={`h-4 w-4 mt-0.5 shrink-0 ${highlighted ? "text-primary-foreground" : "text-primary"}`} />
-          <span>{feature}</span>
+        <li key={feature} className="flex items-start gap-3 text-sm">
+          <Check className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
+          <span className="text-foreground/80">{feature}</span>
         </li>
       ))}
     </ul>
-    <button
-      className={`mt-8 w-full py-3 rounded-lg font-semibold text-sm transition-all ${
+    <Link
+      to="/auth"
+      className={`mt-8 w-full py-3.5 rounded-xl font-semibold text-sm transition-all text-center block ${
         highlighted
-          ? "bg-card text-foreground hover:bg-card/90"
-          : "gradient-primary text-primary-foreground hover:opacity-90"
+          ? "gradient-primary text-primary-foreground hover:opacity-90 shadow-glow"
+          : "border border-border text-foreground hover:border-primary/40 hover:text-primary"
       }`}
     >
       {cta}
-    </button>
+    </Link>
   </div>
 );
 
@@ -113,17 +115,20 @@ const PricingSection = () => {
   ];
 
   return (
-    <section id="pricing" className="py-24 bg-secondary/50">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-16">
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">
+    <section id="pricing" className="py-32 relative">
+      <div className="absolute top-0 right-1/4 w-72 h-72 bg-primary/5 rounded-full blur-[100px]" />
+      
+      <div className="container mx-auto px-6 relative z-10">
+        <div className="text-center mb-20">
+          <p className="text-primary text-sm font-semibold tracking-widest uppercase mb-4">Pricing</p>
+          <h2 className="font-display text-4xl md:text-5xl font-bold text-foreground">
             Simple, Transparent Pricing
           </h2>
-          <p className="mt-4 text-muted-foreground max-w-xl mx-auto">
-            Start free for 14 days. No credit card required. Scale as your practice grows.
+          <p className="mt-5 text-muted-foreground max-w-lg mx-auto text-lg">
+            Start free for 14 days. No credit card required. Scale as you grow.
           </p>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto items-start">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-0 max-w-6xl mx-auto divide-x divide-border">
           {tiers.map((tier) => (
             <PricingCard key={tier.name} {...tier} />
           ))}
