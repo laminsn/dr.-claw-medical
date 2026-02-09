@@ -9,6 +9,12 @@ import {
   ArrowDownRight,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
+import {
+  CallVolumeChart,
+  TrendChart,
+  OutcomeChart,
+  CallHistoryTable,
+} from "@/components/dashboard/AnalyticsCharts";
 
 const stats = [
   { label: "Active AI Agents", value: "12", change: "+3", up: true, icon: Bot },
@@ -18,11 +24,11 @@ const stats = [
 ];
 
 const recentActivity = [
-  { action: "AI Agent completed patient follow-up call", time: "2 min ago", type: "call" },
-  { action: "New appointment booked via SMS automation", time: "15 min ago", type: "schedule" },
-  { action: "Insurance verification completed for J. Smith", time: "32 min ago", type: "document" },
-  { action: "Referral letter generated and sent", time: "1 hr ago", type: "document" },
-  { action: "No-show reminder sent to 8 patients", time: "2 hrs ago", type: "outreach" },
+  { action: "AI Agent completed patient follow-up call", time: "2 min ago" },
+  { action: "New appointment booked via SMS automation", time: "15 min ago" },
+  { action: "Insurance verification completed for J. Smith", time: "32 min ago" },
+  { action: "Referral letter generated and sent", time: "1 hr ago" },
+  { action: "No-show reminder sent to 8 patients", time: "2 hrs ago" },
 ];
 
 const Dashboard = () => {
@@ -59,11 +65,22 @@ const Dashboard = () => {
             ))}
           </div>
 
-          {/* Content Grid */}
+          {/* Analytics Charts */}
+          <div className="grid lg:grid-cols-3 gap-4 mb-8">
+            <CallVolumeChart />
+            <TrendChart />
+            <OutcomeChart />
+          </div>
+
+          {/* Call History + Activity */}
           <div className="grid lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <CallHistoryTable />
+            </div>
+
             {/* Activity */}
-            <div className="lg:col-span-2 bg-card rounded-xl border border-border p-6">
-              <h2 className="font-display text-lg font-semibold text-foreground mb-4">
+            <div className="bg-card rounded-xl border border-border p-6">
+              <h2 className="font-display text-sm font-semibold text-foreground mb-4">
                 Recent Activity
               </h2>
               <div className="space-y-4">
@@ -71,35 +88,12 @@ const Dashboard = () => {
                   <div key={i} className="flex items-start gap-3 pb-4 border-b border-border last:border-0 last:pb-0">
                     <div className="h-2 w-2 rounded-full gradient-primary mt-2 shrink-0" />
                     <div className="flex-1">
-                      <p className="text-sm text-foreground">{item.action}</p>
+                      <p className="text-xs text-foreground leading-relaxed">{item.action}</p>
                       <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
                         <Clock className="h-3 w-3" /> {item.time}
                       </p>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="bg-card rounded-xl border border-border p-6">
-              <h2 className="font-display text-lg font-semibold text-foreground mb-4">
-                Quick Actions
-              </h2>
-              <div className="space-y-3">
-                {[
-                  { label: "Launch AI Agent", icon: Bot },
-                  { label: "Schedule Campaign", icon: Phone },
-                  { label: "Book Appointment", icon: CalendarCheck },
-                  { label: "View Analytics", icon: TrendingUp },
-                ].map((action) => (
-                  <button
-                    key={action.label}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-border hover:bg-secondary transition-colors text-sm font-medium text-foreground"
-                  >
-                    <action.icon className="h-4 w-4 text-primary" />
-                    {action.label}
-                  </button>
                 ))}
               </div>
             </div>

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import logo from "@/assets/dr-claw-logo.png";
+import logo from "@/assets/dr-claw-logo-transparent.png";
+import ComplianceBadges from "@/components/ComplianceBadges";
 
 const Footer = () => (
   <footer className="py-20 border-t border-border">
@@ -10,9 +11,10 @@ const Footer = () => (
             <img src={logo} alt="Dr. Claw" className="h-8 w-8" />
             <span className="font-display text-lg font-bold text-foreground">Dr. Claw</span>
           </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-sm text-muted-foreground leading-relaxed mb-5">
             The AI-powered platform purpose-built for healthcare professionals.
           </p>
+          <ComplianceBadges variant="stacked" />
         </div>
         <div>
           <h4 className="font-display font-semibold text-foreground mb-4 text-sm tracking-wider uppercase">Product</h4>
@@ -20,6 +22,7 @@ const Footer = () => (
             <li><a href="#features" className="hover:text-foreground transition-colors">Features</a></li>
             <li><a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a></li>
             <li><a href="#personas" className="hover:text-foreground transition-colors">Use Cases</a></li>
+            <li><a href="#integrations" className="hover:text-foreground transition-colors">Integrations</a></li>
           </ul>
         </div>
         <div>
@@ -36,11 +39,12 @@ const Footer = () => (
             <li><a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a></li>
             <li><a href="#" className="hover:text-foreground transition-colors">Terms of Service</a></li>
             <li><a href="#" className="hover:text-foreground transition-colors">HIPAA Compliance</a></li>
+            <li><a href="#" className="hover:text-foreground transition-colors">BAA Agreement</a></li>
           </ul>
         </div>
       </div>
       <div className="border-t border-border mt-14 pt-8 text-center text-xs text-muted-foreground">
-        © 2026 Dr. Claw. All rights reserved.
+        © 2026 Dr. Claw. All rights reserved. HIPAA · BAA · PHI Compliant.
       </div>
     </div>
   </footer>
