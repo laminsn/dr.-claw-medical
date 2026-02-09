@@ -11,6 +11,9 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  Zap,
+  GraduationCap,
+  User,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/dr-claw-logo-transparent.png";
@@ -18,10 +21,13 @@ import logo from "@/assets/dr-claw-logo-transparent.png";
 const menuItems = [
   { icon: LayoutDashboard, label: "Overview", path: "/dashboard" },
   { icon: Bot, label: "AI Agents", path: "/dashboard/agents" },
+  { icon: Zap, label: "Skills Center", path: "/dashboard/skills" },
+  { icon: GraduationCap, label: "Training", path: "/dashboard/training" },
   { icon: Phone, label: "Outreach", path: "/dashboard/outreach" },
   { icon: CalendarCheck, label: "Scheduling", path: "/dashboard/scheduling" },
   { icon: FileText, label: "Documents", path: "/dashboard/documents" },
   { icon: Users, label: "Contacts", path: "/dashboard/contacts" },
+  { icon: User, label: "Profile", path: "/dashboard/profile" },
   { icon: Settings, label: "Settings", path: "/dashboard/settings" },
 ];
 
