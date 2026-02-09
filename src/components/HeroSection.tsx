@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import logo from "@/assets/dr-claw-logo.png";
+import logo from "@/assets/dr-claw-logo-transparent.png";
+import ComplianceBadges from "@/components/ComplianceBadges";
 
 const HeroSection = () => {
   return (
@@ -37,7 +38,7 @@ const HeroSection = () => {
 
           <p className="mt-8 text-lg text-muted-foreground max-w-lg mx-auto animate-fade-up leading-relaxed" style={{ animationDelay: "200ms" }}>
             Pre-trained AI agents for medical execs, agency owners, and office staff. 
-            One-click setup. HIPAA-ready. Starting at $49/mo.
+            One-click setup. Simple implementation. Starting at $49/mo.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12 animate-fade-up" style={{ animationDelay: "400ms" }}>
@@ -55,12 +56,17 @@ const HeroSection = () => {
             </a>
           </div>
 
-          <p className="mt-8 text-xs text-muted-foreground animate-fade-in flex items-center justify-center gap-4" style={{ animationDelay: "600ms" }}>
+          {/* Compliance Badges */}
+          <div className="mt-10 flex justify-center animate-fade-in" style={{ animationDelay: "600ms" }}>
+            <ComplianceBadges />
+          </div>
+
+          <p className="mt-6 text-xs text-muted-foreground animate-fade-in flex items-center justify-center gap-4" style={{ animationDelay: "800ms" }}>
             <span>No credit card required</span>
             <span className="h-1 w-1 rounded-full bg-muted-foreground/50" />
             <span>14-day free trial</span>
             <span className="h-1 w-1 rounded-full bg-muted-foreground/50" />
-            <span>HIPAA compliant</span>
+            <span>Safe &amp; open-source ready</span>
           </p>
         </div>
       </div>

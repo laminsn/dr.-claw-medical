@@ -13,7 +13,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import logo from "@/assets/dr-claw-logo.png";
+import logo from "@/assets/dr-claw-logo-transparent.png";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Overview", path: "/dashboard" },
