@@ -59,27 +59,30 @@ const PricingSection = () => {
     {
       name: "Starter",
       price: "$49",
-      description: "For solo practitioners getting started",
+      description: "Solo practitioners getting started",
       cta: "Start Free Trial",
       features: [
-        "Pre-trained medical AI assistant",
-        "Patient scheduling automation",
-        "Basic document generation",
-        "Email & chat support",
-        "1 user seat",
+        "1 AI agent",
+        "5 OpenClaw skills",
+        "1 LLM integration",
+        "Basic voice (ElevenLabs)",
+        "HIPAA compliant",
+        "Email support",
       ],
     },
     {
       name: "Professional",
       price: "$99",
-      description: "For growing practices and agencies",
+      description: "Growing practices and agencies",
       cta: "Start Free Trial",
       highlighted: true,
       features: [
-        "Everything in Starter",
-        "Multi-channel outreach (calls, SMS, email)",
-        "Insurance verification workflows",
-        "Custom AI training on your data",
+        "5 AI agents",
+        "Unlimited OpenClaw skills",
+        "Multi-LLM (OpenAI, Claude, Gemini)",
+        "Full voice stack (ElevenLabs + Deepgram + VAPI)",
+        "Notion & Airtable integrations",
+        "BAA agreements included",
         "5 user seats",
         "Priority support",
       ],
@@ -87,12 +90,14 @@ const PricingSection = () => {
     {
       name: "Advanced",
       price: "$149",
-      description: "For multi-location offices",
+      description: "Multi-location offices",
       cta: "Start Free Trial",
       features: [
-        "Everything in Professional",
-        "Advanced analytics & reporting",
-        "HIPAA-compliant data handling",
+        "15 AI agents",
+        "All integrations unlocked",
+        "AWS Healthcare (Comprehend, Transcribe)",
+        "Custom skill development",
+        "Advanced analytics",
         "White-label options",
         "15 user seats",
         "Dedicated account manager",
@@ -101,13 +106,14 @@ const PricingSection = () => {
     {
       name: "Enterprise",
       price: "Custom",
-      description: "For hospital networks & large groups",
+      description: "Hospital networks & large groups",
       cta: "Contact Sales",
       features: [
-        "Everything in Advanced",
+        "Unlimited AI agents",
         "Unlimited user seats",
-        "Custom integrations (EHR, billing)",
+        "Custom EHR/billing integrations",
         "On-premise deployment option",
+        "Custom BAA & compliance review",
         "SLA guarantee",
         "24/7 phone support",
       ],
@@ -125,7 +131,7 @@ const PricingSection = () => {
             Simple, Transparent Pricing
           </h2>
           <p className="mt-5 text-muted-foreground max-w-lg mx-auto text-lg">
-            Start free for 14 days. No credit card required. Scale as you grow.
+            Start free for 14 days. All plans include HIPAA compliance and BAA agreements.
           </p>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-0 max-w-6xl mx-auto divide-x divide-border">

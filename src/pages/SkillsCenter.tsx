@@ -10,12 +10,15 @@ import {
   Repeat,
   Brain,
   Star,
-  ChevronRight,
+  Download,
+  CheckCircle,
   Loader2,
   Bot,
+  Search,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -41,8 +44,9 @@ interface Skill {
   is_active: boolean;
 }
 
-interface AgentSkill {
+interface InstalledSkill {
   skill_id: string;
+  agent_key: string;
   level: number;
   xp: number;
   completed_at: string | null;
@@ -52,10 +56,11 @@ const SkillsCenter = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [skills, setSkills] = useState<Skill[]>([]);
-  const [agentSkills, setAgentSkills] = useState<AgentSkill[]>([]);
+  const [installedSkills, setInstalledSkills] = useState<InstalledSkill[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("All");
-  const [training, setTraining] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [installing, setInstalling] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -69,10 +74,10 @@ const SkillsCenter = () => {
       if (user) {
         const { data: agentData } = await supabase
           .from("agent_skills")
-          .select("skill_id, level, xp, completed_at")
+          .select("skill_id, agent_key, level, xp, completed_at")
           .eq("user_id", user.id);
 
-        if (agentData) setAgentSkills(agentData as any);
+        if (agentData) setInstalledSkills(agentData as any);
       }
       setLoading(false);
     };
@@ -80,61 +85,51 @@ const SkillsCenter = () => {
   }, [user]);
 
   const categories = ["All", ...new Set(skills.map((s) => s.category))];
-  const filtered = activeCategory === "All" ? skills : skills.filter((s) => s.category === activeCategory);
 
-  const getSkillProgress = (skillId: string) => {
-    return agentSkills.find((as) => as.skill_id === skillId);
-  };
+  const filtered = skills.filter((s) => {
+    const matchesCategory = activeCategory === "All" || s.category === activeCategory;
+    const matchesSearch = !searchQuery || s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
-  const trainSkill = async (skillId: string) => {
+  const isInstalled = (skillId: string) => installedSkills.some((is) => is.skill_id === skillId);
+  const getInstallCount = (skillId: string) => installedSkills.filter((is) => is.skill_id === skillId).length;
+
+  const installSkill = async (skillId: string) => {
     if (!user) return;
-    setTraining(skillId);
+    setInstalling(skillId);
 
-    const existing = getSkillProgress(skillId);
     const skill = skills.find((s) => s.id === skillId);
 
-    if (existing) {
-      // Level up
-      const newXp = existing.xp + (skill?.xp_reward || 100);
-      const newLevel = Math.min(5, existing.level + (newXp >= existing.level * 200 ? 1 : 0));
+    // Install to default agent
+    const { error } = await supabase.from("agent_skills").insert({
+      user_id: user.id,
+      agent_key: "default",
+      skill_id: skillId,
+      level: 1,
+      xp: skill?.xp_reward || 100,
+    } as any);
 
-      await supabase
-        .from("agent_skills")
-        .update({
-          xp: newXp,
-          level: newLevel,
-          completed_at: newLevel >= 5 ? new Date().toISOString() : null,
-        } as any)
-        .eq("user_id", user.id)
-        .eq("skill_id", skillId);
-
-      setAgentSkills((prev) =>
-        prev.map((as) =>
-          as.skill_id === skillId ? { ...as, xp: newXp, level: newLevel } : as
-        )
-      );
+    if (error) {
+      if (error.code === "23505") {
+        toast({ title: "Already installed", description: `${skill?.name} is already installed on this agent.` });
+      } else {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      }
     } else {
-      // Start training
-      await supabase.from("agent_skills").insert({
-        user_id: user.id,
-        agent_key: "default",
-        skill_id: skillId,
-        level: 1,
-        xp: skill?.xp_reward || 100,
-      } as any);
-
-      setAgentSkills((prev) => [
+      setInstalledSkills((prev) => [
         ...prev,
-        { skill_id: skillId, level: 1, xp: skill?.xp_reward || 100, completed_at: null },
+        { skill_id: skillId, agent_key: "default", level: 1, xp: skill?.xp_reward || 100, completed_at: null },
       ]);
+      toast({
+        title: "Skill installed! 🎉",
+        description: `${skill?.name} has been installed on your agent. It's ready to use.`,
+      });
     }
-
-    toast({ title: "Training complete!", description: `${skill?.name} skill improved.` });
-    setTraining(null);
+    setInstalling(null);
   };
 
-  const totalXp = agentSkills.reduce((sum, a) => sum + a.xp, 0);
-  const masteredCount = agentSkills.filter((a) => a.level >= 5).length;
+  const installedCount = new Set(installedSkills.map((is) => is.skill_id)).size;
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -144,10 +139,10 @@ const SkillsCenter = () => {
           <div className="flex items-start justify-between mb-8">
             <div>
               <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-                <Bot className="h-6 w-6 text-primary" /> Dr. Claw Skills Center
+                <Bot className="h-6 w-6 text-primary" /> OpenClaw Skills
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Train your AI agents to get better at specific tasks
+                Install healthcare skills on your AI agents — one skill or all of them
               </p>
             </div>
           </div>
@@ -155,17 +150,28 @@ const SkillsCenter = () => {
           {/* Stats */}
           <div className="grid sm:grid-cols-3 gap-6 mb-8">
             <div className="bg-card rounded-xl border border-border p-5">
-              <p className="text-xs text-muted-foreground">Total XP Earned</p>
-              <p className="font-display text-2xl font-bold text-foreground mt-1">{totalXp.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">Available Skills</p>
+              <p className="font-display text-2xl font-bold text-foreground mt-1">{skills.length}</p>
             </div>
             <div className="bg-card rounded-xl border border-border p-5">
-              <p className="text-xs text-muted-foreground">Skills in Training</p>
-              <p className="font-display text-2xl font-bold text-foreground mt-1">{agentSkills.length}</p>
+              <p className="text-xs text-muted-foreground">Installed</p>
+              <p className="font-display text-2xl font-bold text-foreground mt-1">{installedCount}</p>
             </div>
             <div className="bg-card rounded-xl border border-border p-5">
-              <p className="text-xs text-muted-foreground">Skills Mastered</p>
-              <p className="font-display text-2xl font-bold text-foreground mt-1">{masteredCount}</p>
+              <p className="text-xs text-muted-foreground">OpenClaw Source</p>
+              <p className="font-display text-sm font-bold text-primary mt-1">Community Marketplace</p>
             </div>
+          </div>
+
+          {/* Search */}
+          <div className="relative mb-6">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search skills..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-secondary border-border"
+            />
           </div>
 
           {/* Categories */}
@@ -190,19 +196,25 @@ const SkillsCenter = () => {
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filtered.map((skill) => {
                 const Icon = iconMap[skill.icon] || Zap;
-                const progress = getSkillProgress(skill.id);
-                const level = progress?.level || 0;
-                const maxLevel = 5;
+                const installed = isInstalled(skill.id);
+                const installCount = getInstallCount(skill.id);
 
                 return (
-                  <div key={skill.id} className="bg-card rounded-xl border border-border p-6 hover:border-primary/20 transition-all">
+                  <div
+                    key={skill.id}
+                    className={`bg-card rounded-xl border p-5 transition-all ${
+                      installed ? "border-primary/20 bg-primary/[0.02]" : "border-border hover:border-primary/10"
+                    }`}
+                  >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg gradient-primary flex items-center justify-center">
-                          <Icon className="h-5 w-5 text-primary-foreground" />
+                        <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
+                          installed ? "gradient-primary" : "bg-muted"
+                        }`}>
+                          <Icon className={`h-5 w-5 ${installed ? "text-primary-foreground" : "text-muted-foreground"}`} />
                         </div>
                         <div>
                           <h3 className="font-display font-semibold text-foreground text-sm">{skill.name}</h3>
@@ -213,43 +225,32 @@ const SkillsCenter = () => {
                         {skill.difficulty}
                       </span>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-4">{skill.description}</p>
 
-                    {/* Level progress */}
-                    <div className="flex items-center gap-2 mb-4">
-                      {[...Array(maxLevel)].map((_, i) => (
-                        <div
-                          key={i}
-                          className={`h-1.5 flex-1 rounded-full ${
-                            i < level ? "gradient-primary" : "bg-muted"
-                          }`}
-                        />
-                      ))}
-                      <span className="text-xs text-muted-foreground ml-1">Lv.{level}/{maxLevel}</span>
-                    </div>
+                    <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{skill.description}</p>
 
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <Star className="h-3 w-3" /> {skill.xp_reward} XP
+                        {installCount > 0 && (
+                          <span className="ml-2 text-primary">• {installCount} agent{installCount > 1 ? "s" : ""}</span>
+                        )}
                       </span>
                       <Button
                         size="sm"
-                        onClick={() => trainSkill(skill.id)}
-                        disabled={training === skill.id || level >= maxLevel}
+                        onClick={() => installSkill(skill.id)}
+                        disabled={installing === skill.id}
                         className={`rounded-lg text-xs gap-1 ${
-                          level >= maxLevel
-                            ? "bg-accent/20 text-accent"
+                          installed
+                            ? "bg-primary/10 text-primary hover:bg-primary/20"
                             : "gradient-primary text-primary-foreground hover:opacity-90"
                         }`}
                       >
-                        {training === skill.id ? (
+                        {installing === skill.id ? (
                           <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : level >= maxLevel ? (
-                          "Mastered"
-                        ) : level > 0 ? (
-                          <>Train <ChevronRight className="h-3 w-3" /></>
+                        ) : installed ? (
+                          <><CheckCircle className="h-3 w-3" /> Installed</>
                         ) : (
-                          <>Start <ChevronRight className="h-3 w-3" /></>
+                          <><Download className="h-3 w-3" /> Install</>
                         )}
                       </Button>
                     </div>

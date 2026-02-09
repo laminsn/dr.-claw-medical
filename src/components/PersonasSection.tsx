@@ -4,20 +4,20 @@ const personas = [
   {
     icon: Stethoscope,
     title: "Medical Executives",
-    description: "Strategic AI tools for practice growth, patient acquisition funnels, and operational analytics.",
-    features: ["Revenue forecasting", "Patient pipeline analytics", "Market positioning"],
+    description: "Strategic AI tools for practice growth, patient acquisition, and operational analytics. HIPAA-first.",
+    features: ["Revenue forecasting", "Patient pipeline analytics", "BAA-secured integrations"],
   },
   {
     icon: Building2,
     title: "Agency Owners",
-    description: "White-label AI solutions to serve your healthcare clients at scale with zero extra overhead.",
-    features: ["Multi-client management", "Branded dashboards", "Automated reporting"],
+    description: "White-label AI solutions to serve healthcare clients at scale. Deploy agents in minutes, not months.",
+    features: ["Multi-client management", "Branded dashboards", "OpenClaw skills marketplace"],
   },
   {
     icon: Users,
     title: "Office Staff",
-    description: "Streamline daily tasks with AI that handles scheduling, follow-ups, and paperwork automatically.",
-    features: ["Smart call handling", "Automated reminders", "Document generation"],
+    description: "AI agents that handle scheduling, follow-ups, and paperwork — so your team can focus on patients.",
+    features: ["Quick-start agent templates", "Skill installation", "One-click deployment"],
   },
 ];
 
@@ -33,7 +33,7 @@ const PersonasSection = () => {
             Built For Healthcare Teams
           </h2>
           <p className="mt-5 text-muted-foreground max-w-lg mx-auto text-lg">
-            Pre-configured AI workflows for every role in your medical practice.
+            Pre-configured AI agents for every role. Install skills, pick your LLM, and deploy.
           </p>
         </div>
         <div className="grid md:grid-cols-3 gap-12 max-w-5xl mx-auto">

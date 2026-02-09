@@ -26,19 +26,19 @@ const HeroSection = () => {
 
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs font-medium mb-8 animate-fade-up">
             <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
-            AI-Powered Healthcare Platform
+            HIPAA & BAA Secured • OpenClaw Source
           </div>
 
           <h1 className="font-display text-5xl sm:text-6xl md:text-7xl font-bold leading-[1.05] animate-fade-up tracking-tight">
-            The AI Platform{" "}
+            Deploy AI Agents{" "}
             <br className="hidden sm:block" />
-            Built for{" "}
+            for{" "}
             <span className="gradient-hero-text">Healthcare</span>
           </h1>
 
-          <p className="mt-8 text-lg text-muted-foreground max-w-lg mx-auto animate-fade-up leading-relaxed" style={{ animationDelay: "200ms" }}>
-            Pre-trained AI agents for medical execs, agency owners, and office staff. 
-            One-click setup. Simple implementation. Starting at $49/mo.
+          <p className="mt-8 text-lg text-muted-foreground max-w-xl mx-auto animate-fade-up leading-relaxed" style={{ animationDelay: "200ms" }}>
+            Simple setup. Fast deployment. Pick your LLM, voice engine, and skills.
+            HIPAA-compliant AI agents trained on healthcare workflows — live in minutes, not months.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12 animate-fade-up" style={{ animationDelay: "400ms" }}>
@@ -49,10 +49,10 @@ const HeroSection = () => {
               Start Free Trial
             </Link>
             <a
-              href="#features"
+              href="#integrations"
               className="px-8 py-4 rounded-xl font-semibold text-base border border-border text-foreground hover:border-primary/40 hover:text-primary transition-all"
             >
-              See Features
+              View Integrations
             </a>
           </div>
 
@@ -61,12 +61,26 @@ const HeroSection = () => {
             <ComplianceBadges />
           </div>
 
-          <p className="mt-6 text-xs text-muted-foreground animate-fade-in flex items-center justify-center gap-4" style={{ animationDelay: "800ms" }}>
+          {/* Integration logos */}
+          <div className="mt-8 animate-fade-in" style={{ animationDelay: "800ms" }}>
+            <p className="text-xs text-muted-foreground mb-4">Works with your stack</p>
+            <div className="flex items-center justify-center gap-6 flex-wrap text-xs text-muted-foreground/70 font-medium">
+              <span className="px-3 py-1.5 rounded-lg border border-border bg-card/50">OpenAI</span>
+              <span className="px-3 py-1.5 rounded-lg border border-border bg-card/50">Claude</span>
+              <span className="px-3 py-1.5 rounded-lg border border-border bg-card/50">Gemini</span>
+              <span className="px-3 py-1.5 rounded-lg border border-border bg-card/50">ElevenLabs</span>
+              <span className="px-3 py-1.5 rounded-lg border border-border bg-card/50">Deepgram</span>
+              <span className="px-3 py-1.5 rounded-lg border border-border bg-card/50">VAPI</span>
+              <span className="px-3 py-1.5 rounded-lg border border-border bg-card/50">AWS</span>
+            </div>
+          </div>
+
+          <p className="mt-6 text-xs text-muted-foreground animate-fade-in flex items-center justify-center gap-4" style={{ animationDelay: "1000ms" }}>
             <span>No credit card required</span>
             <span className="h-1 w-1 rounded-full bg-muted-foreground/50" />
             <span>14-day free trial</span>
             <span className="h-1 w-1 rounded-full bg-muted-foreground/50" />
-            <span>Safe &amp; open-source ready</span>
+            <span>OpenClaw source skills</span>
           </p>
         </div>
       </div>
