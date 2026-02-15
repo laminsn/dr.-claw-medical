@@ -67,7 +67,7 @@ const Agents = () => {
     {
       id: "2",
       name: "Marketing Maven",
-      skills: ["copywriter", "cmo", "researcher"],
+      skills: ["professional-copywriter", "cmo", "researcher"],
       model: "claude",
       active: true,
     },

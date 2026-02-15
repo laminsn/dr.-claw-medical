@@ -13,6 +13,7 @@ import {
   Calendar,
   Shield,
   HeartPulse,
+  Heart,
   FileText,
   GitBranch,
   UserX,
@@ -25,6 +26,7 @@ import {
   TrendingUp,
   Zap,
   Settings,
+  Cog,
   Server,
   BrainCircuit,
   CalendarCheck,
@@ -34,6 +36,9 @@ import {
   ArrowRightLeft,
   FileCheck,
   Award,
+  Microscope,
+  TestTube,
+  CheckSquare,
   type LucideIcon,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
@@ -66,6 +71,7 @@ const iconMap: Record<string, LucideIcon> = {
   Calendar,
   Shield,
   HeartPulse,
+  Heart,
   FileText,
   GitBranch,
   UserX,
@@ -78,6 +84,7 @@ const iconMap: Record<string, LucideIcon> = {
   TrendingUp,
   Zap,
   Settings,
+  Cog,
   Server,
   BrainCircuit,
   CalendarCheck,
@@ -87,6 +94,9 @@ const iconMap: Record<string, LucideIcon> = {
   ArrowRightLeft,
   FileCheck,
   Award,
+  Microscope,
+  TestTube,
+  CheckSquare,
 };
 
 function resolveIcon(name: string): LucideIcon {
@@ -231,10 +241,10 @@ const SkillsCenter = () => {
                     <div className="flex flex-wrap gap-1.5 mt-3">
                       {skill.capabilities.slice(0, 3).map((cap) => (
                         <span
-                          key={cap}
+                          key={cap.name}
                           className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-muted-foreground border border-white/10"
                         >
-                          {cap}
+                          {cap.name}
                         </span>
                       ))}
                       {skill.capabilities.length > 3 && (
@@ -311,13 +321,18 @@ const SkillsCenter = () => {
               <ul className="grid sm:grid-cols-2 gap-2">
                 {selectedSkill.capabilities.map((cap) => (
                   <li
-                    key={cap}
-                    className="flex items-center gap-2 text-sm text-muted-foreground"
+                    key={cap.name}
+                    className="flex items-start gap-2 text-sm text-muted-foreground"
                   >
-                    <Zap className="h-3.5 w-3.5 text-primary shrink-0" />
-                    <span className="font-semibold text-foreground/90">
-                      {cap}
-                    </span>
+                    <Zap className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-semibold text-foreground/90">
+                        {cap.name}
+                      </span>
+                      <p className="text-xs text-muted-foreground/70 mt-0.5 leading-relaxed">
+                        {cap.description}
+                      </p>
+                    </div>
                   </li>
                 ))}
               </ul>

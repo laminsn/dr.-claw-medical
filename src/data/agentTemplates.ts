@@ -55,7 +55,7 @@ export const agentTemplates: AgentTemplate[] = [
     defaultSkills: [
       "clinical-documentation",
       "referral-management",
-      "lab-results",
+      "lab-results-communication",
     ],
     suggestedModel: "Claude",
     tier: "professional",
@@ -74,7 +74,7 @@ export const agentTemplates: AgentTemplate[] = [
       "A proactive engagement engine that reaches out to patients before they disengage. This agent handles appointment reminders, wellness check-ins, preventive care nudges, and re-engagement campaigns for lapsed patients. It dramatically reduces no-show rates while building stronger patient-provider relationships through consistent, personalized communication.",
     icon: "MessageSquareHeart",
     category: "healthcare",
-    defaultSkills: ["patient-follow-up", "no-show-recovery", "rx-refill"],
+    defaultSkills: ["patient-follow-up", "no-show-recovery", "rx-refill-coordination"],
     suggestedModel: "OpenAI",
     tier: "starter",
     metrics: [
@@ -94,8 +94,8 @@ export const agentTemplates: AgentTemplate[] = [
     category: "healthcare",
     defaultSkills: [
       "insurance-verification",
-      "pre-authorization",
-      "rx-refill",
+      "pre-authorization-automation",
+      "rx-refill-coordination",
     ],
     suggestedModel: "Gemini",
     tier: "professional",
@@ -180,7 +180,7 @@ export const agentTemplates: AgentTemplate[] = [
       "A high-output content production system that generates blog posts, social media content, email sequences, and marketing collateral at scale. This agent maintains your brand voice across every channel, optimizes content for SEO and engagement, and adapts messaging for different audience segments. It turns your content calendar from aspirational to fully executed.",
     icon: "PenTool",
     category: "marketing",
-    defaultSkills: ["copywriter", "cmo", "researcher"],
+    defaultSkills: ["professional-copywriter", "cmo", "researcher"],
     suggestedModel: "OpenAI",
     tier: "starter",
     metrics: [
@@ -198,7 +198,7 @@ export const agentTemplates: AgentTemplate[] = [
       "A data-driven marketing strategist that designs multi-channel campaigns, identifies high-value audience segments, and continuously optimizes spend allocation. This agent analyzes conversion funnels, A/B test results, and competitive positioning to recommend strategies that lower customer acquisition costs and accelerate pipeline growth. It brings CMO-caliber thinking to every campaign decision.",
     icon: "Target",
     category: "marketing",
-    defaultSkills: ["cmo", "copywriter", "researcher"],
+    defaultSkills: ["cmo", "professional-copywriter", "researcher"],
     suggestedModel: "Claude",
     tier: "professional",
     metrics: [
@@ -278,7 +278,7 @@ export const agentTemplates: AgentTemplate[] = [
       "A versatile HR operations agent that streamlines recruiting workflows, automates onboarding sequences, and monitors employee engagement signals. This agent drafts job descriptions, screens candidate profiles, generates offer letters, and builds training materials, freeing your people team to focus on culture and strategic talent initiatives rather than administrative overhead.",
     icon: "Users",
     category: "operations",
-    defaultSkills: ["chro", "coo", "copywriter"],
+    defaultSkills: ["chro", "coo", "professional-copywriter"],
     suggestedModel: "OpenAI",
     tier: "starter",
     metrics: [
