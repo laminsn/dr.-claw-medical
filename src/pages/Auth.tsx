@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { lovable } from "@/integrations/lovable/index";
 import logo from "@/assets/dr-claw-logo-transparent.png";
@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
-import { Shield, Lock, CheckCircle, ArrowRight } from "lucide-react";
+import { Shield, Lock, CheckCircle, ArrowRight, ArrowLeft } from "lucide-react";
 
 const Auth = () => {
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -27,21 +28,28 @@ const Auth = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error: signInError } = await signIn(email, password);
-    if (signInError) {
-      if (fullName.trim()) {
-        const { error: signUpError } = await signUp(email, password, fullName);
-        if (signUpError) {
-          toast({ title: "Error", description: signUpError.message, variant: "destructive" });
-        } else {
-          toast({ title: "Welcome to Dr. Claw!", description: "Check your email for a confirmation link." });
-        }
+
+    if (mode === "signin") {
+      const { error } = await signIn(email, password);
+      if (error) {
+        toast({ title: "Sign in failed", description: error.message, variant: "destructive" });
       } else {
-        toast({ title: "Enter your name to register", description: "Add your full name to create a new account, or check credentials to sign in.", variant: "destructive" });
+        navigate("/dashboard");
       }
     } else {
-      navigate("/dashboard");
+      if (!fullName.trim()) {
+        toast({ title: "Name required", description: "Please enter your full name to create an account.", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+      const { error } = await signUp(email, password, fullName);
+      if (error) {
+        toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Welcome to Dr. Claw!", description: "Check your email for a confirmation link." });
+      }
     }
+
     setLoading(false);
   };
 
@@ -65,7 +73,7 @@ const Auth = () => {
 
       {/* Grid overlay */}
       <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
+        className="absolute inset-0 opacity-[0.02] pointer-events-none"
         style={{
           backgroundImage:
             "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)",
@@ -73,18 +81,55 @@ const Auth = () => {
         }}
       />
 
+      {/* Back to home */}
+      <Link
+        to="/"
+        className="absolute top-6 left-6 z-20 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back
+      </Link>
+
       {/* Auth card */}
       <div className="relative z-10 w-full max-w-md animate-fade-up">
         <div className="glass-card rounded-2xl border border-white/[0.06] p-8 shadow-glow">
           {/* Logo & heading */}
-          <div className="flex flex-col items-center text-center mb-8">
+          <div className="flex flex-col items-center text-center mb-6">
             <img src={logo} alt="Dr. Claw" className="h-14 w-14 mb-4" />
             <h1 className="text-2xl font-bold font-heading gradient-hero-text">
-              Welcome to Dr. Claw
+              {mode === "signin" ? "Welcome Back" : "Create Your Account"}
             </h1>
             <p className="text-sm text-muted-foreground mt-1.5">
-              Sign in or create your account to get started
+              {mode === "signin"
+                ? "Sign in to access your AI agent dashboard"
+                : "Get started with your 14-day free trial"}
             </p>
+          </div>
+
+          {/* Mode toggle tabs */}
+          <div className="flex rounded-lg bg-white/[0.04] border border-white/[0.06] p-1 mb-6">
+            <button
+              type="button"
+              onClick={() => setMode("signin")}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+                mode === "signin"
+                  ? "bg-white/10 text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("signup")}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+                mode === "signup"
+                  ? "bg-white/10 text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Sign Up
+            </button>
           </div>
 
           {/* Google OAuth */}
@@ -129,20 +174,21 @@ const Auth = () => {
 
           {/* Email form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="fullName" className="text-sm text-muted-foreground">
-                Full Name
-              </Label>
-              <Input
-                id="fullName"
-                type="text"
-                placeholder="Dr. Jane Smith"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="h-11 bg-white/[0.03] border-white/10 focus:border-primary/50 transition-colors"
-              />
-              <p className="text-xs text-muted-foreground/60">Required for new accounts</p>
-            </div>
+            {mode === "signup" && (
+              <div className="space-y-2">
+                <Label htmlFor="fullName" className="text-sm text-muted-foreground">
+                  Full Name
+                </Label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  placeholder="Dr. Jane Smith"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="h-11 bg-white/[0.03] border-white/10 focus:border-primary/50 transition-colors"
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm text-muted-foreground">
@@ -170,6 +216,7 @@ const Auth = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={6}
                 className="h-11 bg-white/[0.03] border-white/10 focus:border-primary/50 transition-colors"
               />
             </div>
@@ -183,15 +230,42 @@ const Auth = () => {
                 <div className="h-5 w-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  Continue
+                  {mode === "signin" ? "Sign In" : "Create Account"}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </>
               )}
             </Button>
           </form>
 
+          {/* Switch mode prompt */}
+          <p className="text-sm text-muted-foreground text-center mt-5">
+            {mode === "signin" ? (
+              <>
+                Don't have an account?{" "}
+                <button
+                  type="button"
+                  onClick={() => setMode("signup")}
+                  className="text-primary hover:text-primary/80 font-medium transition-colors"
+                >
+                  Sign up free
+                </button>
+              </>
+            ) : (
+              <>
+                Already have an account?{" "}
+                <button
+                  type="button"
+                  onClick={() => setMode("signin")}
+                  className="text-primary hover:text-primary/80 font-medium transition-colors"
+                >
+                  Sign in
+                </button>
+              </>
+            )}
+          </p>
+
           {/* Trust signals */}
-          <div className="flex items-center justify-center gap-6 mt-8 pt-6 border-t border-white/[0.06]">
+          <div className="flex items-center justify-center gap-6 mt-6 pt-6 border-t border-white/[0.06]">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground/60">
               <Shield className="h-3.5 w-3.5 text-primary/70" />
               HIPAA Compliant

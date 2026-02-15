@@ -1,26 +1,25 @@
 import {
-  Phone,
+  Activity,
   CalendarCheck,
   Users,
   Bot,
   Clock,
   ArrowUpRight,
   ArrowDownRight,
-  HeartPulse,
   FileText,
-  Shield,
   TrendingUp,
   Zap,
   Brain,
   Plus,
+  MessageSquare,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import {
-  CallVolumeChart,
+  TaskVolumeChart,
   TrendChart,
   OutcomeChart,
-  CallHistoryTable,
+  AgentTasksTable,
 } from "@/components/dashboard/AnalyticsCharts";
 
 const recentActivity = [
@@ -48,7 +47,7 @@ const primaryStats = [
     value: "2,847",
     change: "+18%",
     trend: "up" as const,
-    icon: Phone,
+    icon: Activity,
     color: "from-cyan-500 to-accent",
   },
   {
@@ -96,7 +95,7 @@ const agentPerformance = [
     value: "892",
     change: "+15%",
     trend: "up" as const,
-    icon: CalendarCheck,
+    icon: MessageSquare,
   },
 ];
 
@@ -210,25 +209,28 @@ const Dashboard = () => {
           {/* Analytics charts */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="bg-card rounded-xl border border-white/[0.06] p-5">
-              <h3 className="text-sm font-semibold text-foreground mb-4">Task Volume</h3>
-              <CallVolumeChart />
+              <h3 className="text-sm font-semibold text-foreground mb-1">Task Volume</h3>
+              <p className="text-xs text-muted-foreground mb-4">Weekly agent task breakdown</p>
+              <TaskVolumeChart />
             </div>
             <div className="bg-card rounded-xl border border-white/[0.06] p-5">
-              <h3 className="text-sm font-semibold text-foreground mb-4">Performance Trend</h3>
+              <h3 className="text-sm font-semibold text-foreground mb-1">Growth Trend</h3>
+              <p className="text-xs text-muted-foreground mb-4">Total tasks over time</p>
               <TrendChart />
             </div>
             <div className="bg-card rounded-xl border border-white/[0.06] p-5">
-              <h3 className="text-sm font-semibold text-foreground mb-4">Task Outcomes</h3>
+              <h3 className="text-sm font-semibold text-foreground mb-1">Task Outcomes</h3>
+              <p className="text-xs text-muted-foreground mb-4">Completion breakdown</p>
               <OutcomeChart />
             </div>
           </div>
 
-          {/* Bottom section: Call history + Recent activity */}
+          {/* Bottom section: Agent tasks + Recent activity */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Call history table - 2 cols */}
+            {/* Agent tasks table - 2 cols */}
             <div className="lg:col-span-2 bg-card rounded-xl border border-white/[0.06] p-5">
               <h3 className="text-sm font-semibold text-foreground mb-4">Recent Agent Tasks</h3>
-              <CallHistoryTable />
+              <AgentTasksTable />
             </div>
 
             {/* Recent activity - 1 col */}
