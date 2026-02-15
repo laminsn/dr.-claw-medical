@@ -24,7 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const iconMap: Record<string, typeof Zap> = {
-  Zap, Heart, Shield, Calendar, Globe, Lock, AlertTriangle, Repeat, Brain, Star,
+  Zap, Heart, Shield, Calendar, Globe, Lock, AlertTriangle, Repeat, Brain, Star, Bot,
 };
 
 const difficultyColor: Record<string, string> = {
@@ -142,7 +142,7 @@ const SkillsCenter = () => {
                 <Bot className="h-6 w-6 text-primary" /> OpenClaw Skills
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Install healthcare skills on your AI agents — one skill or all of them
+                20+ healthcare skills for your AI agents — scheduling, clinical docs, insurance, and more
               </p>
             </div>
           </div>
