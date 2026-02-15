@@ -1,0 +1,372 @@
+export interface Integration {
+  id: string;
+  name: string;
+  description: string;
+  category: "llm" | "voice" | "cloud" | "productivity" | "healthcare" | "communication";
+  icon: string;
+  website: string;
+  apiKeyLabel: string;
+  apiKeyPlaceholder: string;
+  features: string[];
+  tier: "starter" | "professional" | "advanced" | "enterprise";
+  popular?: boolean;
+}
+
+export const integrationCategories = [
+  { id: "llm", name: "AI Models", description: "Large language models for agent intelligence" },
+  { id: "voice", name: "Voice AI", description: "Text-to-speech and speech-to-text engines" },
+  { id: "cloud", name: "Cloud & Infrastructure", description: "Cloud services and data storage" },
+  { id: "productivity", name: "Productivity", description: "Workflow and productivity tools" },
+  { id: "healthcare", name: "Healthcare", description: "EHR, EMR, and healthcare-specific tools" },
+  { id: "communication", name: "Communication", description: "Messaging and notification services" },
+];
+
+export const integrations: Integration[] = [
+  // ---------------------------------------------------------------------------
+  // AI Models (llm)
+  // ---------------------------------------------------------------------------
+  {
+    id: "openai",
+    name: "OpenAI",
+    description: "GPT-4o, GPT-4, GPT-3.5",
+    category: "llm",
+    icon: "brain",
+    website: "https://platform.openai.com",
+    apiKeyLabel: "API Key",
+    apiKeyPlaceholder: "sk-...",
+    features: [
+      "GPT-4o latest model",
+      "Function calling",
+      "Vision capabilities",
+      "JSON mode",
+      "Fine-tuning support",
+    ],
+    tier: "starter",
+    popular: true,
+  },
+  {
+    id: "anthropic",
+    name: "Anthropic Claude",
+    description: "Claude 4.5 Sonnet, Claude Opus",
+    category: "llm",
+    icon: "sparkles",
+    website: "https://console.anthropic.com",
+    apiKeyLabel: "API Key",
+    apiKeyPlaceholder: "sk-ant-...",
+    features: [
+      "200K context window",
+      "Advanced reasoning",
+      "Code generation",
+      "Document analysis",
+      "Tool use",
+    ],
+    tier: "starter",
+    popular: true,
+  },
+  {
+    id: "google-gemini",
+    name: "Google Gemini",
+    description: "Gemini 2.0 Pro, Flash",
+    category: "llm",
+    icon: "hexagon",
+    website: "https://ai.google.dev",
+    apiKeyLabel: "API Key",
+    apiKeyPlaceholder: "AIza...",
+    features: [
+      "Multimodal input",
+      "Long context",
+      "Grounding with Search",
+      "Code execution",
+      "Structured output",
+    ],
+    tier: "starter",
+    popular: true,
+  },
+  {
+    id: "minimax",
+    name: "MiniMax",
+    description: "MiniMax models for text and speech",
+    category: "llm",
+    icon: "cpu",
+    website: "https://www.minimaxi.com",
+    apiKeyLabel: "API Key",
+    apiKeyPlaceholder: "mm-...",
+    features: [
+      "Text generation",
+      "Voice synthesis",
+      "Long context support",
+      "Multilingual",
+      "Cost-effective",
+    ],
+    tier: "professional",
+  },
+  {
+    id: "kimi",
+    name: "Kimi (Moonshot AI)",
+    description: "Kimi large context models",
+    category: "llm",
+    icon: "moon",
+    website: "https://www.moonshot.cn",
+    apiKeyLabel: "API Key",
+    apiKeyPlaceholder: "kimi-...",
+    features: [
+      "Ultra-long context (200K+)",
+      "Document understanding",
+      "Web browsing",
+      "Multilingual support",
+      "Reasoning",
+    ],
+    tier: "professional",
+  },
+  {
+    id: "mistral",
+    name: "Mistral AI",
+    description: "Mistral Large, Medium",
+    category: "llm",
+    icon: "wind",
+    website: "https://console.mistral.ai",
+    apiKeyLabel: "API Key",
+    apiKeyPlaceholder: "mist-...",
+    features: [
+      "Fast inference",
+      "Code generation",
+      "Multilingual",
+      "Function calling",
+      "JSON output",
+    ],
+    tier: "professional",
+  },
+  {
+    id: "cohere",
+    name: "Cohere",
+    description: "Command R+, Embed",
+    category: "llm",
+    icon: "layers",
+    website: "https://dashboard.cohere.com",
+    apiKeyLabel: "API Key",
+    apiKeyPlaceholder: "co-...",
+    features: [
+      "RAG optimized",
+      "Reranking",
+      "Embeddings",
+      "Multilingual",
+      "Enterprise security",
+    ],
+    tier: "advanced",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Voice AI (voice)
+  // ---------------------------------------------------------------------------
+  {
+    id: "elevenlabs",
+    name: "ElevenLabs",
+    description: "Ultra-realistic voice synthesis",
+    category: "voice",
+    icon: "audio-waveform",
+    website: "https://elevenlabs.io",
+    apiKeyLabel: "API Key",
+    apiKeyPlaceholder: "el-...",
+    features: [
+      "Voice cloning",
+      "29+ languages",
+      "Emotion control",
+      "Real-time streaming",
+      "Custom voices",
+    ],
+    tier: "starter",
+    popular: true,
+  },
+  {
+    id: "deepgram",
+    name: "Deepgram",
+    description: "Speech-to-text transcription",
+    category: "voice",
+    icon: "mic",
+    website: "https://deepgram.com",
+    apiKeyLabel: "API Key",
+    apiKeyPlaceholder: "dg-...",
+    features: [
+      "Real-time transcription",
+      "Medical vocabulary",
+      "Speaker diarization",
+      "Sentiment analysis",
+      "Custom models",
+    ],
+    tier: "professional",
+  },
+  {
+    id: "vapi",
+    name: "VAPI",
+    description: "Conversational voice AI platform",
+    category: "voice",
+    icon: "phone-call",
+    website: "https://vapi.ai",
+    apiKeyLabel: "API Key",
+    apiKeyPlaceholder: "vapi-...",
+    features: [
+      "Phone call agents",
+      "Sub-second latency",
+      "Call transfer",
+      "Voicemail detection",
+      "Call recording",
+    ],
+    tier: "professional",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Cloud & Infrastructure (cloud)
+  // ---------------------------------------------------------------------------
+  {
+    id: "aws",
+    name: "AWS",
+    description: "Amazon Web Services healthcare suite",
+    category: "cloud",
+    icon: "cloud",
+    website: "https://aws.amazon.com/health",
+    apiKeyLabel: "Access Key ID",
+    apiKeyPlaceholder: "AKIA...",
+    features: [
+      "Comprehend Medical",
+      "Transcribe Medical",
+      "S3 storage",
+      "HIPAA eligible",
+      "HealthLake",
+    ],
+    tier: "advanced",
+  },
+  {
+    id: "supabase",
+    name: "Supabase",
+    description: "Backend-as-a-service (already integrated)",
+    category: "cloud",
+    icon: "database",
+    website: "https://supabase.com",
+    apiKeyLabel: "Service Key",
+    apiKeyPlaceholder: "eyJ...",
+    features: [
+      "PostgreSQL database",
+      "Real-time subscriptions",
+      "Row-level security",
+      "Edge functions",
+      "File storage",
+    ],
+    tier: "starter",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Productivity (productivity)
+  // ---------------------------------------------------------------------------
+  {
+    id: "notion",
+    name: "Notion",
+    description: "Knowledge base and docs",
+    category: "productivity",
+    icon: "book-open",
+    website: "https://www.notion.so",
+    apiKeyLabel: "Integration Token",
+    apiKeyPlaceholder: "ntn_...",
+    features: [
+      "Knowledge bases",
+      "Clinical SOPs",
+      "Protocol docs",
+      "Team wikis",
+      "Database sync",
+    ],
+    tier: "professional",
+  },
+  {
+    id: "airtable",
+    name: "Airtable",
+    description: "Flexible database and CRM",
+    category: "productivity",
+    icon: "table",
+    website: "https://airtable.com",
+    apiKeyLabel: "API Key",
+    apiKeyPlaceholder: "pat...",
+    features: [
+      "Patient CRM",
+      "Referral tracking",
+      "Workflow automation",
+      "Form builder",
+      "Reporting",
+    ],
+    tier: "professional",
+  },
+  {
+    id: "zapier",
+    name: "Zapier",
+    description: "Workflow automation",
+    category: "productivity",
+    icon: "zap",
+    website: "https://zapier.com",
+    apiKeyLabel: "API Key",
+    apiKeyPlaceholder: "zap-...",
+    features: [
+      "5000+ app connectors",
+      "Multi-step workflows",
+      "Conditional logic",
+      "Webhooks",
+      "Scheduled triggers",
+    ],
+    tier: "advanced",
+  },
+
+  // ---------------------------------------------------------------------------
+  // Communication (communication)
+  // ---------------------------------------------------------------------------
+  {
+    id: "slack",
+    name: "Slack",
+    description: "Team messaging",
+    category: "communication",
+    icon: "message-square",
+    website: "https://api.slack.com",
+    apiKeyLabel: "Bot Token",
+    apiKeyPlaceholder: "xoxb-...",
+    features: [
+      "Agent notifications",
+      "Team alerts",
+      "Channel updates",
+      "Interactive messages",
+      "Slash commands",
+    ],
+    tier: "professional",
+  },
+  {
+    id: "twilio",
+    name: "Twilio",
+    description: "SMS and voice",
+    category: "communication",
+    icon: "phone",
+    website: "https://www.twilio.com",
+    apiKeyLabel: "Auth Token",
+    apiKeyPlaceholder: "twi-...",
+    features: [
+      "SMS notifications",
+      "Voice calls",
+      "WhatsApp",
+      "Patient messaging",
+      "Two-way communication",
+    ],
+    tier: "professional",
+  },
+  {
+    id: "sendgrid",
+    name: "SendGrid",
+    description: "Email delivery",
+    category: "communication",
+    icon: "mail",
+    website: "https://sendgrid.com",
+    apiKeyLabel: "API Key",
+    apiKeyPlaceholder: "SG...",
+    features: [
+      "Transactional email",
+      "Marketing campaigns",
+      "Email templates",
+      "Analytics",
+      "Deliverability tools",
+    ],
+    tier: "professional",
+  },
+];

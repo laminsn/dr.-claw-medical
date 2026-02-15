@@ -6,317 +6,374 @@ import {
   Cloud,
   Database,
   Table2,
-  Shield,
-  Lock,
-  CheckCircle,
-  ExternalLink,
-  Loader2,
+  Zap,
+  MessageSquare,
+  Mail,
   Plug,
+  Bot,
+  Search,
+  Check,
+  Lock,
+  Star,
+  ExternalLink,
+  Sparkles,
+  Hexagon,
+  Cpu,
+  Moon,
+  Wind,
+  Layers,
+  AudioWaveform,
+  PhoneCall,
+  BookOpen,
+  type LucideIcon,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { integrations, integrationCategories } from "@/data/integrations";
 
-type IntegrationStatus = "connected" | "available" | "coming_soon";
-
-interface Integration {
-  id: string;
-  name: string;
-  description: string;
-  icon: typeof Brain;
-  category: string;
-  status: IntegrationStatus;
-  hipaa: boolean;
-  baa: boolean;
-  features: string[];
-}
-
-const integrations: Integration[] = [
-  {
-    id: "openai",
-    name: "OpenAI GPT",
-    description: "Advanced language models for patient communication, documentation, and clinical reasoning.",
-    icon: Brain,
-    category: "LLM",
-    status: "available",
-    hipaa: true,
-    baa: true,
-    features: ["GPT-4o", "GPT-5", "Fine-tuning", "Function calling"],
-  },
-  {
-    id: "anthropic",
-    name: "Anthropic Claude",
-    description: "Constitutional AI for safe, helpful medical conversations and analysis.",
-    icon: Brain,
-    category: "LLM",
-    status: "available",
-    hipaa: true,
-    baa: true,
-    features: ["Claude 3.5 Sonnet", "Long context", "Vision", "Tool use"],
-  },
-  {
-    id: "google",
-    name: "Google Gemini",
-    description: "Multimodal AI for processing medical images, documents, and complex reasoning.",
-    icon: Brain,
-    category: "LLM",
-    status: "available",
-    hipaa: true,
-    baa: true,
-    features: ["Gemini Pro", "Multimodal", "Grounding", "Code execution"],
-  },
-  {
-    id: "elevenlabs",
-    name: "ElevenLabs",
-    description: "Ultra-realistic voice synthesis for patient calls, IVR systems, and voice agents.",
-    icon: Mic,
-    category: "Voice",
-    status: "available",
-    hipaa: true,
-    baa: true,
-    features: ["Voice cloning", "29 languages", "Low latency", "Custom voices"],
-  },
-  {
-    id: "deepgram",
-    name: "Deepgram",
-    description: "Real-time speech-to-text transcription for medical dictation and call analysis.",
-    icon: Mic,
-    category: "Voice",
-    status: "available",
-    hipaa: true,
-    baa: true,
-    features: ["Medical vocabulary", "Real-time STT", "Speaker diarization", "Summarization"],
-  },
-  {
-    id: "vapi",
-    name: "VAPI",
-    description: "Voice AI pipeline for building conversational phone agents with sub-second latency.",
-    icon: Phone,
-    category: "Voice",
-    status: "available",
-    hipaa: true,
-    baa: true,
-    features: ["Phone calls", "WebRTC", "Transfer", "Voicemail detection"],
-  },
-  {
-    id: "aws",
-    name: "AWS Healthcare",
-    description: "HIPAA-eligible cloud infrastructure — Comprehend Medical, Transcribe Medical, S3.",
-    icon: Cloud,
-    category: "Infrastructure",
-    status: "available",
-    hipaa: true,
-    baa: true,
-    features: ["Comprehend Medical", "Transcribe Medical", "S3 storage", "Lambda"],
-  },
-  {
-    id: "notion",
-    name: "Notion",
-    description: "Knowledge base and documentation management for clinical SOPs and protocols.",
-    icon: Database,
-    category: "Productivity",
-    status: "available",
-    hipaa: true,
-    baa: true,
-    features: ["Knowledge base", "SOPs", "Databases", "API access"],
-  },
-  {
-    id: "airtable",
-    name: "Airtable",
-    description: "Structured data management for patient pipelines, referral tracking, and workflows.",
-    icon: Table2,
-    category: "Productivity",
-    status: "available",
-    hipaa: true,
-    baa: true,
-    features: ["Patient CRM", "Referral tracking", "Automations", "Dashboards"],
-  },
-];
-
-const categories = ["All", "LLM", "Voice", "Infrastructure", "Productivity"];
-
-const statusBadge: Record<IntegrationStatus, { label: string; className: string }> = {
-  connected: { label: "Connected", className: "bg-primary/20 text-primary" },
-  available: { label: "Available", className: "bg-accent/20 text-accent" },
-  coming_soon: { label: "Coming Soon", className: "bg-muted text-muted-foreground" },
+// ---------------------------------------------------------------------------
+// Icon mapping: integration data stores icon names as lowercase strings
+// ---------------------------------------------------------------------------
+const iconMap: Record<string, LucideIcon> = {
+  brain: Brain,
+  mic: Mic,
+  phone: Phone,
+  cloud: Cloud,
+  database: Database,
+  "table-2": Table2,
+  table: Table2,
+  zap: Zap,
+  "message-square": MessageSquare,
+  mail: Mail,
+  plug: Plug,
+  bot: Bot,
+  sparkles: Sparkles,
+  hexagon: Hexagon,
+  cpu: Cpu,
+  moon: Moon,
+  wind: Wind,
+  layers: Layers,
+  "audio-waveform": AudioWaveform,
+  "phone-call": PhoneCall,
+  "book-open": BookOpen,
 };
 
+function resolveIcon(name: string): LucideIcon {
+  return iconMap[name] ?? Plug;
+}
+
+// ---------------------------------------------------------------------------
+// Tier + category badge colours
+// ---------------------------------------------------------------------------
+const tierColors: Record<string, string> = {
+  starter: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  professional: "bg-blue-500/15 text-blue-400 border-blue-500/30",
+  advanced: "bg-violet-500/15 text-violet-400 border-violet-500/30",
+  enterprise: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+};
+
+const categoryColors: Record<string, string> = {
+  llm: "bg-violet-500/15 text-violet-400 border-violet-500/30",
+  voice: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
+  cloud: "bg-sky-500/15 text-sky-400 border-sky-500/30",
+  productivity: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+  healthcare: "bg-rose-500/15 text-rose-400 border-rose-500/30",
+  communication: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+};
+
+const categoryLabel: Record<string, string> = {
+  llm: "AI Models",
+  voice: "Voice AI",
+  cloud: "Cloud",
+  productivity: "Productivity",
+  healthcare: "Healthcare",
+  communication: "Communication",
+};
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 const Integrations = () => {
   const { toast } = useToast();
-  const [activeCategory, setActiveCategory] = useState("All");
-  const [connecting, setConnecting] = useState<string | null>(null);
-  const [connectedIds, setConnectedIds] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedIntegration, setSelectedIntegration] = useState<
+    (typeof integrations)[number] | null
+  >(null);
+  const [apiKeyInput, setApiKeyInput] = useState("");
+  const [connectedKeys, setConnectedKeys] = useState<Record<string, string>>(
+    {},
+  );
 
-  const filtered =
-    activeCategory === "All"
-      ? integrations
-      : integrations.filter((i) => i.category === activeCategory);
+  const filteredIntegrations = integrations.filter((integ) => {
+    return selectedCategory === "all" || integ.category === selectedCategory;
+  });
 
-  const handleConnect = async (id: string) => {
-    setConnecting(id);
-    // Simulate connection setup
-    await new Promise((r) => setTimeout(r, 1500));
-    setConnectedIds((prev) => [...prev, id]);
-    const integration = integrations.find((i) => i.id === id);
+  const categoryTabs = [
+    { id: "all", name: "All" },
+    ...integrationCategories.map((c) => ({ id: c.id, name: c.name })),
+  ];
+
+  const handleConnect = () => {
+    if (!selectedIntegration || !apiKeyInput.trim()) return;
+
+    setConnectedKeys((prev) => ({
+      ...prev,
+      [selectedIntegration.id]: apiKeyInput.trim(),
+    }));
+
     toast({
-      title: "Integration ready",
-      description: `${integration?.name} is configured and HIPAA-compliant. Add your API key in Settings to activate.`,
+      title: "Connected",
+      description: `${selectedIntegration.name} has been connected successfully.`,
     });
-    setConnecting(null);
-  };
 
-  const getStatus = (integration: Integration): IntegrationStatus => {
-    if (connectedIds.includes(integration.id)) return "connected";
-    return integration.status;
+    setApiKeyInput("");
+    setSelectedIntegration(null);
   };
 
   return (
     <div className="flex min-h-screen bg-background">
       <DashboardSidebar />
-      <main className="flex-1 p-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-start justify-between mb-8">
-            <div>
-              <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-                <Plug className="h-6 w-6 text-primary" /> Integrations
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Connect your favorite tools — all HIPAA compliant with BAA agreements
-              </p>
-            </div>
+
+      <main className="flex-1 p-8 overflow-y-auto">
+        <div className="max-w-7xl mx-auto space-y-8">
+          {/* ── Header ─────────────────────────────────── */}
+          <div>
+            <h1 className="text-3xl font-bold font-heading gradient-hero-text">
+              Integrations
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Connect your API keys to power your AI agents.
+            </p>
           </div>
 
-          {/* HIPAA/BAA Banner */}
-          <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 mb-8 flex items-center gap-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg gradient-primary flex items-center justify-center">
-                <Shield className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">All Integrations are HIPAA & BAA Secured</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Every connection is encrypted end-to-end. PHI never leaves your secure environment.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 ml-auto">
-              <div className="flex items-center gap-1.5 text-xs text-primary font-medium">
-                <Shield className="h-3.5 w-3.5" /> HIPAA
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-primary font-medium">
-                <Lock className="h-3.5 w-3.5" /> BAA
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-primary font-medium">
-                <Lock className="h-3.5 w-3.5" /> PHI Protected
-              </div>
-            </div>
-          </div>
-
-          {/* Categories */}
-          <div className="flex gap-2 mb-6 flex-wrap">
-            {categories.map((cat) => (
+          {/* ── Category tabs ──────────────────────────── */}
+          <div className="flex flex-wrap items-center gap-2">
+            {categoryTabs.map((tab) => (
               <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-2 rounded-lg text-xs font-medium transition-all ${
-                  activeCategory === cat
-                    ? "gradient-primary text-primary-foreground"
-                    : "bg-secondary text-muted-foreground hover:text-foreground"
+                key={tab.id}
+                onClick={() => setSelectedCategory(tab.id)}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  selectedCategory === tab.id
+                    ? "gradient-primary text-white shadow-glow-sm"
+                    : "bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground"
                 }`}
               >
-                {cat}
+                {tab.name}
               </button>
             ))}
           </div>
 
-          {/* Integration Cards */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((integration) => {
-              const status = getStatus(integration);
-              const badge = statusBadge[status];
+          {/* ── Integration cards grid ─────────────────── */}
+          {filteredIntegrations.length === 0 ? (
+            <div className="text-center py-20 text-muted-foreground">
+              <Search className="h-10 w-10 mx-auto mb-3 opacity-40" />
+              <p className="text-sm">No integrations in this category.</p>
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredIntegrations.map((integ) => {
+                const Icon = resolveIcon(integ.icon);
+                const isConnected = !!connectedKeys[integ.id];
 
-              return (
-                <div
-                  key={integration.id}
-                  className={`bg-card rounded-xl border p-6 transition-all hover:border-primary/20 ${
-                    status === "connected" ? "border-primary/30 bg-primary/[0.02]" : "border-border"
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
-                        status === "connected" ? "gradient-primary" : "bg-muted"
-                      }`}>
-                        <integration.icon className={`h-5 w-5 ${
-                          status === "connected" ? "text-primary-foreground" : "text-muted-foreground"
-                        }`} />
+                return (
+                  <div
+                    key={integ.id}
+                    className="glass-card card-hover rounded-2xl p-5 flex flex-col transition-all group"
+                  >
+                    {/* Top row */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                        <Icon className="h-5 w-5 text-primary" />
                       </div>
-                      <div>
-                        <h3 className="font-display font-semibold text-foreground text-sm">{integration.name}</h3>
-                        <span className="text-xs text-muted-foreground">{integration.category}</span>
+
+                      <div className="flex items-center gap-1.5">
+                        {integ.popular && (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] bg-yellow-500/15 text-yellow-400 border-yellow-500/30"
+                          >
+                            <Star className="h-2.5 w-2.5 mr-0.5 fill-yellow-400" />
+                            Popular
+                          </Badge>
+                        )}
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] ${categoryColors[integ.category] ?? ""}`}
+                        >
+                          {categoryLabel[integ.category] ?? integ.category}
+                        </Badge>
                       </div>
                     </div>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.className}`}>
-                      {badge.label}
-                    </span>
+
+                    {/* Name + description */}
+                    <h3 className="font-semibold font-heading text-sm text-foreground group-hover:text-primary transition-colors">
+                      {integ.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      {integ.description}
+                    </p>
+
+                    {/* Features (show 3) */}
+                    <ul className="mt-3 space-y-1">
+                      {integ.features.slice(0, 3).map((feat) => (
+                        <li
+                          key={feat}
+                          className="flex items-center gap-1.5 text-[11px] text-muted-foreground"
+                        >
+                          <Check className="h-3 w-3 text-primary shrink-0" />
+                          {feat}
+                        </li>
+                      ))}
+                      {integ.features.length > 3 && (
+                        <li className="text-[11px] text-muted-foreground/60 pl-[18px]">
+                          +{integ.features.length - 3} more
+                        </li>
+                      )}
+                    </ul>
+
+                    {/* Bottom row */}
+                    <div className="mt-auto pt-4 flex items-center justify-between">
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] capitalize ${tierColors[integ.tier] ?? ""}`}
+                      >
+                        {integ.tier}
+                      </Badge>
+
+                      {isConnected ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400">
+                          <Check className="h-3.5 w-3.5" />
+                          Connected
+                        </span>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs border-white/10 hover:bg-white/5"
+                          onClick={() => {
+                            setApiKeyInput("");
+                            setSelectedIntegration(integ);
+                          }}
+                        >
+                          <Plug className="h-3.5 w-3.5 mr-1" />
+                          Connect
+                        </Button>
+                      )}
+                    </div>
                   </div>
-
-                  <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                    {integration.description}
-                  </p>
-
-                  {/* Features */}
-                  <div className="flex flex-wrap gap-1.5 mb-4">
-                    {integration.features.map((f) => (
-                      <span key={f} className="text-xs px-2 py-0.5 rounded bg-secondary text-muted-foreground">
-                        {f}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Compliance badges */}
-                  <div className="flex items-center gap-3 mb-4">
-                    {integration.hipaa && (
-                      <span className="flex items-center gap-1 text-xs text-primary">
-                        <Shield className="h-3 w-3" /> HIPAA
-                      </span>
-                    )}
-                    {integration.baa && (
-                      <span className="flex items-center gap-1 text-xs text-primary">
-                        <Lock className="h-3 w-3" /> BAA
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Action */}
-                  <Button
-                    size="sm"
-                    onClick={() => handleConnect(integration.id)}
-                    disabled={connecting === integration.id || status === "connected" || status === "coming_soon"}
-                    className={`w-full rounded-lg text-xs gap-1.5 ${
-                      status === "connected"
-                        ? "bg-primary/10 text-primary hover:bg-primary/20"
-                        : status === "coming_soon"
-                        ? "bg-muted text-muted-foreground"
-                        : "gradient-primary text-primary-foreground hover:opacity-90"
-                    }`}
-                  >
-                    {connecting === integration.id ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : status === "connected" ? (
-                      <><CheckCircle className="h-3 w-3" /> Connected</>
-                    ) : status === "coming_soon" ? (
-                      "Coming Soon"
-                    ) : (
-                      <><ExternalLink className="h-3 w-3" /> Connect</>
-                    )}
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </main>
+
+      {/* ── Connect dialog ─────────────────────────────── */}
+      <Dialog
+        open={!!selectedIntegration}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedIntegration(null);
+            setApiKeyInput("");
+          }
+        }}
+      >
+        {selectedIntegration && (
+          <DialogContent className="max-w-md glass-card border-white/10">
+            <DialogHeader>
+              <div className="flex items-center gap-3 mb-1">
+                {(() => {
+                  const Icon = resolveIcon(selectedIntegration.icon);
+                  return (
+                    <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0">
+                      <Icon className="h-5 w-5 text-primary" />
+                    </div>
+                  );
+                })()}
+                <div className="min-w-0">
+                  <DialogTitle className="text-lg font-heading">
+                    Connect {selectedIntegration.name}
+                  </DialogTitle>
+                  <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                    {selectedIntegration.description}
+                  </DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
+
+            {/* API key input */}
+            <div className="space-y-2 pt-2">
+              <Label htmlFor="api-key" className="text-sm font-medium">
+                {selectedIntegration.apiKeyLabel}
+              </Label>
+              <Input
+                id="api-key"
+                type="password"
+                placeholder={selectedIntegration.apiKeyPlaceholder}
+                value={apiKeyInput}
+                onChange={(e) => setApiKeyInput(e.target.value)}
+                className="bg-white/5 border-white/10 focus:border-primary"
+              />
+              <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
+                <Lock className="h-3 w-3" />
+                The key is stored encrypted and never shared.
+              </p>
+            </div>
+
+            {/* Features */}
+            <div className="pt-2">
+              <h4 className="text-xs font-semibold text-foreground mb-2">
+                Features
+              </h4>
+              <ul className="space-y-1.5">
+                {selectedIntegration.features.map((feat) => (
+                  <li
+                    key={feat}
+                    className="flex items-center gap-2 text-xs text-muted-foreground"
+                  >
+                    <Check className="h-3 w-3 text-primary shrink-0" />
+                    {feat}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Website link */}
+            <a
+              href={selectedIntegration.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+            >
+              Visit {selectedIntegration.name}
+              <ExternalLink className="h-3 w-3" />
+            </a>
+
+            <DialogFooter className="pt-2">
+              <Button
+                className="w-full gradient-primary text-white shadow-glow-sm hover:opacity-90 transition-opacity"
+                disabled={!apiKeyInput.trim()}
+                onClick={handleConnect}
+              >
+                <Zap className="h-4 w-4 mr-1.5" />
+                Save &amp; Connect
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        )}
+      </Dialog>
     </div>
   );
 };

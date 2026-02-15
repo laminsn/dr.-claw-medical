@@ -1,86 +1,139 @@
-import { Stethoscope, Building2, Users, Heart, Bone, Baby, ArrowRight } from "lucide-react";
+import {
+  Stethoscope,
+  Building2,
+  TrendingUp,
+  FileText,
+  Users,
+  Briefcase,
+  ArrowRight,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 
 const personas = [
   {
     icon: Stethoscope,
-    title: "Primary Care & Family Medicine",
-    description: "Automate appointment scheduling, patient follow-ups, preventive care reminders, and chronic disease management outreach across your patient panel.",
-    features: ["Annual wellness visit reminders", "Chronic care follow-ups", "Lab result notifications"],
+    title: "Healthcare Practices",
+    description:
+      "AI front desk, clinical documentation, and patient follow-ups — purpose-built for healthcare.",
+    bullets: [
+      "Automated patient scheduling & reminders",
+      "Clinical note generation & summaries",
+      "Referral tracking & follow-up outreach",
+    ],
   },
   {
     icon: Building2,
-    title: "Multi-Specialty Groups",
-    description: "Deploy AI agents across locations. Centralize referral management, coordinate between specialists, and maintain consistent patient communication.",
-    features: ["Cross-location scheduling", "Specialist referral routing", "Centralized analytics"],
+    title: "Marketing Teams",
+    description:
+      "Content creation, campaign strategy, and brand management powered by AI agents.",
+    bullets: [
+      "Blog posts, social media & ad copy",
+      "Campaign strategy & performance analysis",
+      "Brand voice consistency at scale",
+    ],
+  },
+  {
+    icon: TrendingUp,
+    title: "Executive Leadership",
+    description:
+      "Strategic planning, financial analysis, and AI strategy from your C-suite AI team.",
+    bullets: [
+      "CEO, CFO & CAIO strategic insights",
+      "Financial modeling & forecasting",
+      "AI adoption roadmap & governance",
+    ],
+  },
+  {
+    icon: FileText,
+    title: "Grant & Research",
+    description:
+      "Grant writing, market research, and competitive intelligence — automated.",
+    bullets: [
+      "Grant proposal drafting & review",
+      "Market research & data synthesis",
+      "Competitive intelligence reports",
+    ],
   },
   {
     icon: Users,
-    title: "Urgent Care & Walk-In Clinics",
-    description: "Manage high patient volume with AI-powered triage, wait time communication, and follow-up coordination to reduce readmissions.",
-    features: ["Wait time updates", "Post-visit follow-ups", "Insurance pre-verification"],
+    title: "HR & Operations",
+    description:
+      "Talent management, process optimization, and compliance handled by AI agents.",
+    bullets: [
+      "Job descriptions & candidate screening",
+      "Process documentation & SOPs",
+      "Compliance monitoring & reporting",
+    ],
   },
   {
-    icon: Heart,
-    title: "Cardiology & Internal Medicine",
-    description: "Monitor patient adherence to medication regimens, automate post-procedure check-ins, and streamline prior authorization for imaging and procedures.",
-    features: ["Medication adherence calls", "Post-procedure follow-ups", "Prior auth automation"],
-  },
-  {
-    icon: Bone,
-    title: "Orthopedics & Surgical Centers",
-    description: "Pre-op preparation calls, post-surgical recovery check-ins, physical therapy scheduling, and surgical clearance coordination — all automated.",
-    features: ["Pre-op preparation", "Recovery check-ins", "PT scheduling"],
-  },
-  {
-    icon: Baby,
-    title: "Pediatrics & OB/GYN",
-    description: "Well-child visit scheduling, vaccine reminders, prenatal appointment coordination, and parent communication that builds lasting trust.",
-    features: ["Vaccine schedule reminders", "Prenatal visit coordination", "Parent outreach"],
+    icon: Briefcase,
+    title: "Multi-Department",
+    description:
+      "Deploy AI agents across your entire organization with shared libraries and role-based access.",
+    bullets: [
+      "Cross-department agent sharing",
+      "Centralized management dashboard",
+      "Role-based access & permissions",
+    ],
   },
 ];
 
-const PersonasSection = () => {
+export default function PersonasSection() {
   return (
-    <section id="personas" className="py-32 relative">
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-accent/5 rounded-full blur-[120px]" />
-
-      <div className="container mx-auto px-6 relative z-10">
-        <div className="text-center mb-20">
-          <p className="text-accent text-sm font-semibold tracking-widest uppercase mb-4">Specialties</p>
-          <h2 className="font-display text-4xl md:text-5xl font-bold text-foreground">
-            Purpose-Built for{" "}
-            <span className="gradient-hero-text">Every Specialty</span>
+    <section className="py-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-16 animate-fade-up">
+          <span className="text-sm font-medium text-blue-400 uppercase tracking-widest mb-3 block">
+            Use Cases
+          </span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-heading mb-4">
+            Built for{" "}
+            <span className="gradient-hero-text">Every Team</span>
           </h2>
-          <p className="mt-5 text-muted-foreground max-w-lg mx-auto text-lg">
-            Pre-configured AI agents with specialty-specific skills. Choose your medical focus and deploy immediately.
+          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+            Whether you run a medical practice or a marketing department, Dr.
+            Claw agents adapt to your workflow.
           </p>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {personas.map((persona) => (
+
+        {/* Persona Grid */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {personas.map((persona, i) => (
             <div
               key={persona.title}
-              className="group relative bg-card rounded-xl border border-border p-6 hover:border-primary/20 transition-all"
+              className="glass-card rounded-xl p-6 card-hover animate-fade-up flex flex-col"
+              style={{ animationDelay: `${i * 80}ms` }}
             >
-              <div className="h-14 w-14 rounded-2xl gradient-primary flex items-center justify-center mb-6 group-hover:shadow-glow transition-shadow duration-500">
-                <persona.icon className="h-7 w-7 text-primary-foreground" />
+              <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center mb-4 shadow-glow-sm">
+                <persona.icon className="w-6 h-6 text-white" />
               </div>
-              <h3 className="font-display text-lg font-bold text-foreground mb-3">
+
+              <h3 className="text-lg font-semibold font-heading text-white mb-2">
                 {persona.title}
               </h3>
-              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
+              <p className="text-sm text-slate-400 mb-4 leading-relaxed">
                 {persona.description}
               </p>
-              <ul className="space-y-2.5 mb-6">
-                {persona.features.map((f) => (
-                  <li key={f} className="text-sm text-foreground/80 flex items-center gap-3">
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary inline-block shrink-0" />
-                    {f}
+
+              <ul className="space-y-2 mb-6 flex-1">
+                {persona.bullets.map((bullet) => (
+                  <li
+                    key={bullet}
+                    className="flex items-start gap-2 text-sm text-slate-300"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0" />
+                    {bullet}
                   </li>
                 ))}
               </ul>
-              <Link to="/auth" className="inline-flex items-center gap-2 text-sm text-primary font-medium hover:gap-3 transition-all">
-                Get Started <ArrowRight className="h-4 w-4" />
+
+              <Link
+                to="/get-started"
+                className="inline-flex items-center gap-1 text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                Get Started
+                <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           ))}
@@ -88,6 +141,4 @@ const PersonasSection = () => {
       </div>
     </section>
   );
-};
-
-export default PersonasSection;
+}

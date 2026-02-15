@@ -1,363 +1,621 @@
 import { useState } from "react";
-import AgentConfigModal from "@/components/AgentConfigModal";
 import {
   Bot,
-  Phone,
-  CalendarCheck,
-  FileText,
-  Shield,
-  MessageSquare,
-  Play,
-  Pause,
-  Settings,
   Plus,
+  Settings,
+  Power,
   Zap,
-  TrendingUp,
-  Rocket,
-  Users,
-  Stethoscope,
+  Search,
+  ArrowRight,
+  X,
+  Check,
+  Brain,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { skills, skillCategories } from "@/data/skills";
+import { agentTemplates } from "@/data/agentTemplates";
 
-interface Agent {
+interface MyAgent {
   id: string;
   name: string;
-  description: string;
-  icon: typeof Bot;
-  category: string;
+  skills: string[];
+  model: string;
   active: boolean;
-  calls: number;
-  successRate: number;
-  skills: string[];
 }
 
-const defaultAgents: Agent[] = [
-  {
-    id: "1",
-    name: "Patient Follow-Up",
-    description: "Automated post-visit follow-up calls to check on patient recovery and satisfaction.",
-    icon: Phone,
-    category: "Outreach",
-    active: true,
-    calls: 342,
-    successRate: 94,
-    skills: ["Empathetic Listening", "HIPAA Compliance"],
-  },
-  {
-    id: "2",
-    name: "Appointment Scheduler",
-    description: "AI-powered scheduling that handles bookings, rescheduling, and waitlist management.",
-    icon: CalendarCheck,
-    category: "Scheduling",
-    active: true,
-    calls: 518,
-    successRate: 97,
-    skills: ["Smart Scheduling", "Multi-Language"],
-  },
-  {
-    id: "3",
-    name: "Insurance Verifier",
-    description: "Automatically verifies patient insurance eligibility and pre-authorizations.",
-    icon: Shield,
-    category: "Admin",
-    active: false,
-    calls: 156,
-    successRate: 89,
-    skills: ["Insurance Verification"],
-  },
-  {
-    id: "4",
-    name: "Referral Generator",
-    description: "Drafts and sends referral letters with relevant patient history and documentation.",
-    icon: FileText,
-    category: "Documents",
-    active: true,
-    calls: 89,
-    successRate: 96,
-    skills: ["Clinical Documentation", "Referral Management"],
-  },
-  {
-    id: "5",
-    name: "No-Show Recovery",
-    description: "Re-engages patients who missed appointments with personalized outreach.",
-    icon: MessageSquare,
-    category: "Outreach",
-    active: false,
-    calls: 203,
-    successRate: 72,
-    skills: ["Patient Re-engagement"],
-  },
-  {
-    id: "6",
-    name: "New Patient Intake",
-    description: "Guides new patients through paperwork, insurance, and pre-visit questionnaires.",
-    icon: Bot,
-    category: "Onboarding",
-    active: true,
-    calls: 127,
-    successRate: 91,
-    skills: ["Patient Onboarding", "HIPAA Compliance"],
-  },
+const MODEL_OPTIONS = [
+  { id: "openai", label: "OpenAI", color: "text-green-400" },
+  { id: "claude", label: "Claude", color: "text-violet-400" },
+  { id: "gemini", label: "Gemini", color: "text-blue-400" },
+  { id: "minimax", label: "MiniMax", color: "text-amber-400" },
+  { id: "kimi", label: "Kimi", color: "text-rose-400" },
 ];
 
-interface QuickStartTemplate {
-  name: string;
-  description: string;
-  icon: typeof Bot;
-  skills: string[];
-  category: string;
+function getSkillName(skillId: string): string {
+  const skill = skills.find((s) => s.id === skillId);
+  return skill ? skill.shortName : skillId;
 }
 
-const quickStartTemplates: QuickStartTemplate[] = [
-  {
-    name: "Front Desk Agent",
-    description: "Handles calls, scheduling, and basic patient inquiries.",
-    icon: Phone,
-    skills: ["Smart Scheduling", "Empathetic Listening", "Multi-Language"],
-    category: "Receptionist",
-  },
-  {
-    name: "Clinical Coordinator",
-    description: "Manages referrals, documentation, and care coordination.",
-    icon: Stethoscope,
-    skills: ["Clinical Documentation", "Referral Management", "HIPAA Compliance"],
-    category: "Clinical",
-  },
-  {
-    name: "Patient Outreach",
-    description: "Follow-ups, no-show recovery, and satisfaction surveys.",
-    icon: Users,
-    skills: ["Empathetic Listening", "Patient Re-engagement", "No-Show Recovery"],
-    category: "Marketing",
-  },
-  {
-    name: "Admin Assistant",
-    description: "Insurance verification, billing support, and data entry.",
-    icon: Shield,
-    skills: ["Insurance Verification", "Data Entry", "Compliance Monitoring"],
-    category: "Admin",
-  },
-];
+function getSkillFullName(skillId: string): string {
+  const skill = skills.find((s) => s.id === skillId);
+  return skill ? skill.name : skillId;
+}
 
 const Agents = () => {
-  const [agents, setAgents] = useState<Agent[]>(defaultAgents);
-  const [configAgent, setConfigAgent] = useState<Agent | null>(null);
-  const [showTemplates, setShowTemplates] = useState(false);
-  const { toast } = useToast();
+  const [myAgents, setMyAgents] = useState<MyAgent[]>([
+    {
+      id: "1",
+      name: "Dr. Front Desk",
+      skills: [
+        "appointment-scheduling",
+        "insurance-verification",
+        "patient-follow-up",
+      ],
+      model: "openai",
+      active: true,
+    },
+    {
+      id: "2",
+      name: "Marketing Maven",
+      skills: ["professional-copywriter", "cmo", "researcher"],
+      model: "claude",
+      active: true,
+    },
+    {
+      id: "3",
+      name: "Grant Pro",
+      skills: ["grant-writer", "researcher", "cfo"],
+      model: "claude",
+      active: false,
+    },
+  ]);
+
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newAgentName, setNewAgentName] = useState("");
+  const [newAgentModel, setNewAgentModel] = useState("openai");
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [searchSkills, setSearchSkills] = useState("");
+  const [activeTab, setActiveTab] = useState<"my-agents" | "templates">(
+    "my-agents"
+  );
+
+  // ── Handlers ────────────────────────────────────
 
   const toggleAgent = (id: string) => {
-    setAgents((prev) =>
+    setMyAgents((prev) =>
       prev.map((a) => (a.id === id ? { ...a, active: !a.active } : a))
     );
   };
 
-  const createFromTemplate = (template: QuickStartTemplate) => {
-    const newAgent: Agent = {
-      id: String(agents.length + 1),
-      name: template.name,
-      description: template.description,
-      icon: template.icon,
-      category: template.category,
-      active: true,
-      calls: 0,
-      successRate: 0,
-      skills: template.skills,
-    };
-    setAgents((prev) => [...prev, newAgent]);
-    setShowTemplates(false);
-    toast({
-      title: "Agent created! 🚀",
-      description: `${template.name} is live with ${template.skills.length} skills installed.`,
-    });
+  const toggleSkill = (skillId: string) => {
+    setSelectedSkills((prev) =>
+      prev.includes(skillId)
+        ? prev.filter((s) => s !== skillId)
+        : [...prev, skillId]
+    );
   };
 
-  const activeCount = agents.filter((a) => a.active).length;
-  const totalCalls = agents.reduce((sum, a) => sum + a.calls, 0);
+  const removeSelectedSkill = (skillId: string) => {
+    setSelectedSkills((prev) => prev.filter((s) => s !== skillId));
+  };
+
+  const resetCreateForm = () => {
+    setNewAgentName("");
+    setNewAgentModel("openai");
+    setSelectedSkills([]);
+    setSearchSkills("");
+  };
+
+  const handleCreate = () => {
+    if (!newAgentName.trim() || selectedSkills.length === 0) return;
+
+    const newAgent: MyAgent = {
+      id: String(Date.now()),
+      name: newAgentName.trim(),
+      skills: [...selectedSkills],
+      model: newAgentModel,
+      active: true,
+    };
+
+    setMyAgents((prev) => [...prev, newAgent]);
+    setCreateOpen(false);
+    resetCreateForm();
+  };
+
+  const deployTemplate = (templateId: string) => {
+    const template = agentTemplates.find((t) => t.id === templateId);
+    if (!template) return;
+
+    const newAgent: MyAgent = {
+      id: String(Date.now()),
+      name: template.name,
+      skills: [...template.defaultSkills],
+      model: template.suggestedModel.toLowerCase(),
+      active: true,
+    };
+
+    setMyAgents((prev) => [...prev, newAgent]);
+    setActiveTab("my-agents");
+  };
+
+  // ── Filtered skills for the create dialog ───────
+
+  const filteredSkills = skills.filter((skill) =>
+    skill.name.toLowerCase().includes(searchSkills.toLowerCase())
+  );
+
+  const groupedSkills = skillCategories
+    .map((cat) => ({
+      ...cat,
+      skills: filteredSkills.filter((s) => s.category === cat.id),
+    }))
+    .filter((group) => group.skills.length > 0);
+
+  // ── Render ──────────────────────────────────────
 
   return (
     <div className="flex min-h-screen bg-background">
       <DashboardSidebar />
-      <main className="flex-1 p-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="flex items-start justify-between mb-10">
-            <div>
-              <h1 className="font-display text-2xl font-bold text-foreground">
-                AI Agents
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Deploy, configure, and manage your healthcare AI agents
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                className="rounded-xl gap-2"
-                onClick={() => setShowTemplates(!showTemplates)}
-              >
-                <Rocket className="h-4 w-4" />
-                Quick Start
-              </Button>
-              <Button className="gradient-primary text-primary-foreground rounded-xl shadow-glow hover:opacity-90 gap-2">
-                <Plus className="h-4 w-4" />
-                Custom Agent
-              </Button>
-            </div>
+
+      <main className="flex-1 overflow-y-auto">
+        <div className="p-8 max-w-7xl mx-auto">
+          {/* ── Header ─────────────────────────────── */}
+          <div className="mb-8">
+            <h1 className="font-display text-3xl font-bold text-foreground tracking-tight">
+              AI Agents
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Create, customize, and deploy your AI team
+            </p>
           </div>
 
-          {/* Quick Start Templates */}
-          {showTemplates && (
-            <div className="mb-8 bg-primary/5 border border-primary/20 rounded-xl p-6">
-              <h2 className="font-display text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
-                <Rocket className="h-4 w-4 text-primary" /> Quick Start Templates
-              </h2>
-              <p className="text-xs text-muted-foreground mb-4">
-                Pre-configured agents with skills already installed. Deploy in one click.
-              </p>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {quickStartTemplates.map((template) => (
-                  <button
-                    key={template.name}
-                    onClick={() => createFromTemplate(template)}
-                    className="text-left bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-all group"
-                  >
-                    <div className="h-9 w-9 rounded-lg gradient-primary flex items-center justify-center mb-3 group-hover:shadow-glow transition-shadow">
-                      <template.icon className="h-4 w-4 text-primary-foreground" />
-                    </div>
-                    <h3 className="font-display font-semibold text-foreground text-sm">{template.name}</h3>
-                    <p className="text-xs text-muted-foreground mt-1 mb-3">{template.description}</p>
-                    <div className="flex flex-wrap gap-1">
-                      {template.skills.slice(0, 2).map((s) => (
-                        <span key={s} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                          {s}
+          {/* ── Tabs ───────────────────────────────── */}
+          <div className="flex items-center gap-1 mb-8 bg-card/50 border border-border rounded-xl p-1 w-fit">
+            <button
+              onClick={() => setActiveTab("my-agents")}
+              className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === "my-agents"
+                  ? "gradient-primary text-primary-foreground shadow-glow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <Bot className="h-4 w-4" />
+                My Agents
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab("templates")}
+              className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === "templates"
+                  ? "gradient-primary text-primary-foreground shadow-glow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <Zap className="h-4 w-4" />
+                Quick-Start Templates
+              </span>
+            </button>
+          </div>
+
+          {/* ── My Agents Tab ──────────────────────── */}
+          {activeTab === "my-agents" && (
+            <div>
+              {/* Create button */}
+              <div className="flex items-center justify-between mb-6">
+                <p className="text-sm text-muted-foreground">
+                  {myAgents.filter((a) => a.active).length} active of{" "}
+                  {myAgents.length} agents
+                </p>
+                <Button
+                  className="gradient-primary text-primary-foreground rounded-xl shadow-glow-sm hover:opacity-90 gap-2"
+                  onClick={() => {
+                    resetCreateForm();
+                    setCreateOpen(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                  Create Agent
+                </Button>
+              </div>
+
+              {/* Agent cards grid */}
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {myAgents.map((agent) => {
+                  const modelOption = MODEL_OPTIONS.find(
+                    (m) => m.id === agent.model
+                  );
+                  const visibleSkills = agent.skills.slice(0, 3);
+                  const extraCount = agent.skills.length - 3;
+
+                  return (
+                    <div
+                      key={agent.id}
+                      className={`group relative rounded-xl border p-5 transition-all duration-300 card-hover ${
+                        agent.active
+                          ? "border-primary/20 bg-card"
+                          : "border-border bg-card/60 opacity-75"
+                      }`}
+                    >
+                      {/* Status indicator dot */}
+                      <div className="absolute top-4 right-4">
+                        <span className="relative flex h-2.5 w-2.5">
+                          {agent.active && (
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                          )}
+                          <span
+                            className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                              agent.active ? "bg-green-500" : "bg-muted-foreground/40"
+                            }`}
+                          />
                         </span>
-                      ))}
-                      {template.skills.length > 2 && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                          +{template.skills.length - 2}
-                        </span>
-                      )}
+                      </div>
+
+                      {/* Agent icon and name */}
+                      <div className="flex items-center gap-3 mb-4">
+                        <div
+                          className={`h-10 w-10 rounded-lg flex items-center justify-center ${
+                            agent.active
+                              ? "gradient-primary shadow-glow-sm"
+                              : "bg-muted"
+                          }`}
+                        >
+                          <Bot
+                            className={`h-5 w-5 ${
+                              agent.active
+                                ? "text-primary-foreground"
+                                : "text-muted-foreground"
+                            }`}
+                          />
+                        </div>
+                        <div>
+                          <h3 className="font-display font-bold text-foreground leading-tight">
+                            {agent.name}
+                          </h3>
+                          <Badge
+                            variant="secondary"
+                            className={`text-xs mt-0.5 bg-primary/10 border-0 ${
+                              modelOption?.color ?? "text-primary"
+                            }`}
+                          >
+                            {modelOption?.label ?? agent.model}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Skills list */}
+                      <div className="mb-4">
+                        <p className="text-xs text-muted-foreground mb-2">
+                          {agent.skills.length} skill
+                          {agent.skills.length !== 1 ? "s" : ""} assigned
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {visibleSkills.map((skillId) => (
+                            <span
+                              key={skillId}
+                              className="text-xs px-2 py-0.5 rounded-md bg-primary/10 text-primary font-medium"
+                            >
+                              {getSkillName(skillId)}
+                            </span>
+                          ))}
+                          {extraCount > 0 && (
+                            <span className="text-xs px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
+                              +{extraCount} more
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex items-center justify-between pt-3 border-t border-border">
+                        <button
+                          onClick={() => toggleAgent(agent.id)}
+                          className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${
+                            agent.active
+                              ? "text-green-500 hover:text-green-400"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          <Power className="h-3.5 w-3.5" />
+                          {agent.active ? "Active" : "Inactive"}
+                        </button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        >
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                  </button>
-                ))}
+                  );
+                })}
+
+                {/* Empty state / create card */}
+                <button
+                  onClick={() => {
+                    resetCreateForm();
+                    setCreateOpen(true);
+                  }}
+                  className="rounded-xl border-2 border-dashed border-border p-5 flex flex-col items-center justify-center text-center hover:border-primary/40 hover:bg-primary/5 transition-all min-h-[220px] group"
+                >
+                  <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center mb-3 group-hover:bg-primary/10 transition-colors">
+                    <Plus className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </div>
+                  <p className="font-display font-semibold text-muted-foreground group-hover:text-foreground transition-colors text-sm">
+                    Create New Agent
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Pick skills and a model to get started
+                  </p>
+                </button>
               </div>
             </div>
           )}
 
-          {/* Summary stats */}
-          <div className="grid sm:grid-cols-3 gap-6 mb-10">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl gradient-primary flex items-center justify-center">
-                <Bot className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <div>
-                <p className="font-display text-2xl font-bold text-foreground">{activeCount}</p>
-                <p className="text-xs text-muted-foreground">Active Agents</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-accent/10 flex items-center justify-center">
-                <Zap className="h-6 w-6 text-accent" />
-              </div>
-              <div>
-                <p className="font-display text-2xl font-bold text-foreground">{totalCalls.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">Total Interactions</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-accent/10 flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-accent" />
-              </div>
-              <div>
-                <p className="font-display text-2xl font-bold text-foreground">92%</p>
-                <p className="text-xs text-muted-foreground">Avg. Success Rate</p>
-              </div>
-            </div>
-          </div>
+          {/* ── Templates Tab ──────────────────────── */}
+          {activeTab === "templates" && (
+            <div>
+              <p className="text-sm text-muted-foreground mb-6">
+                Pre-configured agent blueprints. Deploy one in a single click.
+              </p>
 
-          {/* Agents Grid */}
-          <div className="grid md:grid-cols-2 gap-4">
-            {agents.map((agent) => (
-              <div
-                key={agent.id}
-                className={`group rounded-xl border p-6 transition-all duration-300 ${
-                  agent.active
-                    ? "border-primary/20 bg-primary/[0.03]"
-                    : "border-border bg-card"
-                }`}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
-                      agent.active ? "gradient-primary" : "bg-muted"
-                    }`}>
-                      <agent.icon className={`h-5 w-5 ${agent.active ? "text-primary-foreground" : "text-muted-foreground"}`} />
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {agentTemplates.map((template) => (
+                  <div
+                    key={template.id}
+                    className="rounded-xl border border-border bg-card p-5 transition-all duration-300 card-hover flex flex-col"
+                  >
+                    {/* Icon and category */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="h-10 w-10 rounded-lg gradient-primary flex items-center justify-center shadow-glow-sm">
+                        <Brain className="h-5 w-5 text-primary-foreground" />
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] capitalize border-border"
+                      >
+                        {template.category}
+                      </Badge>
                     </div>
-                    <div>
-                      <h3 className="font-display font-semibold text-foreground text-sm">{agent.name}</h3>
-                      <span className="text-xs text-muted-foreground">{agent.category}</span>
+
+                    {/* Name and description */}
+                    <h3 className="font-display font-bold text-foreground mb-1">
+                      {template.name}
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1">
+                      {template.description}
+                    </p>
+
+                    {/* Default skills */}
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {template.defaultSkills.map((skillId) => (
+                        <span
+                          key={skillId}
+                          className="text-[11px] px-2 py-0.5 rounded-md bg-primary/10 text-primary font-medium"
+                        >
+                          {getSkillFullName(skillId)}
+                        </span>
+                      ))}
                     </div>
+
+                    {/* Metrics */}
+                    <div className="grid grid-cols-3 gap-2 mb-4 py-3 border-t border-b border-border">
+                      {template.metrics.map((metric) => (
+                        <div key={metric.label} className="text-center">
+                          <p className="text-xs font-bold text-foreground">
+                            {metric.value}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {metric.label}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Deploy button */}
+                    <Button
+                      className="w-full gradient-primary text-primary-foreground rounded-lg shadow-glow-sm hover:opacity-90 gap-2"
+                      onClick={() => deployTemplate(template.id)}
+                    >
+                      <Zap className="h-4 w-4" />
+                      Deploy
+                      <ArrowRight className="h-4 w-4 ml-auto" />
+                    </Button>
                   </div>
-                  <Switch
-                    checked={agent.active}
-                    onCheckedChange={() => toggleAgent(agent.id)}
-                  />
-                </div>
-                <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
-                  {agent.description}
-                </p>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
 
-                {/* Installed skills */}
-                {agent.skills.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mb-4">
-                    {agent.skills.map((s) => (
-                      <span key={s} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-                        {s}
+        {/* ── Create Agent Dialog ───────────────── */}
+        <Dialog
+          open={createOpen}
+          onOpenChange={(open) => {
+            setCreateOpen(open);
+            if (!open) resetCreateForm();
+          }}
+        >
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card border-border">
+            <DialogHeader>
+              <DialogTitle className="font-display text-xl font-bold flex items-center gap-2">
+                <Bot className="h-5 w-5 text-primary" />
+                Create New Agent
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-6 mt-2">
+              {/* Agent Name */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Agent Name</Label>
+                <Input
+                  value={newAgentName}
+                  onChange={(e) => setNewAgentName(e.target.value)}
+                  placeholder="e.g. Dr. Front Desk, Marketing Maven..."
+                  className="bg-background border-border"
+                />
+              </div>
+
+              {/* Model Selection */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">AI Model</Label>
+                <div className="grid grid-cols-5 gap-2">
+                  {MODEL_OPTIONS.map((model) => (
+                    <button
+                      key={model.id}
+                      onClick={() => setNewAgentModel(model.id)}
+                      className={`relative flex flex-col items-center gap-1 rounded-lg border p-3 transition-all text-center ${
+                        newAgentModel === model.id
+                          ? "border-primary bg-primary/10 shadow-glow-sm"
+                          : "border-border bg-background hover:border-primary/30 hover:bg-primary/5"
+                      }`}
+                    >
+                      {newAgentModel === model.id && (
+                        <span className="absolute top-1.5 right-1.5">
+                          <Check className="h-3 w-3 text-primary" />
+                        </span>
+                      )}
+                      <Brain
+                        className={`h-5 w-5 ${
+                          newAgentModel === model.id
+                            ? model.color
+                            : "text-muted-foreground"
+                        }`}
+                      />
+                      <span
+                        className={`text-xs font-medium ${
+                          newAgentModel === model.id
+                            ? "text-foreground"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        {model.label}
                       </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Skills Selection */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">
+                  Skills{" "}
+                  <span className="text-muted-foreground font-normal">
+                    ({selectedSkills.length} selected)
+                  </span>
+                </Label>
+
+                {/* Selected skills badges */}
+                {selectedSkills.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                    {selectedSkills.map((skillId) => (
+                      <Badge
+                        key={skillId}
+                        className="bg-primary/15 text-primary border-0 hover:bg-primary/25 cursor-pointer gap-1 pr-1"
+                        onClick={() => removeSelectedSkill(skillId)}
+                      >
+                        {getSkillFullName(skillId)}
+                        <X className="h-3 w-3" />
+                      </Badge>
                     ))}
                   </div>
                 )}
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-5 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1.5">
-                      <Phone className="h-3 w-3" />
-                      {agent.calls} calls
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <TrendingUp className="h-3 w-3" />
-                      {agent.successRate}% success
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setConfigAgent(agent)}>
-                      <Settings className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={`h-8 w-8 ${agent.active ? "text-primary hover:text-primary" : "text-muted-foreground hover:text-foreground"}`}
-                      onClick={() => toggleAgent(agent.id)}
-                    >
-                      {agent.active ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                    </Button>
-                  </div>
+                {/* Search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    value={searchSkills}
+                    onChange={(e) => setSearchSkills(e.target.value)}
+                    placeholder="Search skills..."
+                    className="pl-9 bg-background border-border"
+                  />
+                </div>
+
+                {/* Skills grouped by category */}
+                <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
+                  {groupedSkills.map((group) => (
+                    <div key={group.id}>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                        {group.name}
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {group.skills.map((skill) => {
+                          const isSelected = selectedSkills.includes(skill.id);
+                          return (
+                            <button
+                              key={skill.id}
+                              onClick={() => toggleSkill(skill.id)}
+                              className={`flex items-start gap-3 rounded-lg border p-3 text-left transition-all ${
+                                isSelected
+                                  ? "border-primary bg-primary/10"
+                                  : "border-border bg-background hover:border-primary/30 hover:bg-primary/5"
+                              }`}
+                            >
+                              <div
+                                className={`mt-0.5 h-4 w-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
+                                  isSelected
+                                    ? "bg-primary border-primary"
+                                    : "border-muted-foreground/40"
+                                }`}
+                              >
+                                {isSelected && (
+                                  <Check className="h-3 w-3 text-primary-foreground" />
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <p
+                                  className={`text-sm font-medium leading-tight ${
+                                    isSelected
+                                      ? "text-foreground"
+                                      : "text-muted-foreground"
+                                  }`}
+                                >
+                                  {skill.name}
+                                </p>
+                                <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">
+                                  {skill.description}
+                                </p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+
+                  {groupedSkills.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground text-sm">
+                      No skills match your search.
+                    </div>
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
 
-        {configAgent && (
-          <AgentConfigModal
-            agent={{ id: configAgent.id, name: configAgent.name, category: configAgent.category }}
-            open={!!configAgent}
-            onClose={() => setConfigAgent(null)}
-          />
-        )}
+              {/* Create button */}
+              <Button
+                className="w-full gradient-primary text-primary-foreground rounded-xl shadow-glow-sm hover:opacity-90 gap-2"
+                disabled={!newAgentName.trim() || selectedSkills.length === 0}
+                onClick={handleCreate}
+              >
+                <Plus className="h-4 w-4" />
+                Create Agent
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

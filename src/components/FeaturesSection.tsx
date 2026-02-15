@@ -1,84 +1,106 @@
-import { Bot, Zap, Shield, Brain, Mic, Stethoscope, HeartPulse, FileText, Phone } from "lucide-react";
+import {
+  Zap,
+  Brain,
+  Stethoscope,
+  Shield,
+  Mic,
+  Bot,
+  Plug,
+  FileText,
+  Users,
+} from "lucide-react";
 
 const features = [
   {
     icon: Zap,
-    title: "One-Step Registration",
-    description: "Enter your email and go. No lengthy credentialing forms or specialty verification. Your HIPAA-compliant workspace is ready in seconds.",
+    title: "Custom Agent Builder",
+    description:
+      "Create and name your own AI agents, assign skills, and choose the models that power them.",
   },
   {
     icon: Brain,
     title: "Multi-LLM Choice",
-    description: "Pick from OpenAI, Claude, or Gemini. Switch models per agent. Use the best AI for each task — documentation, calls, or analysis.",
-  },
-  {
-    icon: Mic,
-    title: "Voice AI for Patient Calls",
-    description: "ElevenLabs, Deepgram, VAPI — natural voice agents for inbound calls, appointment reminders, post-visit follow-ups, and patient outreach.",
+    description:
+      "OpenAI, Claude, Gemini, MiniMax, Kimi — switch between models per agent for the best results.",
   },
   {
     icon: Stethoscope,
-    title: "20+ Healthcare Skills",
-    description: "Pre-built skills for scheduling, insurance verification, clinical documentation, referral management, lab results, prescription refills, and more.",
+    title: "30+ AI Skills",
+    description:
+      "From C-suite strategy to healthcare operations to content creation — one platform, every skill.",
   },
   {
     icon: Shield,
-    title: "HIPAA & BAA First",
-    description: "Every integration ships with BAA agreements. End-to-end encryption. PHI never leaves your environment. SOC 2 Type II certified.",
+    title: "Enterprise Security",
+    description:
+      "HIPAA compliant, BAA available, SOC 2 certified, end-to-end encryption, and PHI protection.",
+  },
+  {
+    icon: Mic,
+    title: "Voice AI",
+    description:
+      "Natural voice agents for calls, follow-ups, patient outreach, and hands-free workflows.",
   },
   {
     icon: Bot,
-    title: "Quick-Start Agent Templates",
-    description: "Pre-configured agents for Front Desk, Clinical Coordinator, Patient Outreach, Insurance Verifier — live in minutes, not months.",
+    title: "Quick-Start Templates",
+    description:
+      "16 pre-built agent templates to get you started — deploy a working agent in one click.",
   },
   {
-    icon: HeartPulse,
-    title: "Patient Engagement",
-    description: "Automated no-show recovery, satisfaction surveys, post-op check-ins, and preventive care reminders that increase retention by 40%.",
+    icon: Plug,
+    title: "Your Integrations",
+    description:
+      "Connect your own API keys and use your preferred AI providers. Full control, zero lock-in.",
   },
   {
     icon: FileText,
-    title: "Clinical Documentation",
-    description: "AI-powered referral letters, visit summaries, patient instructions, and discharge notes — reducing chart time by up to 60%.",
+    title: "Professional Content",
+    description:
+      "Copywriting, grant proposals, research papers, marketing campaigns — all AI-powered.",
   },
   {
-    icon: Phone,
-    title: "24/7 Virtual Front Desk",
-    description: "Never miss a patient call again. AI agents answer after-hours calls, triage urgency, book appointments, and route emergencies.",
+    icon: Users,
+    title: "Team Collaboration",
+    description:
+      "Multi-seat plans, role-based access, and a shared agent library for your entire team.",
   },
 ];
 
-const FeaturesSection = () => {
+export default function FeaturesSection() {
   return (
-    <section id="features" className="py-32 relative">
-      {/* Ambient glow */}
-      <div className="absolute top-1/2 left-0 w-72 h-72 bg-primary/5 rounded-full blur-[100px]" />
-
-      <div className="container mx-auto px-6 relative z-10">
-        <div className="text-center mb-20">
-          <p className="text-primary text-sm font-semibold tracking-widest uppercase mb-4">Why Dr. Claw</p>
-          <h2 className="font-display text-4xl md:text-5xl font-bold text-foreground">
-            Built for How{" "}
-            <span className="gradient-hero-text">Medicine Works</span>
+    <section id="features" className="py-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-16 animate-fade-up">
+          <span className="text-sm font-medium text-blue-400 uppercase tracking-widest mb-3 block">
+            Platform Capabilities
+          </span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-heading mb-4">
+            Everything You Need to{" "}
+            <span className="gradient-hero-text">Deploy AI Agents</span>
           </h2>
-          <p className="mt-5 text-muted-foreground max-w-lg mx-auto text-lg">
-            Every feature is designed for healthcare workflows — from patient intake to post-discharge follow-up. Deploy compliant AI agents in minutes, not months.
+          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+            A complete platform for building, customizing, and managing AI
+            agents across your organization.
           </p>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-16 max-w-5xl mx-auto">
+
+        {/* 3x3 Grid */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature, i) => (
             <div
               key={feature.title}
-              className="group relative"
-              style={{ animationDelay: `${i * 100}ms` }}
+              className="glass-card rounded-xl p-6 card-hover animate-fade-up"
+              style={{ animationDelay: `${i * 80}ms` }}
             >
-              <div className="h-12 w-12 rounded-xl gradient-primary flex items-center justify-center mb-5 group-hover:shadow-glow transition-shadow duration-500">
-                <feature.icon className="h-6 w-6 text-primary-foreground" />
+              <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center mb-4 shadow-glow-sm">
+                <feature.icon className="w-6 h-6 text-white" />
               </div>
-              <h3 className="font-display text-lg font-semibold text-foreground mb-3">
+              <h3 className="text-lg font-semibold font-heading text-white mb-2">
                 {feature.title}
               </h3>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-sm text-slate-400 leading-relaxed">
                 {feature.description}
               </p>
             </div>
@@ -87,6 +109,4 @@ const FeaturesSection = () => {
       </div>
     </section>
   );
-};
-
-export default FeaturesSection;
+}

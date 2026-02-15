@@ -1,87 +1,77 @@
 import { UserPlus, Puzzle, Rocket } from "lucide-react";
-import { Link } from "react-router-dom";
 
 const steps = [
   {
-    number: "01",
     icon: UserPlus,
-    title: "Register in One Step",
+    title: "Create Your Account",
     description:
-      "Enter your email and name — that's it. No lengthy forms, no specialty verification hoops. Your HIPAA-compliant workspace is ready in seconds.",
+      "One-step registration gets you an instant workspace. No setup calls, no waiting.",
   },
   {
-    number: "02",
     icon: Puzzle,
-    title: "Pick Your Skills & LLM",
+    title: "Build Your Agents",
     description:
-      "Browse 20+ healthcare-specific skills — from appointment scheduling to clinical documentation. Choose your AI engine (OpenAI, Claude, or Gemini) and voice provider.",
+      "Name your agents, assign skills from our library of 30+, and connect your own API keys.",
   },
   {
-    number: "03",
     icon: Rocket,
-    title: "Deploy & Go Live",
+    title: "Deploy & Scale",
     description:
-      "One click deploys your AI agents. They start handling calls, follow-ups, scheduling, and patient outreach immediately — HIPAA compliant from day one.",
+      "Your agents start working immediately. Scale across your entire organization on demand.",
   },
 ];
 
-const HowItWorksSection = () => {
+export default function HowItWorksSection() {
   return (
-    <section className="py-32 relative" id="how-it-works">
-      <div className="absolute top-1/2 left-1/4 w-80 h-80 bg-primary/5 rounded-full blur-[100px]" />
-
-      <div className="container mx-auto px-6 relative z-10">
-        <div className="text-center mb-20">
-          <p className="text-accent text-sm font-semibold tracking-widest uppercase mb-4">
+    <section id="how-it-works" className="py-24">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-16 animate-fade-up">
+          <span className="text-sm font-medium text-blue-400 uppercase tracking-widest mb-3 block">
             How It Works
-          </p>
-          <h2 className="font-display text-4xl md:text-5xl font-bold text-foreground">
-            Live in{" "}
-            <span className="gradient-hero-text">Under 5 Minutes</span>
+          </span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-heading mb-4">
+            Up and Running in{" "}
+            <span className="gradient-hero-text">Minutes</span>
           </h2>
-          <p className="mt-5 text-muted-foreground max-w-lg mx-auto text-lg">
-            No IT department needed. No developer required. Three simple steps
-            to AI-powered healthcare operations.
+          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+            Three simple steps to deploy your AI agent team.
           </p>
         </div>
 
-        <div className="max-w-4xl mx-auto">
-          <div className="grid md:grid-cols-3 gap-8 relative">
-            {/* Connector line */}
-            <div className="hidden md:block absolute top-16 left-[20%] right-[20%] h-[2px] bg-gradient-to-r from-primary/40 via-accent/40 to-primary/40" />
+        {/* Steps */}
+        <div className="relative">
+          {/* Connector Line */}
+          <div className="hidden lg:block absolute top-16 left-[16.67%] right-[16.67%] h-0.5 bg-gradient-to-r from-blue-500/50 via-cyan-500/50 to-blue-500/50" />
 
+          <div className="grid lg:grid-cols-3 gap-12 lg:gap-8">
             {steps.map((step, i) => (
-              <div key={step.number} className="relative text-center group">
-                <div className="relative z-10 inline-flex flex-col items-center">
-                  <div className="h-16 w-16 rounded-2xl gradient-primary flex items-center justify-center mb-6 group-hover:shadow-glow transition-shadow duration-500">
-                    <step.icon className="h-8 w-8 text-primary-foreground" />
+              <div
+                key={step.title}
+                className="text-center animate-fade-up"
+                style={{ animationDelay: `${i * 150}ms` }}
+              >
+                {/* Step Number + Icon */}
+                <div className="relative inline-flex items-center justify-center mb-6">
+                  <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center shadow-glow relative z-10">
+                    <step.icon className="w-7 h-7 text-white" />
                   </div>
-                  <span className="absolute -top-2 -right-2 font-display text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
-                    {step.number}
+                  <span className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-cyan-500 text-white text-xs font-bold flex items-center justify-center z-20">
+                    {i + 1}
                   </span>
                 </div>
-                <h3 className="font-display text-lg font-bold text-foreground mb-3">
+
+                <h3 className="text-xl font-semibold font-heading text-white mb-3">
                   {step.title}
                 </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
+                <p className="text-slate-400 leading-relaxed max-w-xs mx-auto">
                   {step.description}
                 </p>
               </div>
             ))}
           </div>
-
-          <div className="text-center mt-14">
-            <Link
-              to="/auth"
-              className="gradient-primary text-primary-foreground px-8 py-4 rounded-xl font-semibold text-base hover:opacity-90 transition-all shadow-glow inline-block"
-            >
-              Get Started Free — No Credit Card
-            </Link>
-          </div>
         </div>
       </div>
     </section>
   );
-};
-
-export default HowItWorksSection;
+}

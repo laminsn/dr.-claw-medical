@@ -11,6 +11,9 @@ import Profile from "./pages/Profile";
 import SkillsCenter from "./pages/SkillsCenter";
 import TrainingCenter from "./pages/TrainingCenter";
 import Integrations from "./pages/Integrations";
+import CompanyProfile from "./pages/CompanyProfile";
+import TeamManagement from "./pages/TeamManagement";
+import AgentCollaboration from "./pages/AgentCollaboration";
 import AdminDashboard from "./pages/AdminDashboard";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -34,6 +37,9 @@ const App = () => (
             <Route path="/dashboard/skills" element={<ProtectedRoute><SkillsCenter /></ProtectedRoute>} />
             <Route path="/dashboard/training" element={<ProtectedRoute><TrainingCenter /></ProtectedRoute>} />
             <Route path="/dashboard/integrations" element={<ProtectedRoute><Integrations /></ProtectedRoute>} />
+            <Route path="/dashboard/company" element={<ProtectedRoute><CompanyProfile /></ProtectedRoute>} />
+            <Route path="/dashboard/team" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
+            <Route path="/dashboard/collaboration" element={<ProtectedRoute><AgentCollaboration /></ProtectedRoute>} />
             <Route path="/dashboard/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
             <Route path="/dashboard/*" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />

@@ -1,90 +1,114 @@
 import { Link } from "react-router-dom";
-import logo from "@/assets/dr-claw-logo-transparent.png";
-import ComplianceBadges from "@/components/ComplianceBadges";
+import { ArrowRight, Play, Shield, FileCheck, Lock } from "lucide-react";
 
-const HeroSection = () => {
+const poweredBy = [
+  { name: "OpenAI", logo: "/logos/openai.svg" },
+  { name: "Claude", logo: "/logos/claude.svg" },
+  { name: "Gemini", logo: "/logos/gemini.svg" },
+  { name: "MiniMax", logo: "/logos/minimax.svg" },
+  { name: "Kimi", logo: "/logos/kimi.svg" },
+  { name: "ElevenLabs", logo: "/logos/elevenlabs.svg" },
+];
+
+export default function HeroSection() {
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden">
-      {/* Ambient glow effects */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[120px] animate-pulse-glow" />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent/8 rounded-full blur-[100px] animate-pulse-glow" style={{ animationDelay: "1.5s" }} />
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-16">
+      {/* Ambient Glow Effects */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-[128px] animate-pulse-glow" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/15 rounded-full blur-[128px] animate-pulse-glow" />
 
-      {/* Grid overlay */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{
-        backgroundImage: `linear-gradient(hsl(217 100% 59% / 0.3) 1px, transparent 1px), linear-gradient(90deg, hsl(217 100% 59% / 0.3) 1px, transparent 1px)`,
-        backgroundSize: '60px 60px'
-      }} />
+      {/* Grid Overlay */}
+      <div
+        className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)",
+          backgroundSize: "64px 64px",
+        }}
+      />
 
-      <div className="container mx-auto px-6 relative z-10 pt-32">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="animate-float inline-block mb-10">
-            <div className="relative">
-              <img src={logo} alt="Dr. Claw mascot" className="h-24 w-24 mx-auto relative z-10" />
-              <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl scale-150" />
-            </div>
+      {/* Floating Logo */}
+      <div className="absolute top-32 right-[10%] hidden lg:block animate-float opacity-20">
+        <img src="/Dr. Claw Logo.png" alt="" className="h-32 w-32" />
+      </div>
+
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        {/* Badge */}
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-300 text-sm font-medium mb-8 animate-fade-in">
+          <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+          Enterprise AI Agent Platform
+        </div>
+
+        {/* Headline */}
+        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold font-heading leading-tight mb-6 animate-fade-up">
+          <span className="gradient-hero-text">AI Agents</span> That{" "}
+          <br className="hidden sm:block" />
+          Work For You
+        </h1>
+
+        {/* Subheadline */}
+        <p className="text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto mb-8 animate-fade-up leading-relaxed">
+          Deploy AI agents with C-suite strategy skills, healthcare operations,
+          professional content creation, and more. Choose your models, assign
+          skills, and let your AI team handle the rest.
+        </p>
+
+        {/* Trust Badges */}
+        <div className="flex items-center justify-center gap-6 mb-10 animate-fade-up">
+          <div className="flex items-center gap-1.5 text-sm text-slate-400">
+            <Shield className="w-4 h-4 text-green-400" />
+            HIPAA Compliant
           </div>
-
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs font-medium mb-8 animate-fade-up">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
-            HIPAA & BAA Secured — Built for Healthcare Professionals
+          <div className="flex items-center gap-1.5 text-sm text-slate-400">
+            <FileCheck className="w-4 h-4 text-green-400" />
+            BAA Available
           </div>
+          <div className="flex items-center gap-1.5 text-sm text-slate-400">
+            <Lock className="w-4 h-4 text-green-400" />
+            SOC 2
+          </div>
+        </div>
 
-          <h1 className="font-display text-5xl sm:text-6xl md:text-7xl font-bold leading-[1.05] animate-fade-up tracking-tight">
-            AI Agents That{" "}
-            <br className="hidden sm:block" />
-            <span className="gradient-hero-text">Run Your Practice</span>
-          </h1>
+        {/* CTAs */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 animate-fade-up">
+          <Link
+            to="/auth"
+            className="gradient-primary text-white font-semibold px-8 py-3.5 rounded-lg shadow-glow hover:opacity-90 transition-opacity inline-flex items-center gap-2 text-lg"
+          >
+            Start Free Trial
+            <ArrowRight className="w-5 h-5" />
+          </Link>
+          <a
+            href="#how-it-works"
+            className="glass-card text-white font-semibold px-8 py-3.5 rounded-lg hover:bg-white/10 transition-colors inline-flex items-center gap-2 text-lg"
+          >
+            <Play className="w-5 h-5" />
+            See How It Works
+          </a>
+        </div>
 
-          <p className="mt-8 text-lg text-muted-foreground max-w-xl mx-auto animate-fade-up leading-relaxed" style={{ animationDelay: "200ms" }}>
-            One-step registration. Deploy in 5 minutes. 20+ healthcare skills — from scheduling to clinical documentation.
-            HIPAA-compliant AI agents that handle patient calls, follow-ups, and admin so your team can focus on care.
+        {/* Powered By */}
+        <div className="animate-fade-up">
+          <p className="text-xs text-slate-500 uppercase tracking-widest mb-4">
+            Powered By
           </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12 animate-fade-up" style={{ animationDelay: "400ms" }}>
-            <Link
-              to="/auth"
-              className="gradient-primary text-primary-foreground px-8 py-4 rounded-xl font-semibold text-base hover:opacity-90 transition-all shadow-glow"
-            >
-              Start Free — No Credit Card
-            </Link>
-            <a
-              href="#how-it-works"
-              className="px-8 py-4 rounded-xl font-semibold text-base border border-border text-foreground hover:border-primary/40 hover:text-primary transition-all"
-            >
-              See How It Works
-            </a>
+          <div className="flex items-center justify-center gap-8 flex-wrap opacity-50">
+            {poweredBy.map((item) => (
+              <div key={item.name} className="flex items-center gap-2">
+                <img
+                  src={item.logo}
+                  alt={item.name}
+                  className="h-6 w-auto brightness-0 invert"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+                <span className="text-sm text-slate-400">{item.name}</span>
+              </div>
+            ))}
           </div>
-
-          {/* Compliance Badges */}
-          <div className="mt-10 flex justify-center animate-fade-in" style={{ animationDelay: "600ms" }}>
-            <ComplianceBadges />
-          </div>
-
-          {/* Integration logos */}
-          <div className="mt-8 animate-fade-in" style={{ animationDelay: "800ms" }}>
-            <p className="text-xs text-muted-foreground mb-4">Trusted by 2,500+ healthcare practices</p>
-            <div className="flex items-center justify-center gap-6 flex-wrap text-xs text-muted-foreground/70 font-medium">
-              <span className="px-3 py-1.5 rounded-lg border border-border bg-card/50">OpenAI</span>
-              <span className="px-3 py-1.5 rounded-lg border border-border bg-card/50">Claude</span>
-              <span className="px-3 py-1.5 rounded-lg border border-border bg-card/50">Gemini</span>
-              <span className="px-3 py-1.5 rounded-lg border border-border bg-card/50">ElevenLabs</span>
-              <span className="px-3 py-1.5 rounded-lg border border-border bg-card/50">Deepgram</span>
-              <span className="px-3 py-1.5 rounded-lg border border-border bg-card/50">VAPI</span>
-              <span className="px-3 py-1.5 rounded-lg border border-border bg-card/50">AWS Healthcare</span>
-            </div>
-          </div>
-
-          <p className="mt-6 text-xs text-muted-foreground animate-fade-in flex items-center justify-center gap-4" style={{ animationDelay: "1000ms" }}>
-            <span>14-day free trial</span>
-            <span className="h-1 w-1 rounded-full bg-muted-foreground/50" />
-            <span>No credit card required</span>
-            <span className="h-1 w-1 rounded-full bg-muted-foreground/50" />
-            <span>One-step registration</span>
-          </p>
         </div>
       </div>
     </section>
   );
-};
-
-export default HeroSection;
+}
