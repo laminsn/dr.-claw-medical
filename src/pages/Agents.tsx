@@ -89,6 +89,12 @@ const Agents = () => {
     "my-agents"
   );
 
+  // Deploy template dialog state
+  const [deployOpen, setDeployOpen] = useState(false);
+  const [deployTemplate, setDeployTemplateData] = useState<typeof agentTemplates[number] | null>(null);
+  const [deployName, setDeployName] = useState("");
+  const [deployModel, setDeployModel] = useState("");
+
   // ── Handlers ────────────────────────────────────
 
   const toggleAgent = (id: string) => {
@@ -132,19 +138,30 @@ const Agents = () => {
     resetCreateForm();
   };
 
-  const deployTemplate = (templateId: string) => {
+  const openDeployDialog = (templateId: string) => {
     const template = agentTemplates.find((t) => t.id === templateId);
     if (!template) return;
+    setDeployTemplateData(template);
+    setDeployName(template.name);
+    setDeployModel(template.suggestedModel.toLowerCase());
+    setDeployOpen(true);
+  };
+
+  const handleDeployTemplate = () => {
+    if (!deployTemplate || !deployName.trim()) return;
 
     const newAgent: MyAgent = {
       id: String(Date.now()),
-      name: template.name,
-      skills: [...template.defaultSkills],
-      model: template.suggestedModel.toLowerCase(),
+      name: deployName.trim(),
+      skills: [...deployTemplate.defaultSkills],
+      model: deployModel,
       active: true,
     };
 
     setMyAgents((prev) => [...prev, newAgent]);
+    setDeployOpen(false);
+    setDeployTemplateData(null);
+    setDeployName("");
     setActiveTab("my-agents");
   };
 
@@ -427,7 +444,7 @@ const Agents = () => {
                     {/* Deploy button */}
                     <Button
                       className="w-full gradient-primary text-primary-foreground rounded-lg shadow-glow-sm hover:opacity-90 gap-2"
-                      onClick={() => deployTemplate(template.id)}
+                      onClick={() => openDeployDialog(template.id)}
                     >
                       <Zap className="h-4 w-4" />
                       Deploy
@@ -439,6 +456,121 @@ const Agents = () => {
             </div>
           )}
         </div>
+
+        {/* ── Deploy Template Dialog ────────────── */}
+        <Dialog
+          open={deployOpen}
+          onOpenChange={(open) => {
+            setDeployOpen(open);
+            if (!open) {
+              setDeployTemplateData(null);
+              setDeployName("");
+            }
+          }}
+        >
+          {deployTemplate && (
+            <DialogContent className="max-w-md bg-card border-border">
+              <DialogHeader>
+                <DialogTitle className="font-display text-xl font-bold flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-primary" />
+                  Deploy {deployTemplate.name}
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-5 mt-2">
+                {/* Agent Name */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Name Your Agent</Label>
+                  <Input
+                    value={deployName}
+                    onChange={(e) => setDeployName(e.target.value)}
+                    placeholder="Give your agent a custom name..."
+                    className="bg-background border-border"
+                    autoFocus
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Pre-filled with the template name. Customize it to fit your team.
+                  </p>
+                </div>
+
+                {/* Model Selection */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">AI Model</Label>
+                  <div className="grid grid-cols-5 gap-2">
+                    {MODEL_OPTIONS.map((model) => (
+                      <button
+                        key={model.id}
+                        onClick={() => setDeployModel(model.id)}
+                        className={`relative flex flex-col items-center gap-1 rounded-lg border p-2.5 transition-all text-center ${
+                          deployModel === model.id
+                            ? "border-primary bg-primary/10 shadow-glow-sm"
+                            : "border-border bg-background hover:border-primary/30 hover:bg-primary/5"
+                        }`}
+                      >
+                        {deployModel === model.id && (
+                          <span className="absolute top-1 right-1">
+                            <Check className="h-3 w-3 text-primary" />
+                          </span>
+                        )}
+                        <Brain
+                          className={`h-4 w-4 ${
+                            deployModel === model.id
+                              ? model.color
+                              : "text-muted-foreground"
+                          }`}
+                        />
+                        <span
+                          className={`text-[10px] font-medium ${
+                            deployModel === model.id
+                              ? "text-foreground"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          {model.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Skills preview */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Included Skills</Label>
+                  <div className="flex flex-wrap gap-1.5 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                    {deployTemplate.defaultSkills.map((skillId) => (
+                      <span
+                        key={skillId}
+                        className="text-xs px-2 py-0.5 rounded-md bg-primary/15 text-primary font-medium"
+                      >
+                        {getSkillFullName(skillId)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Template metrics */}
+                <div className="grid grid-cols-3 gap-2 py-3 border-t border-b border-border">
+                  {deployTemplate.metrics.map((metric) => (
+                    <div key={metric.label} className="text-center">
+                      <p className="text-xs font-bold text-foreground">{metric.value}</p>
+                      <p className="text-[10px] text-muted-foreground">{metric.label}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Deploy button */}
+                <Button
+                  className="w-full gradient-primary text-primary-foreground rounded-xl shadow-glow-sm hover:opacity-90 gap-2"
+                  disabled={!deployName.trim()}
+                  onClick={handleDeployTemplate}
+                >
+                  <Zap className="h-4 w-4" />
+                  Deploy Agent
+                </Button>
+              </div>
+            </DialogContent>
+          )}
+        </Dialog>
 
         {/* ── Create Agent Dialog ───────────────── */}
         <Dialog

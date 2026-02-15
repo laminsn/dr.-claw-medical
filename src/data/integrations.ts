@@ -2,7 +2,7 @@ export interface Integration {
   id: string;
   name: string;
   description: string;
-  category: "llm" | "voice" | "cloud" | "productivity" | "healthcare" | "communication";
+  category: "llm" | "voice" | "cloud" | "productivity" | "healthcare" | "communication" | "crm";
   icon: string;
   website: string;
   apiKeyLabel: string;
@@ -15,6 +15,7 @@ export interface Integration {
 export const integrationCategories = [
   { id: "llm", name: "AI Models", description: "Large language models for agent intelligence" },
   { id: "voice", name: "Voice AI", description: "Text-to-speech and speech-to-text engines" },
+  { id: "crm", name: "CRM", description: "Customer relationship management platforms" },
   { id: "cloud", name: "Cloud & Infrastructure", description: "Cloud services and data storage" },
   { id: "productivity", name: "Productivity", description: "Workflow and productivity tools" },
   { id: "healthcare", name: "Healthcare", description: "EHR, EMR, and healthcare-specific tools" },
@@ -310,6 +311,103 @@ export const integrations: Integration[] = [
       "Scheduled triggers",
     ],
     tier: "advanced",
+  },
+
+  // ---------------------------------------------------------------------------
+  // CRM (crm)
+  // ---------------------------------------------------------------------------
+  {
+    id: "gohighlevel",
+    name: "GoHighLevel",
+    description: "All-in-one CRM & marketing platform",
+    category: "crm",
+    icon: "rocket",
+    website: "https://www.gohighlevel.com",
+    apiKeyLabel: "API Key",
+    apiKeyPlaceholder: "ghl-...",
+    features: [
+      "Contact management",
+      "Pipeline & deals",
+      "Marketing automation",
+      "Appointment booking",
+      "SMS & email campaigns",
+    ],
+    tier: "professional",
+    popular: true,
+  },
+  {
+    id: "hubspot",
+    name: "HubSpot",
+    description: "CRM, marketing, sales & service hub",
+    category: "crm",
+    icon: "hub",
+    website: "https://www.hubspot.com",
+    apiKeyLabel: "Private App Token",
+    apiKeyPlaceholder: "pat-...",
+    features: [
+      "Contact & deal management",
+      "Marketing automation",
+      "Sales pipeline",
+      "Ticketing & support",
+      "Reporting dashboards",
+    ],
+    tier: "professional",
+    popular: true,
+  },
+  {
+    id: "salesforce",
+    name: "Salesforce",
+    description: "Enterprise CRM & cloud platform",
+    category: "crm",
+    icon: "cloud-cog",
+    website: "https://www.salesforce.com",
+    apiKeyLabel: "Connected App Token",
+    apiKeyPlaceholder: "sf-...",
+    features: [
+      "Lead & opportunity management",
+      "Einstein AI insights",
+      "Health Cloud for healthcare",
+      "Custom objects & workflows",
+      "AppExchange ecosystem",
+    ],
+    tier: "enterprise",
+    popular: true,
+  },
+  {
+    id: "zoho-crm",
+    name: "Zoho CRM",
+    description: "Comprehensive CRM for all business sizes",
+    category: "crm",
+    icon: "contact",
+    website: "https://www.zoho.com/crm",
+    apiKeyLabel: "OAuth Token",
+    apiKeyPlaceholder: "zoho-...",
+    features: [
+      "Lead & deal tracking",
+      "Workflow automation",
+      "AI assistant (Zia)",
+      "Omnichannel communication",
+      "Custom modules",
+    ],
+    tier: "professional",
+  },
+  {
+    id: "pipedrive",
+    name: "Pipedrive",
+    description: "Sales-focused CRM & pipeline management",
+    category: "crm",
+    icon: "git-branch",
+    website: "https://www.pipedrive.com",
+    apiKeyLabel: "API Token",
+    apiKeyPlaceholder: "pipe-...",
+    features: [
+      "Visual sales pipeline",
+      "Activity-based selling",
+      "Email integration",
+      "Revenue forecasting",
+      "Automation workflows",
+    ],
+    tier: "professional",
   },
 
   // ---------------------------------------------------------------------------
