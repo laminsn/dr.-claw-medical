@@ -174,12 +174,14 @@ const OutcomeChart = () => (
 
 const CallHistoryTable = () => {
   const history = [
-    { patient: "M. Johnson", agent: "Patient Follow-Up", time: "10:32 AM", duration: "2:14", status: "success" },
+    { patient: "M. Johnson", agent: "Post-Surgery Follow-Up", time: "10:32 AM", duration: "2:14", status: "success" },
     { patient: "S. Williams", agent: "Appointment Scheduler", time: "10:18 AM", duration: "1:47", status: "success" },
     { patient: "J. Martinez", agent: "No-Show Recovery", time: "10:05 AM", duration: "0:42", status: "voicemail" },
-    { patient: "K. Brown", agent: "Insurance Verifier", time: "9:51 AM", duration: "3:08", status: "success" },
-    { patient: "L. Davis", agent: "Patient Follow-Up", time: "9:38 AM", duration: "0:00", status: "failed" },
-    { patient: "R. Taylor", agent: "Referral Generator", time: "9:22 AM", duration: "1:55", status: "success" },
+    { patient: "K. Brown", agent: "Insurance Pre-Auth", time: "9:51 AM", duration: "3:08", status: "success" },
+    { patient: "L. Davis", agent: "Lab Result Notification", time: "9:38 AM", duration: "1:22", status: "success" },
+    { patient: "R. Taylor", agent: "Referral Coordinator", time: "9:22 AM", duration: "1:55", status: "success" },
+    { patient: "A. Chen", agent: "Rx Refill Reminder", time: "9:10 AM", duration: "0:58", status: "success" },
+    { patient: "P. Garcia", agent: "Pre-Op Preparation", time: "8:55 AM", duration: "4:12", status: "success" },
   ];
 
   const statusStyles: Record<string, string> = {

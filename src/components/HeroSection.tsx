@@ -8,7 +8,7 @@ const HeroSection = () => {
       {/* Ambient glow effects */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[120px] animate-pulse-glow" />
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent/8 rounded-full blur-[100px] animate-pulse-glow" style={{ animationDelay: "1.5s" }} />
-      
+
       {/* Grid overlay */}
       <div className="absolute inset-0 opacity-[0.03]" style={{
         backgroundImage: `linear-gradient(hsl(217 100% 59% / 0.3) 1px, transparent 1px), linear-gradient(90deg, hsl(217 100% 59% / 0.3) 1px, transparent 1px)`,
@@ -26,19 +26,18 @@ const HeroSection = () => {
 
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs font-medium mb-8 animate-fade-up">
             <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
-            HIPAA & BAA Secured • OpenClaw Source
+            HIPAA & BAA Secured — Built for Healthcare Professionals
           </div>
 
           <h1 className="font-display text-5xl sm:text-6xl md:text-7xl font-bold leading-[1.05] animate-fade-up tracking-tight">
-            Deploy AI Agents{" "}
+            AI Agents That{" "}
             <br className="hidden sm:block" />
-            for{" "}
-            <span className="gradient-hero-text">Healthcare</span>
+            <span className="gradient-hero-text">Run Your Practice</span>
           </h1>
 
           <p className="mt-8 text-lg text-muted-foreground max-w-xl mx-auto animate-fade-up leading-relaxed" style={{ animationDelay: "200ms" }}>
-            Simple setup. Fast deployment. Pick your LLM, voice engine, and skills.
-            HIPAA-compliant AI agents trained on healthcare workflows — live in minutes, not months.
+            One-step registration. Deploy in 5 minutes. 20+ healthcare skills — from scheduling to clinical documentation.
+            HIPAA-compliant AI agents that handle patient calls, follow-ups, and admin so your team can focus on care.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12 animate-fade-up" style={{ animationDelay: "400ms" }}>
@@ -46,13 +45,13 @@ const HeroSection = () => {
               to="/auth"
               className="gradient-primary text-primary-foreground px-8 py-4 rounded-xl font-semibold text-base hover:opacity-90 transition-all shadow-glow"
             >
-              Start Free Trial
+              Start Free — No Credit Card
             </Link>
             <a
-              href="#integrations"
+              href="#how-it-works"
               className="px-8 py-4 rounded-xl font-semibold text-base border border-border text-foreground hover:border-primary/40 hover:text-primary transition-all"
             >
-              View Integrations
+              See How It Works
             </a>
           </div>
 
@@ -63,7 +62,7 @@ const HeroSection = () => {
 
           {/* Integration logos */}
           <div className="mt-8 animate-fade-in" style={{ animationDelay: "800ms" }}>
-            <p className="text-xs text-muted-foreground mb-4">Works with your stack</p>
+            <p className="text-xs text-muted-foreground mb-4">Trusted by 2,500+ healthcare practices</p>
             <div className="flex items-center justify-center gap-6 flex-wrap text-xs text-muted-foreground/70 font-medium">
               <span className="px-3 py-1.5 rounded-lg border border-border bg-card/50">OpenAI</span>
               <span className="px-3 py-1.5 rounded-lg border border-border bg-card/50">Claude</span>
@@ -71,16 +70,16 @@ const HeroSection = () => {
               <span className="px-3 py-1.5 rounded-lg border border-border bg-card/50">ElevenLabs</span>
               <span className="px-3 py-1.5 rounded-lg border border-border bg-card/50">Deepgram</span>
               <span className="px-3 py-1.5 rounded-lg border border-border bg-card/50">VAPI</span>
-              <span className="px-3 py-1.5 rounded-lg border border-border bg-card/50">AWS</span>
+              <span className="px-3 py-1.5 rounded-lg border border-border bg-card/50">AWS Healthcare</span>
             </div>
           </div>
 
           <p className="mt-6 text-xs text-muted-foreground animate-fade-in flex items-center justify-center gap-4" style={{ animationDelay: "1000ms" }}>
-            <span>No credit card required</span>
-            <span className="h-1 w-1 rounded-full bg-muted-foreground/50" />
             <span>14-day free trial</span>
             <span className="h-1 w-1 rounded-full bg-muted-foreground/50" />
-            <span>OpenClaw source skills</span>
+            <span>No credit card required</span>
+            <span className="h-1 w-1 rounded-full bg-muted-foreground/50" />
+            <span>One-step registration</span>
           </p>
         </div>
       </div>

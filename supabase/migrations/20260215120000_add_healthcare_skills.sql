@@ -1,0 +1,22 @@
+-- Add expanded healthcare-specific skills for medical professionals
+INSERT INTO public.bot_skills (name, description, category, difficulty, icon, xp_reward) VALUES
+  ('Prescription Refill Coordination', 'Automate prescription refill reminders and coordinate with pharmacies for patient pickups', 'Clinical', 'intermediate', 'Repeat', 250),
+  ('Lab Result Communication', 'Securely notify patients of lab results with appropriate clinical context and next steps', 'Clinical', 'intermediate', 'Zap', 250),
+  ('Pre-Authorization Automation', 'Streamline insurance pre-authorization workflows for procedures, imaging, and medications', 'Admin', 'advanced', 'Shield', 350),
+  ('Referral Management', 'Generate, track, and follow up on specialist referrals with complete clinical documentation', 'Clinical', 'intermediate', 'Repeat', 250),
+  ('No-Show Recovery', 'Re-engage patients who missed appointments with personalized outreach and easy rebooking', 'Outreach', 'beginner', 'Heart', 150),
+  ('Patient Intake Automation', 'Guide new patients through paperwork, insurance, and pre-visit questionnaires digitally', 'Admin', 'beginner', 'Zap', 150),
+  ('Post-Surgical Follow-Up', 'Conduct structured post-operative check-in calls to monitor recovery and flag concerns', 'Clinical', 'advanced', 'Heart', 400),
+  ('Chronic Care Management', 'Proactive outreach for chronic disease patients — diabetes, hypertension, COPD monitoring', 'Clinical', 'advanced', 'Brain', 400),
+  ('Vaccine Schedule Reminders', 'Track and remind patients of upcoming vaccinations based on age and medical history', 'Outreach', 'beginner', 'Calendar', 150),
+  ('Clinical Documentation', 'AI-powered generation of visit summaries, discharge notes, and patient instructions', 'Admin', 'intermediate', 'Zap', 250),
+  ('Patient Satisfaction Surveys', 'Automated post-visit satisfaction surveys with sentiment analysis and reporting', 'Communication', 'beginner', 'Star', 150),
+  ('Preventive Care Reminders', 'Annual wellness visits, screenings, and preventive care outreach based on patient demographics', 'Outreach', 'beginner', 'Calendar', 150),
+  ('Medication Adherence', 'Monitor and encourage patient medication compliance through scheduled check-in calls', 'Clinical', 'intermediate', 'Repeat', 250),
+  ('Wait Time Communication', 'Real-time wait time updates and queue management for walk-in and urgent care patients', 'Scheduling', 'beginner', 'Calendar', 100),
+  ('Emergency Triage Routing', 'Intelligently assess call urgency and route emergencies to appropriate on-call staff', 'Decision Making', 'advanced', 'AlertTriangle', 400),
+  ('Care Coordination', 'Coordinate between multiple providers, specialists, and care facilities for complex patients', 'Clinical', 'advanced', 'Brain', 350),
+  ('Billing Inquiry Handler', 'Answer common billing questions, explain charges, and set up payment plans', 'Admin', 'intermediate', 'Shield', 200),
+  ('Telehealth Scheduling', 'Schedule and manage virtual visit appointments with automated reminders and link distribution', 'Scheduling', 'beginner', 'Calendar', 150),
+  ('Pre-Visit Preparation', 'Send pre-visit instructions, fasting requirements, and what-to-bring reminders to patients', 'Outreach', 'beginner', 'Zap', 100),
+  ('HIPAA Audit Trail', 'Comprehensive logging and audit trail for all patient interactions ensuring regulatory compliance', 'Compliance', 'advanced', 'Lock', 350);
