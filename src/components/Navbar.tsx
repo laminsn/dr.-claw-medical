@@ -1,90 +1,117 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
-import logo from "@/assets/dr-claw-logo-transparent.png";
 
 const navLinks = [
   { label: "Features", href: "#features" },
   { label: "How It Works", href: "#how-it-works" },
-  { label: "Integrations", href: "#integrations" },
-  { label: "Specialties", href: "#personas" },
   { label: "Pricing", href: "#pricing" },
   { label: "FAQ", href: "#faq" },
 ];
 
-const Navbar = () => {
-  const [mobileOpen, setMobileOpen] = useState(false);
+export default function Navbar() {
+  const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass-card">
-      <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-3">
-          <img src={logo} alt="Dr. Claw" className="h-10 w-10" />
-          <span className="font-display text-xl font-bold text-foreground">
-            Dr. Claw
-          </span>
-        </Link>
-
-        <div className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {link.label}
-            </a>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Link
-            to="/auth"
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors hidden sm:block"
-          >
-            Log In
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled ? "glass-card-solid py-3" : "py-5"
+      }`}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2">
+            <img
+              src="/Dr. Claw Logo.png"
+              alt="Dr. Claw"
+              className="h-9 w-9"
+            />
+            <span className="text-xl font-bold font-heading gradient-hero-text">
+              Dr. Claw
+            </span>
           </Link>
-          <Link
-            to="/auth"
-            className="gradient-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity"
-          >
-            Get Started
-          </Link>
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden text-foreground p-1"
-          >
-            {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
-        </div>
-      </div>
 
-      {/* Mobile menu */}
-      {mobileOpen && (
-        <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-xl">
-          <div className="container mx-auto px-6 py-4 space-y-3">
+          {/* Desktop Links */}
+          <div className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
               <a
                 key={link.label}
                 href={link.href}
-                onClick={() => setMobileOpen(false)}
-                className="block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
+                className="text-sm text-slate-300 hover:text-white transition-colors"
               >
                 {link.label}
               </a>
             ))}
+          </div>
+
+          {/* Desktop CTAs */}
+          <div className="hidden md:flex items-center gap-3">
             <Link
               to="/auth"
-              onClick={() => setMobileOpen(false)}
-              className="block gradient-primary text-primary-foreground px-5 py-3 rounded-lg text-sm font-semibold text-center mt-4"
+              className="text-sm text-slate-300 hover:text-white transition-colors px-4 py-2"
             >
-              Get Started Free
+              Sign In
+            </Link>
+            <Link
+              to="/auth"
+              className="gradient-primary text-white text-sm font-semibold px-5 py-2.5 rounded-lg shadow-glow-sm hover:opacity-90 transition-opacity"
+            >
+              Get Started
             </Link>
           </div>
+
+          {/* Mobile Menu Toggle */}
+          <button
+            className="md:hidden text-slate-300 hover:text-white"
+            onClick={() => setOpen(!open)}
+            aria-label="Toggle menu"
+          >
+            {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
-      )}
+
+        {/* Mobile Menu */}
+        {open && (
+          <div className="md:hidden mt-4 pb-4 border-t border-white/10 pt-4 animate-fade-in">
+            <div className="flex flex-col gap-4">
+              {navLinks.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className="text-sm text-slate-300 hover:text-white transition-colors"
+                  onClick={() => setOpen(false)}
+                >
+                  {link.label}
+                </a>
+              ))}
+              <div className="flex flex-col gap-3 pt-4 border-t border-white/10">
+                <Link
+                  to="/auth"
+                  className="text-sm text-slate-300 hover:text-white transition-colors text-center py-2"
+                  onClick={() => setOpen(false)}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/auth"
+                  className="gradient-primary text-white text-sm font-semibold px-5 py-2.5 rounded-lg shadow-glow-sm hover:opacity-90 transition-opacity text-center"
+                  onClick={() => setOpen(false)}
+                >
+                  Get Started
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </nav>
   );
-};
-
-export default Navbar;
+}

@@ -2,105 +2,98 @@ import { Star, Quote } from "lucide-react";
 
 const testimonials = [
   {
+    quote:
+      "Dr. Claw's AI front desk agent reduced our no-show rate by 34% in the first month. The voice follow-ups feel completely natural to our patients.",
     name: "Dr. Sarah Chen",
-    role: "Chief Medical Officer, Pacific Health Group",
-    specialty: "Internal Medicine",
-    quote:
-      "Dr. Claw cut our patient no-show rate by 40% in the first month. The AI follow-up agents handle what used to take our staff 3 hours a day.",
-    stars: 5,
+    title: "CMO, Pacific Health Network",
+    rating: 5,
   },
   {
-    name: "Dr. Marcus Williams",
-    role: "Practice Owner, Williams Family Medicine",
-    specialty: "Family Medicine",
     quote:
-      "The one-step setup is no joke — I had AI agents handling scheduling and insurance verification within 15 minutes. HIPAA compliance built-in was the dealbreaker for us.",
-    stars: 5,
+      "The CAIO skill gave us a complete AI adoption roadmap in hours. It would have taken our team weeks to produce the same strategic analysis.",
+    name: "Marcus Williams",
+    title: "CEO, TechStart Inc",
+    rating: 5,
   },
   {
-    name: "Jennifer Torres, RN",
-    role: "Director of Operations, Sunrise Surgical Center",
-    specialty: "Surgical Center",
     quote:
-      "We went from missing 30% of referral follow-ups to catching 98% of them. The clinical documentation agent alone justified the investment.",
-    stars: 5,
+      "Referral tracking used to be a nightmare. Now our AI agent handles the entire loop — from sending referrals to confirming appointments to follow-up.",
+    name: "Jennifer Torres",
+    title: "Dir. of Operations, Sunrise Surgical Center",
+    rating: 5,
   },
   {
-    name: "Dr. Rajesh Patel",
-    role: "Managing Partner, Metro Orthopedic Associates",
-    specialty: "Orthopedics",
     quote:
-      "Our 6-provider practice was drowning in admin work. Dr. Claw's multi-agent system handles patient intake, post-op follow-ups, and insurance pre-auths simultaneously.",
-    stars: 5,
-  },
-  {
+      "We replaced three separate content tools with one Dr. Claw marketing agent. Blog posts, email campaigns, social media — all from a single dashboard.",
     name: "Amanda Brooks",
-    role: "Practice Manager, Lakeside Pediatrics",
-    specialty: "Pediatrics",
-    quote:
-      "Parents love the AI appointment reminders. Our front desk can actually focus on patients now instead of being glued to the phone all day.",
-    stars: 5,
+    title: "VP Marketing, Lakeside Group",
+    rating: 5,
   },
   {
-    name: "Dr. Michael Okafor",
-    role: "CEO, HealthBridge Multi-Specialty Clinic",
-    specialty: "Multi-Specialty",
     quote:
-      "We deployed across 4 locations in a single afternoon. The white-label option lets each office feel customized while we manage everything centrally.",
-    stars: 5,
+      "Running five agents across our practice — front desk, billing, clinical docs, patient outreach, and research. The multi-agent system is a game changer.",
+    name: "Dr. Rajesh Patel",
+    title: "Managing Partner, Metro Orthopedics",
+    rating: 5,
+  },
+  {
+    quote:
+      "Our grant writer agent drafted a $2.4M NIH proposal that reviewers praised for its clarity. The research skill pulled supporting data we would have missed.",
+    name: "Michael Okafor",
+    title: "Grant Director, HealthBridge Foundation",
+    rating: 5,
   },
 ];
 
-const TestimonialsSection = () => {
+export default function TestimonialsSection() {
   return (
-    <section className="py-32 relative">
-      <div className="absolute top-1/3 right-0 w-96 h-96 bg-accent/5 rounded-full blur-[120px]" />
-
-      <div className="container mx-auto px-6 relative z-10">
-        <div className="text-center mb-20">
-          <p className="text-primary text-sm font-semibold tracking-widest uppercase mb-4">
-            Trusted by Healthcare Professionals
-          </p>
-          <h2 className="font-display text-4xl md:text-5xl font-bold text-foreground">
-            Real Results from{" "}
-            <span className="gradient-hero-text">Real Practices</span>
+    <section className="py-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-16 animate-fade-up">
+          <span className="text-sm font-medium text-blue-400 uppercase tracking-widest mb-3 block">
+            Testimonials
+          </span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-heading mb-4">
+            Trusted by{" "}
+            <span className="gradient-hero-text">Industry Leaders</span>
           </h2>
-          <p className="mt-5 text-muted-foreground max-w-lg mx-auto text-lg">
-            See how clinics, hospitals, and medical groups are transforming
-            patient care with AI agents.
+          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+            See how organizations across healthcare, tech, and nonprofits are
+            deploying AI agents with Dr. Claw.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {testimonials.map((t) => (
+        {/* Testimonial Grid */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {testimonials.map((item, i) => (
             <div
-              key={t.name}
-              className="bg-card rounded-xl border border-border p-6 hover:border-primary/20 transition-all group"
+              key={item.name}
+              className="glass-card rounded-xl p-6 card-hover animate-fade-up flex flex-col"
+              style={{ animationDelay: `${i * 80}ms` }}
             >
-              <div className="flex items-center gap-1 mb-4">
-                {Array.from({ length: t.stars }).map((_, i) => (
+              {/* Quote Icon */}
+              <Quote className="w-8 h-8 text-blue-500/30 mb-4" />
+
+              {/* Stars */}
+              <div className="flex gap-1 mb-4">
+                {Array.from({ length: item.rating }).map((_, j) => (
                   <Star
-                    key={i}
-                    className="h-4 w-4 fill-primary text-primary"
+                    key={j}
+                    className="w-4 h-4 fill-yellow-400 text-yellow-400"
                   />
                 ))}
               </div>
-              <div className="relative mb-5">
-                <Quote className="absolute -top-1 -left-1 h-6 w-6 text-primary/20" />
-                <p className="text-sm text-foreground/80 leading-relaxed pl-5">
-                  {t.quote}
-                </p>
-              </div>
-              <div className="border-t border-border pt-4">
-                <p className="font-display font-semibold text-foreground text-sm">
-                  {t.name}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {t.role}
-                </p>
-                <span className="inline-block mt-2 text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-                  {t.specialty}
-                </span>
+
+              {/* Quote */}
+              <p className="text-sm text-slate-300 leading-relaxed flex-1 mb-6">
+                "{item.quote}"
+              </p>
+
+              {/* Author */}
+              <div>
+                <p className="text-sm font-semibold text-white">{item.name}</p>
+                <p className="text-xs text-slate-500">{item.title}</p>
               </div>
             </div>
           ))}
@@ -108,6 +101,4 @@ const TestimonialsSection = () => {
       </div>
     </section>
   );
-};
-
-export default TestimonialsSection;
+}

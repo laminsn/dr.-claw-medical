@@ -1,266 +1,338 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
-  Zap,
-  Heart,
-  Shield,
-  Calendar,
-  Globe,
-  Lock,
-  AlertTriangle,
-  Repeat,
+  Crown,
+  BarChart3,
+  DollarSign,
+  Megaphone,
+  Monitor,
+  Users,
   Brain,
-  Star,
-  Download,
-  CheckCircle,
-  Loader2,
-  Bot,
+  PenTool,
+  FileSearch,
   Search,
+  Calendar,
+  Shield,
+  HeartPulse,
+  FileText,
+  GitBranch,
+  UserX,
+  Pill,
+  FlaskConical,
+  ClipboardCheck,
+  Stethoscope,
+  Briefcase,
+  Target,
+  TrendingUp,
+  Zap,
+  Settings,
+  Server,
+  BrainCircuit,
+  CalendarCheck,
+  ShieldCheck,
+  PhoneCall,
+  ClipboardList,
+  ArrowRightLeft,
+  FileCheck,
+  Award,
+  type LucideIcon,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { skills, skillCategories, getSkillsByCategory } from "@/data/skills";
 
-const iconMap: Record<string, typeof Zap> = {
-  Zap, Heart, Shield, Calendar, Globe, Lock, AlertTriangle, Repeat, Brain, Star, Bot,
+// ---------------------------------------------------------------------------
+// Icon mapping: skill data stores icon names as strings
+// ---------------------------------------------------------------------------
+const iconMap: Record<string, LucideIcon> = {
+  Crown,
+  BarChart3,
+  DollarSign,
+  Megaphone,
+  Monitor,
+  Users,
+  Brain,
+  PenTool,
+  FileSearch,
+  Search,
+  Calendar,
+  Shield,
+  HeartPulse,
+  FileText,
+  GitBranch,
+  UserX,
+  Pill,
+  FlaskConical,
+  ClipboardCheck,
+  Stethoscope,
+  Briefcase,
+  Target,
+  TrendingUp,
+  Zap,
+  Settings,
+  Server,
+  BrainCircuit,
+  CalendarCheck,
+  ShieldCheck,
+  PhoneCall,
+  ClipboardList,
+  ArrowRightLeft,
+  FileCheck,
+  Award,
 };
 
-const difficultyColor: Record<string, string> = {
-  beginner: "bg-primary/20 text-primary",
-  intermediate: "bg-accent/20 text-accent",
-  advanced: "bg-destructive/20 text-destructive",
+function resolveIcon(name: string): LucideIcon {
+  return iconMap[name] ?? Zap;
+}
+
+// ---------------------------------------------------------------------------
+// Tier badge colours
+// ---------------------------------------------------------------------------
+const tierColors: Record<string, string> = {
+  starter: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  professional: "bg-blue-500/15 text-blue-400 border-blue-500/30",
+  advanced: "bg-violet-500/15 text-violet-400 border-violet-500/30",
+  enterprise: "bg-amber-500/15 text-amber-400 border-amber-500/30",
 };
 
-interface Skill {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  difficulty: string;
-  icon: string;
-  xp_reward: number;
-  is_active: boolean;
-}
+const categoryColors: Record<string, string> = {
+  healthcare: "bg-rose-500/15 text-rose-400 border-rose-500/30",
+  executive: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+  marketing: "bg-pink-500/15 text-pink-400 border-pink-500/30",
+  operations: "bg-slate-500/15 text-slate-300 border-slate-500/30",
+  finance: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  research: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
+};
 
-interface InstalledSkill {
-  skill_id: string;
-  agent_key: string;
-  level: number;
-  xp: number;
-  completed_at: string | null;
-}
-
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 const SkillsCenter = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [skills, setSkills] = useState<Skill[]>([]);
-  const [installedSkills, setInstalledSkills] = useState<InstalledSkill[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [installing, setInstalling] = useState<string | null>(null);
+  const [selectedSkill, setSelectedSkill] = useState<(typeof skills)[number] | null>(null);
 
-  useEffect(() => {
-    const load = async () => {
-      const { data: skillsData } = await supabase
-        .from("bot_skills")
-        .select("*")
-        .eq("is_active", true);
-
-      if (skillsData) setSkills(skillsData as any);
-
-      if (user) {
-        const { data: agentData } = await supabase
-          .from("agent_skills")
-          .select("skill_id, agent_key, level, xp, completed_at")
-          .eq("user_id", user.id);
-
-        if (agentData) setInstalledSkills(agentData as any);
-      }
-      setLoading(false);
-    };
-    load();
-  }, [user]);
-
-  const categories = ["All", ...new Set(skills.map((s) => s.category))];
-
-  const filtered = skills.filter((s) => {
-    const matchesCategory = activeCategory === "All" || s.category === activeCategory;
-    const matchesSearch = !searchQuery || s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.description?.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredSkills = skills.filter((s) => {
+    const matchesCategory =
+      selectedCategory === "all" || s.category === selectedCategory;
+    const matchesSearch =
+      s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
-  const isInstalled = (skillId: string) => installedSkills.some((is) => is.skill_id === skillId);
-  const getInstallCount = (skillId: string) => installedSkills.filter((is) => is.skill_id === skillId).length;
-
-  const installSkill = async (skillId: string) => {
-    if (!user) return;
-    setInstalling(skillId);
-
-    const skill = skills.find((s) => s.id === skillId);
-
-    // Install to default agent
-    const { error } = await supabase.from("agent_skills").insert({
-      user_id: user.id,
-      agent_key: "default",
-      skill_id: skillId,
-      level: 1,
-      xp: skill?.xp_reward || 100,
-    } as any);
-
-    if (error) {
-      if (error.code === "23505") {
-        toast({ title: "Already installed", description: `${skill?.name} is already installed on this agent.` });
-      } else {
-        toast({ title: "Error", description: error.message, variant: "destructive" });
-      }
-    } else {
-      setInstalledSkills((prev) => [
-        ...prev,
-        { skill_id: skillId, agent_key: "default", level: 1, xp: skill?.xp_reward || 100, completed_at: null },
-      ]);
-      toast({
-        title: "Skill installed! 🎉",
-        description: `${skill?.name} has been installed on your agent. It's ready to use.`,
-      });
-    }
-    setInstalling(null);
-  };
-
-  const installedCount = new Set(installedSkills.map((is) => is.skill_id)).size;
+  const categoryTabs = [
+    { id: "all", name: "All" },
+    ...skillCategories.map((c) => ({ id: c.id, name: c.name })),
+  ];
 
   return (
     <div className="flex min-h-screen bg-background">
       <DashboardSidebar />
-      <main className="flex-1 p-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-start justify-between mb-8">
-            <div>
-              <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-                <Bot className="h-6 w-6 text-primary" /> OpenClaw Skills
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                20+ healthcare skills for your AI agents — scheduling, clinical docs, insurance, and more
-              </p>
+
+      <main className="flex-1 p-8 overflow-y-auto">
+        <div className="max-w-7xl mx-auto space-y-8">
+          {/* ── Header ─────────────────────────────────── */}
+          <div>
+            <h1 className="text-3xl font-bold font-heading gradient-hero-text">
+              Skills Library
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Browse and explore 30+ AI skills to power your agents.
+            </p>
+          </div>
+
+          {/* ── Filters ────────────────────────────────── */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            {/* Category tabs */}
+            <div className="flex flex-wrap items-center gap-2">
+              {categoryTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setSelectedCategory(tab.id)}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    selectedCategory === tab.id
+                      ? "gradient-primary text-white shadow-glow-sm"
+                      : "bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground"
+                  }`}
+                >
+                  {tab.name}
+                </button>
+              ))}
+            </div>
+
+            {/* Search */}
+            <div className="relative sm:ml-auto sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search skills..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 bg-white/5 border-white/10 focus:border-primary"
+              />
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="grid sm:grid-cols-3 gap-6 mb-8">
-            <div className="bg-card rounded-xl border border-border p-5">
-              <p className="text-xs text-muted-foreground">Available Skills</p>
-              <p className="font-display text-2xl font-bold text-foreground mt-1">{skills.length}</p>
-            </div>
-            <div className="bg-card rounded-xl border border-border p-5">
-              <p className="text-xs text-muted-foreground">Installed</p>
-              <p className="font-display text-2xl font-bold text-foreground mt-1">{installedCount}</p>
-            </div>
-            <div className="bg-card rounded-xl border border-border p-5">
-              <p className="text-xs text-muted-foreground">OpenClaw Source</p>
-              <p className="font-display text-sm font-bold text-primary mt-1">Community Marketplace</p>
-            </div>
-          </div>
-
-          {/* Search */}
-          <div className="relative mb-6">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search skills..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-secondary border-border"
-            />
-          </div>
-
-          {/* Categories */}
-          <div className="flex gap-2 mb-6 flex-wrap">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-2 rounded-lg text-xs font-medium transition-all ${
-                  activeCategory === cat
-                    ? "gradient-primary text-primary-foreground"
-                    : "bg-secondary text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          {/* ── Skills grid ────────────────────────────── */}
+          {filteredSkills.length === 0 ? (
+            <div className="text-center py-20 text-muted-foreground">
+              <Search className="h-10 w-10 mx-auto mb-3 opacity-40" />
+              <p className="text-sm">No skills match your search.</p>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filtered.map((skill) => {
-                const Icon = iconMap[skill.icon] || Zap;
-                const installed = isInstalled(skill.id);
-                const installCount = getInstallCount(skill.id);
-
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredSkills.map((skill) => {
+                const Icon = resolveIcon(skill.icon);
                 return (
-                  <div
+                  <button
                     key={skill.id}
-                    className={`bg-card rounded-xl border p-5 transition-all ${
-                      installed ? "border-primary/20 bg-primary/[0.02]" : "border-border hover:border-primary/10"
-                    }`}
+                    onClick={() => setSelectedSkill(skill)}
+                    className="glass-card card-hover rounded-2xl p-5 text-left transition-all group"
                   >
+                    {/* Top row: icon + badges */}
                     <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
-                          installed ? "gradient-primary" : "bg-muted"
-                        }`}>
-                          <Icon className={`h-5 w-5 ${installed ? "text-primary-foreground" : "text-muted-foreground"}`} />
-                        </div>
-                        <div>
-                          <h3 className="font-display font-semibold text-foreground text-sm">{skill.name}</h3>
-                          <span className="text-xs text-muted-foreground">{skill.category}</span>
-                        </div>
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                        <Icon className="h-5 w-5 text-primary" />
                       </div>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${difficultyColor[skill.difficulty]}`}>
-                        {skill.difficulty}
-                      </span>
+
+                      <div className="flex items-center gap-1.5">
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] capitalize ${categoryColors[skill.category] ?? ""}`}
+                        >
+                          {skill.category}
+                        </Badge>
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] capitalize ${tierColors[skill.tier] ?? ""}`}
+                        >
+                          {skill.tier}
+                        </Badge>
+                      </div>
                     </div>
 
-                    <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{skill.description}</p>
+                    {/* Name + description */}
+                    <h3 className="font-semibold font-heading text-sm text-foreground group-hover:text-primary transition-colors">
+                      {skill.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+                      {skill.description}
+                    </p>
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Star className="h-3 w-3" /> {skill.xp_reward} XP
-                        {installCount > 0 && (
-                          <span className="ml-2 text-primary">• {installCount} agent{installCount > 1 ? "s" : ""}</span>
-                        )}
-                      </span>
-                      <Button
-                        size="sm"
-                        onClick={() => installSkill(skill.id)}
-                        disabled={installing === skill.id}
-                        className={`rounded-lg text-xs gap-1 ${
-                          installed
-                            ? "bg-primary/10 text-primary hover:bg-primary/20"
-                            : "gradient-primary text-primary-foreground hover:opacity-90"
-                        }`}
-                      >
-                        {installing === skill.id ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : installed ? (
-                          <><CheckCircle className="h-3 w-3" /> Installed</>
-                        ) : (
-                          <><Download className="h-3 w-3" /> Install</>
-                        )}
-                      </Button>
+                    {/* Capability preview chips */}
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {skill.capabilities.slice(0, 3).map((cap) => (
+                        <span
+                          key={cap}
+                          className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-muted-foreground border border-white/10"
+                        >
+                          {cap}
+                        </span>
+                      ))}
+                      {skill.capabilities.length > 3 && (
+                        <span className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-muted-foreground border border-white/10">
+                          +{skill.capabilities.length - 3}
+                        </span>
+                      )}
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
           )}
         </div>
       </main>
+
+      {/* ── Skill detail dialog ──────────────────────── */}
+      <Dialog
+        open={!!selectedSkill}
+        onOpenChange={(open) => {
+          if (!open) setSelectedSkill(null);
+        }}
+      >
+        {selectedSkill && (
+          <DialogContent className="max-w-3xl glass-card border-white/10">
+            <DialogHeader>
+              <div className="flex items-center gap-3 mb-1">
+                {(() => {
+                  const Icon = resolveIcon(selectedSkill.icon);
+                  return (
+                    <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0">
+                      <Icon className="h-5 w-5 text-primary" />
+                    </div>
+                  );
+                })()}
+                <div className="min-w-0">
+                  <DialogTitle className="text-lg font-heading">
+                    {selectedSkill.name}
+                  </DialogTitle>
+                  <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                    {selectedSkill.shortName} &middot;{" "}
+                    <span className="capitalize">{selectedSkill.category}</span>
+                  </DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
+
+            {/* Description */}
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {selectedSkill.description}
+            </p>
+
+            {/* Badges */}
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="outline"
+                className={`text-[10px] capitalize ${categoryColors[selectedSkill.category] ?? ""}`}
+              >
+                {selectedSkill.category}
+              </Badge>
+              <Badge
+                variant="outline"
+                className={`text-[10px] capitalize ${tierColors[selectedSkill.tier] ?? ""}`}
+              >
+                {selectedSkill.tier} tier
+              </Badge>
+            </div>
+
+            {/* Capabilities */}
+            <div>
+              <h4 className="text-sm font-semibold font-heading text-foreground mb-2">
+                Capabilities
+              </h4>
+              <ul className="grid sm:grid-cols-2 gap-2">
+                {selectedSkill.capabilities.map((cap) => (
+                  <li
+                    key={cap}
+                    className="flex items-center gap-2 text-sm text-muted-foreground"
+                  >
+                    <Zap className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <span className="font-semibold text-foreground/90">
+                      {cap}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Action */}
+            <div className="pt-2 flex justify-end">
+              <Button className="gradient-primary text-white shadow-glow-sm hover:opacity-90 transition-opacity">
+                <Zap className="h-4 w-4 mr-1.5" />
+                Add to Agent
+              </Button>
+            </div>
+          </DialogContent>
+        )}
+      </Dialog>
     </div>
   );
 };

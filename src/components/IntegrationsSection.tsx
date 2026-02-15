@@ -1,117 +1,82 @@
-import { Brain, Mic, Phone, Cloud, Database, Table2, Shield, Lock } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Brain, Mic, Phone, Cloud, Database, Mail } from "lucide-react";
 
 const integrations = [
   {
-    name: "OpenAI / Claude / Gemini",
-    description: "Choose your LLM. Switch models per agent. BAA-secured.",
     icon: Brain,
+    title: "OpenAI / Claude / Gemini",
     category: "LLM",
   },
   {
-    name: "ElevenLabs",
-    description: "Ultra-realistic voice synthesis for patient calls and IVR.",
+    icon: Brain,
+    title: "MiniMax / Kimi / Mistral",
+    category: "LLM",
+  },
+  {
     icon: Mic,
+    title: "ElevenLabs / Deepgram",
     category: "Voice",
   },
   {
-    name: "Deepgram",
-    description: "Real-time medical transcription and dictation.",
-    icon: Mic,
-    category: "Voice",
-  },
-  {
-    name: "VAPI",
-    description: "Conversational phone agents with sub-second latency.",
     icon: Phone,
-    category: "Voice",
+    title: "VAPI / Twilio",
+    category: "Communication",
   },
   {
-    name: "AWS Healthcare",
-    description: "Comprehend Medical, Transcribe Medical, S3 storage.",
     icon: Cloud,
-    category: "Infra",
+    title: "AWS Healthcare",
+    category: "Cloud",
   },
   {
-    name: "Notion",
-    description: "Clinical SOPs, knowledge bases, and protocol docs.",
     icon: Database,
+    title: "Notion / Airtable",
     category: "Productivity",
   },
   {
-    name: "Airtable",
-    description: "Patient CRM, referral tracking, and workflow automation.",
-    icon: Table2,
-    category: "Productivity",
+    icon: Mail,
+    title: "Slack / SendGrid",
+    category: "Communication",
   },
 ];
 
-const IntegrationsSection = () => (
-  <section className="py-24 relative" id="integrations">
-    <div className="container mx-auto px-6">
-      <div className="text-center mb-16">
-        <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs font-medium mb-6">
-          Integrations
-        </span>
-        <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground">
-          Your Stack.{" "}
-          <span className="gradient-hero-text">HIPAA Secured.</span>
-        </h2>
-        <p className="mt-4 text-muted-foreground max-w-lg mx-auto">
-          Connect to the LLMs, voice engines, and tools you already trust.
-          Every integration ships with BAA agreements and end-to-end encryption.
-        </p>
-      </div>
+export default function IntegrationsSection() {
+  return (
+    <section className="py-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-16 animate-fade-up">
+          <span className="text-sm font-medium text-blue-400 uppercase tracking-widest mb-3 block">
+            Integrations
+          </span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-heading mb-4">
+            Connect to{" "}
+            <span className="gradient-hero-text">Your Stack</span>
+          </h2>
+          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+            Connect your own API keys. Use your preferred providers.
+          </p>
+        </div>
 
-      {/* HIPAA/BAA banner */}
-      <div className="flex items-center justify-center gap-6 mb-10">
-        <div className="flex items-center gap-1.5 text-xs text-primary font-medium px-3 py-1.5 rounded-lg border border-primary/20 bg-primary/5">
-          <Shield className="h-3.5 w-3.5" /> HIPAA Compliant
-        </div>
-        <div className="flex items-center gap-1.5 text-xs text-primary font-medium px-3 py-1.5 rounded-lg border border-primary/20 bg-primary/5">
-          <Lock className="h-3.5 w-3.5" /> BAA Certified
-        </div>
-        <div className="flex items-center gap-1.5 text-xs text-primary font-medium px-3 py-1.5 rounded-lg border border-primary/20 bg-primary/5">
-          <Lock className="h-3.5 w-3.5" /> PHI Protected
-        </div>
-      </div>
-
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-w-5xl mx-auto">
-        {integrations.map((integration) => (
-          <div
-            key={integration.name}
-            className="group flex items-start gap-4 p-5 rounded-xl border border-border hover:border-primary/20 transition-all bg-card/50"
-          >
-            <div className="h-10 w-10 rounded-lg gradient-primary flex items-center justify-center shrink-0">
-              <integration.icon className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-display font-semibold text-foreground text-sm">
-                  {integration.name}
-                </h3>
+        {/* Integration Cards */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {integrations.map((item, i) => (
+            <div
+              key={item.title}
+              className="glass-card rounded-xl p-5 card-hover text-center animate-fade-up"
+              style={{ animationDelay: `${i * 80}ms` }}
+            >
+              <div className="w-12 h-12 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-3">
+                <item.icon className="w-6 h-6 text-cyan-400" />
               </div>
-              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                {integration.description}
-              </p>
-              <span className="text-[10px] text-primary/70 font-medium mt-2 inline-block">
-                {integration.category}
+              <h3 className="text-sm font-semibold text-white mb-1">
+                {item.title}
+              </h3>
+              <span className="text-xs text-slate-500 uppercase tracking-wider">
+                {item.category}
               </span>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-
-      <div className="text-center mt-10">
-        <Link
-          to="/auth"
-          className="inline-flex items-center gap-2 text-sm text-primary font-medium hover:underline"
-        >
-          View all integrations →
-        </Link>
-      </div>
-    </div>
-  </section>
-);
-
-export default IntegrationsSection;
+    </section>
+  );
+}

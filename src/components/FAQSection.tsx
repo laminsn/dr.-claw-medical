@@ -3,107 +3,105 @@ import { ChevronDown } from "lucide-react";
 
 const faqs = [
   {
-    question: "Is Dr. Claw really HIPAA compliant?",
+    question: "Is Dr. Claw HIPAA compliant?",
     answer:
-      "Yes. Every component of Dr. Claw is designed for HIPAA compliance from the ground up. We provide Business Associate Agreements (BAA) with all plans, end-to-end encryption for all patient data, and our infrastructure never stores PHI in unencrypted environments. We undergo regular third-party security audits.",
+      "Yes. Dr. Claw is fully HIPAA compliant with end-to-end encryption, PHI protection, and we offer Business Associate Agreements (BAAs) on Professional plans and above. All data is processed in SOC 2 certified infrastructure.",
   },
   {
-    question: "How does one-step registration work?",
+    question: "How do custom agents work?",
     answer:
-      "Simply enter your name, email, and password — or click 'Continue with Google.' That's it. No specialty verification forms, no fax-in credentialing. Your secure, HIPAA-compliant workspace is provisioned immediately and you can start deploying AI agents in minutes.",
+      "You create an agent by giving it a name, selecting one or more skills (like CEO, CMO, Grant Writer, or Clinical Documentation), and choosing which AI model powers it. Each agent operates independently and can be customized with specific instructions and workflows.",
   },
   {
-    question: "Can I switch between AI models (OpenAI, Claude, Gemini)?",
+    question: "Can I switch between AI models?",
     answer:
-      "Absolutely. Each AI agent can use a different LLM. You might use Claude for nuanced patient follow-up conversations and OpenAI for clinical documentation. Switch models anytime without reconfiguring your agents or skills.",
+      "Absolutely. On Professional plans and above, you can assign different LLM providers to each agent — OpenAI, Claude, Gemini, MiniMax, Kimi, or Mistral. Switch models anytime to find the best fit for each task.",
   },
   {
-    question: "What healthcare skills are available?",
+    question: "What skills are available?",
     answer:
-      "We offer 20+ pre-built healthcare skills including Appointment Scheduling, Insurance Verification, Patient Follow-Up, Clinical Documentation, HIPAA Compliance Monitoring, Referral Management, No-Show Recovery, Prescription Refill Coordination, Lab Result Communication, and many more. New skills are added regularly from our open-source community.",
+      "We offer 30+ skills including C-suite roles (CEO, CFO, CMO, CAIO, CIO, COO, CHRO), Professional Copywriter, Grant Writer, Researcher, and 20+ healthcare-specific skills covering clinical documentation, patient management, billing, referrals, and more.",
   },
   {
-    question: "Does Dr. Claw integrate with my existing EHR/EMR system?",
+    question: "Does Dr. Claw integrate with my EHR/EMR system?",
     answer:
-      "Our Professional plan and above include integrations with major practice management tools. The Enterprise plan supports custom EHR/EMR integrations including HL7 FHIR and SMART on FHIR standards. We work with Epic, Cerner, Athenahealth, and other major platforms through our API.",
+      "Yes. We integrate with major EHR/EMR platforms and also support connections to AWS Healthcare, Notion, Airtable, Slack, and other productivity tools. On Advanced and Enterprise plans, we can build custom integrations for your specific systems.",
   },
   {
-    question: "How quickly can I deploy an AI agent?",
+    question: "How quickly can I deploy an agent?",
     answer:
-      "Most practices have their first AI agent live in under 5 minutes using our Quick Start Templates. Choose from pre-configured agents like Front Desk, Patient Follow-Up, Insurance Verifier, or Clinical Coordinator — each comes with relevant skills pre-installed.",
+      "Most users deploy their first agent in under 5 minutes. We provide 16 pre-built templates that work out of the box — just select a template, connect your API key, and your agent is live. Custom agents take only a few minutes more.",
   },
   {
-    question: "What happens to my patient data?",
+    question: "How is my data secured?",
     answer:
-      "Patient data is encrypted end-to-end and never leaves your secure environment. We don't train our models on your data. All integrations include BAA agreements, and you retain full ownership and control of all data at all times. PHI is processed in SOC 2 Type II certified infrastructure.",
+      "All data is encrypted at rest and in transit using AES-256 and TLS 1.3. We maintain SOC 2 Type II certification, conduct regular penetration testing, and follow the principle of least privilege. Your API keys are stored in encrypted vaults and never shared across accounts.",
   },
   {
-    question: "Can I try Dr. Claw before committing?",
+    question: "What does the free trial include?",
     answer:
-      "Yes! Every plan includes a 14-day free trial with full access to all features. No credit card required to start. You can deploy agents, install skills, and see real results before making any payment decision.",
+      "The 14-day free trial gives you full access to the Professional plan — 10 agents, unlimited skills, multi-LLM support, and all integrations. No credit card required to start. At the end of the trial, choose the plan that fits your needs.",
   },
 ];
 
-const FAQSection = () => {
-  const [openIndex, setOpenIndex] = useState<number | null>(0);
+export default function FAQSection() {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  const toggle = (index: number) => {
+    setOpenIndex(openIndex === index ? null : index);
+  };
 
   return (
-    <section className="py-32 relative" id="faq">
-      <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-primary/5 rounded-full blur-[100px]" />
-
-      <div className="container mx-auto px-6 relative z-10">
-        <div className="text-center mb-20">
-          <p className="text-primary text-sm font-semibold tracking-widest uppercase mb-4">
+    <section id="faq" className="py-24">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-16 animate-fade-up">
+          <span className="text-sm font-medium text-blue-400 uppercase tracking-widest mb-3 block">
             FAQ
-          </p>
-          <h2 className="font-display text-4xl md:text-5xl font-bold text-foreground">
-            Common Questions
+          </span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-heading mb-4">
+            Frequently Asked{" "}
+            <span className="gradient-hero-text">Questions</span>
           </h2>
-          <p className="mt-5 text-muted-foreground max-w-lg mx-auto text-lg">
-            Everything healthcare professionals need to know before getting
-            started.
+          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+            Everything you need to know about Dr. Claw.
           </p>
         </div>
 
-        <div className="max-w-3xl mx-auto space-y-3">
-          {faqs.map((faq, i) => {
-            const isOpen = openIndex === i;
-            return (
+        {/* Accordion */}
+        <div className="space-y-3">
+          {faqs.map((faq, i) => (
+            <div
+              key={i}
+              className="glass-card rounded-xl overflow-hidden animate-fade-up"
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
+              <button
+                onClick={() => toggle(i)}
+                className="w-full flex items-center justify-between p-5 text-left"
+              >
+                <span className="text-sm font-semibold text-white pr-4">
+                  {faq.question}
+                </span>
+                <ChevronDown
+                  className={`w-5 h-5 text-slate-400 shrink-0 transition-transform duration-300 ${
+                    openIndex === i ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
               <div
-                key={i}
-                className={`rounded-xl border transition-all ${
-                  isOpen
-                    ? "border-primary/20 bg-primary/[0.02]"
-                    : "border-border bg-card"
+                className={`overflow-hidden transition-all duration-300 ${
+                  openIndex === i ? "max-h-96" : "max-h-0"
                 }`}
               >
-                <button
-                  onClick={() => setOpenIndex(isOpen ? null : i)}
-                  className="w-full flex items-center justify-between p-5 text-left"
-                >
-                  <span className="font-display font-semibold text-foreground text-sm pr-4">
-                    {faq.question}
-                  </span>
-                  <ChevronDown
-                    className={`h-5 w-5 text-muted-foreground shrink-0 transition-transform duration-200 ${
-                      isOpen ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
-                {isOpen && (
-                  <div className="px-5 pb-5 -mt-1">
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {faq.answer}
-                    </p>
-                  </div>
-                )}
+                <p className="px-5 pb-5 text-sm text-slate-400 leading-relaxed">
+                  {faq.answer}
+                </p>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </div>
     </section>
   );
-};
-
-export default FAQSection;
+}

@@ -1,151 +1,163 @@
 import { Check } from "lucide-react";
 import { Link } from "react-router-dom";
 
-interface PricingTierProps {
-  name: string;
-  price: string;
-  description: string;
-  features: string[];
-  highlighted?: boolean;
-  cta: string;
-}
+const tiers = [
+  {
+    name: "Starter",
+    price: "$147",
+    period: "/mo",
+    description: "For individuals and small teams getting started with AI agents.",
+    features: [
+      "2 AI Agents",
+      "5 Skills",
+      "1 LLM Provider",
+      "Basic Voice AI",
+      "HIPAA Compliant",
+      "Email Support",
+    ],
+    cta: "Start Free Trial",
+    highlighted: false,
+  },
+  {
+    name: "Professional",
+    price: "$297",
+    period: "/mo",
+    description: "For growing teams that need multi-model AI and full voice capabilities.",
+    badge: "Most Popular",
+    features: [
+      "10 AI Agents",
+      "Unlimited Skills",
+      "Multi-LLM (OpenAI, Claude, Gemini)",
+      "Full Voice AI Suite",
+      "All Integrations",
+      "BAA Available",
+      "5 Team Seats",
+      "Priority Support",
+    ],
+    cta: "Start Free Trial",
+    highlighted: true,
+  },
+  {
+    name: "Advanced",
+    price: "$447",
+    period: "/mo",
+    description: "For organizations needing advanced integrations and white-label capabilities.",
+    features: [
+      "25 AI Agents",
+      "All Integrations + AWS",
+      "Custom Skills",
+      "Advanced Analytics",
+      "White-Label Option",
+      "15 Team Seats",
+      "Dedicated Account Manager",
+    ],
+    cta: "Start Free Trial",
+    highlighted: false,
+  },
+  {
+    name: "Enterprise",
+    price: "Custom",
+    period: "",
+    description: "For large organizations with custom requirements and on-premise needs.",
+    features: [
+      "Unlimited Agents & Skills",
+      "All LLM Providers",
+      "Custom Integrations",
+      "On-Premise Deployment",
+      "Custom SLA",
+      "Unlimited Seats",
+      "24/7 Dedicated Support",
+    ],
+    cta: "Contact Sales",
+    highlighted: false,
+  },
+];
 
-const PricingCard = ({ name, price, description, features, highlighted, cta }: PricingTierProps) => (
-  <div
-    className={`relative flex flex-col ${
-      highlighted
-        ? "border border-primary/40 rounded-2xl bg-primary/5 shadow-glow p-8"
-        : "p-8"
-    }`}
-  >
-    {highlighted && (
-      <span className="absolute -top-3 left-8 gradient-primary text-primary-foreground text-xs font-bold px-4 py-1 rounded-full">
-        Most Popular
-      </span>
-    )}
-    <h3 className="font-display text-xl font-bold text-foreground">{name}</h3>
-    <p className="text-sm mt-1 text-muted-foreground">
-      {description}
-    </p>
-    <div className="mt-6 mb-8">
-      <span className="font-display text-5xl font-bold text-foreground">{price}</span>
-      {price !== "Custom" && (
-        <span className="text-sm text-muted-foreground ml-1">/month</span>
-      )}
-    </div>
-    <ul className="space-y-3 flex-1">
-      {features.map((feature) => (
-        <li key={feature} className="flex items-start gap-3 text-sm">
-          <Check className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
-          <span className="text-foreground/80">{feature}</span>
-        </li>
-      ))}
-    </ul>
-    <Link
-      to="/auth"
-      className={`mt-8 w-full py-3.5 rounded-xl font-semibold text-sm transition-all text-center block ${
-        highlighted
-          ? "gradient-primary text-primary-foreground hover:opacity-90 shadow-glow"
-          : "border border-border text-foreground hover:border-primary/40 hover:text-primary"
-      }`}
-    >
-      {cta}
-    </Link>
-  </div>
-);
-
-const PricingSection = () => {
-  const tiers: PricingTierProps[] = [
-    {
-      name: "Starter",
-      price: "$147",
-      description: "Solo practitioners getting started",
-      cta: "Start Free Trial",
-      features: [
-        "1 AI agent",
-        "5 OpenClaw skills",
-        "1 LLM integration",
-        "Basic voice (ElevenLabs)",
-        "HIPAA compliant",
-        "Email support",
-        "Patient follow-up automation",
-      ],
-    },
-    {
-      name: "Professional",
-      price: "$297",
-      description: "Growing practices and clinics",
-      cta: "Start Free Trial",
-      highlighted: true,
-      features: [
-        "5 AI agents",
-        "Unlimited OpenClaw skills",
-        "Multi-LLM (OpenAI, Claude, Gemini)",
-        "Full voice stack (ElevenLabs + Deepgram + VAPI)",
-        "EHR & practice management integrations",
-        "BAA agreements included",
-        "5 user seats",
-        "Priority support",
-        "Clinical workflow templates",
-      ],
-    },
-    {
-      name: "Advanced",
-      price: "$447",
-      description: "Multi-location medical groups",
-      cta: "Start Free Trial",
-      features: [
-        "15 AI agents",
-        "All integrations unlocked",
-        "AWS Healthcare (Comprehend, Transcribe)",
-        "Custom clinical skill development",
-        "Advanced analytics & reporting",
-        "White-label options",
-        "15 user seats",
-        "Dedicated account manager",
-        "HIPAA audit trail & compliance dashboard",
-      ],
-    },
-    {
-      name: "Enterprise",
-      price: "Custom",
-      description: "Hospital networks & health systems",
-      cta: "Contact Sales",
-      features: [
-        "Unlimited AI agents",
-        "Unlimited user seats",
-        "Custom EHR/EMR/billing integrations",
-        "On-premise deployment option",
-        "Custom BAA & compliance review",
-        "SLA guarantee with 99.9% uptime",
-        "24/7 phone & dedicated support",
-        "HL7 FHIR & SMART on FHIR support",
-      ],
-    },
-  ];
-
+export default function PricingSection() {
   return (
-    <section id="pricing" className="py-32 relative">
-      <div className="absolute top-0 right-1/4 w-72 h-72 bg-primary/5 rounded-full blur-[100px]" />
-      
-      <div className="container mx-auto px-6 relative z-10">
-        <div className="text-center mb-20">
-          <p className="text-primary text-sm font-semibold tracking-widest uppercase mb-4">Pricing</p>
-          <h2 className="font-display text-4xl md:text-5xl font-bold text-foreground">
-            Simple, Transparent Pricing
+    <section id="pricing" className="py-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-16 animate-fade-up">
+          <span className="text-sm font-medium text-blue-400 uppercase tracking-widest mb-3 block">
+            Pricing
+          </span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-heading mb-4">
+            Simple, Transparent{" "}
+            <span className="gradient-hero-text">Pricing</span>
           </h2>
-          <p className="mt-5 text-muted-foreground max-w-lg mx-auto text-lg">
-            Start free for 14 days. All plans include HIPAA compliance and BAA agreements.
+          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+            Start free for 14 days. No credit card required. Scale as you grow.
           </p>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-0 max-w-6xl mx-auto divide-x divide-border">
-          {tiers.map((tier) => (
-            <PricingCard key={tier.name} {...tier} />
+
+        {/* Pricing Grid */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {tiers.map((tier, i) => (
+            <div
+              key={tier.name}
+              className={`rounded-xl p-6 flex flex-col animate-fade-up ${
+                tier.highlighted
+                  ? "glass-card-solid border-2 border-blue-500/50 shadow-glow relative"
+                  : "glass-card card-hover"
+              }`}
+              style={{ animationDelay: `${i * 100}ms` }}
+            >
+              {/* Badge */}
+              {tier.badge && (
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 text-xs font-bold gradient-primary text-white rounded-full">
+                  {tier.badge}
+                </span>
+              )}
+
+              {/* Tier Name */}
+              <h3 className="text-lg font-semibold font-heading text-white mb-1">
+                {tier.name}
+              </h3>
+
+              {/* Price */}
+              <div className="mb-3">
+                <span className="text-4xl font-bold font-heading gradient-hero-text">
+                  {tier.price}
+                </span>
+                {tier.period && (
+                  <span className="text-slate-400 text-sm">{tier.period}</span>
+                )}
+              </div>
+
+              {/* Description */}
+              <p className="text-sm text-slate-400 mb-6 leading-relaxed">
+                {tier.description}
+              </p>
+
+              {/* Features */}
+              <ul className="space-y-3 mb-8 flex-1">
+                {tier.features.map((feature) => (
+                  <li
+                    key={feature}
+                    className="flex items-start gap-2 text-sm text-slate-300"
+                  >
+                    <Check className="w-4 h-4 text-cyan-400 mt-0.5 shrink-0" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+
+              {/* CTA */}
+              <Link
+                to={tier.name === "Enterprise" ? "/contact" : "/auth"}
+                className={`text-center font-semibold py-3 rounded-lg transition-all text-sm ${
+                  tier.highlighted
+                    ? "gradient-primary text-white shadow-glow-sm hover:opacity-90"
+                    : "border border-white/10 text-white hover:bg-white/5"
+                }`}
+              >
+                {tier.cta}
+              </Link>
+            </div>
           ))}
         </div>
       </div>
     </section>
   );
-};
-
-export default PricingSection;
+}
