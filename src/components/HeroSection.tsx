@@ -1,25 +1,20 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Play, Shield, FileCheck, Lock } from "lucide-react";
+import { ArrowRight, Play, Shield, FileCheck, Lock, Bot, Zap, Brain, Sparkles } from "lucide-react";
+import logo from "@/assets/dr-claw-logo-transparent.png";
 
-const poweredBy = [
-  { name: "OpenAI", logo: "/logos/openai.svg" },
-  { name: "Claude", logo: "/logos/claude.svg" },
-  { name: "Gemini", logo: "/logos/gemini.svg" },
-  { name: "MiniMax", logo: "/logos/minimax.svg" },
-  { name: "Kimi", logo: "/logos/kimi.svg" },
-  { name: "ElevenLabs", logo: "/logos/elevenlabs.svg" },
-];
+const poweredBy = ["OpenAI", "Claude", "Gemini", "MiniMax", "Kimi", "ElevenLabs"];
 
 export default function HeroSection() {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-16">
       {/* Ambient Glow Effects */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-[128px] animate-pulse-glow" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/15 rounded-full blur-[128px] animate-pulse-glow" />
+      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-blue-500/15 rounded-full blur-[160px] animate-pulse-glow" />
+      <div className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-cyan-500/10 rounded-full blur-[140px] animate-pulse-glow" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[200px]" />
 
       {/* Grid Overlay */}
       <div
-        className="absolute inset-0 opacity-[0.03]"
+        className="absolute inset-0 opacity-[0.02]"
         style={{
           backgroundImage:
             "linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)",
@@ -27,9 +22,15 @@ export default function HeroSection() {
         }}
       />
 
-      {/* Floating Logo */}
-      <div className="absolute top-32 right-[10%] hidden lg:block animate-float opacity-20">
-        <img src="/Dr. Claw Logo.png" alt="" className="h-32 w-32" />
+      {/* Floating decorative elements */}
+      <div className="absolute top-32 right-[12%] hidden lg:block animate-float opacity-10">
+        <img src={logo} alt="" className="h-28 w-28" />
+      </div>
+      <div className="absolute bottom-40 left-[8%] hidden lg:block animate-float opacity-[0.06]" style={{ animationDelay: "3s" }}>
+        <Bot className="h-16 w-16 text-primary" />
+      </div>
+      <div className="absolute top-48 left-[15%] hidden xl:block animate-float opacity-[0.06]" style={{ animationDelay: "1.5s" }}>
+        <Sparkles className="h-12 w-12 text-cyan-400" />
       </div>
 
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -40,7 +41,7 @@ export default function HeroSection() {
         </div>
 
         {/* Headline */}
-        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold font-heading leading-tight mb-6 animate-fade-up">
+        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold font-heading leading-[1.1] mb-6 animate-fade-up">
           <span className="gradient-hero-text">AI Agents</span> That{" "}
           <br className="hidden sm:block" />
           Work For You
@@ -54,17 +55,17 @@ export default function HeroSection() {
         </p>
 
         {/* Trust Badges */}
-        <div className="flex items-center justify-center gap-6 mb-10 animate-fade-up">
+        <div className="flex items-center justify-center gap-6 sm:gap-8 mb-10 animate-fade-up">
           <div className="flex items-center gap-1.5 text-sm text-slate-400">
-            <Shield className="w-4 h-4 text-green-400" />
+            <Shield className="w-4 h-4 text-emerald-400" />
             HIPAA Compliant
           </div>
           <div className="flex items-center gap-1.5 text-sm text-slate-400">
-            <FileCheck className="w-4 h-4 text-green-400" />
+            <FileCheck className="w-4 h-4 text-emerald-400" />
             BAA Available
           </div>
           <div className="flex items-center gap-1.5 text-sm text-slate-400">
-            <Lock className="w-4 h-4 text-green-400" />
+            <Lock className="w-4 h-4 text-emerald-400" />
             SOC 2
           </div>
         </div>
@@ -73,14 +74,14 @@ export default function HeroSection() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 animate-fade-up">
           <Link
             to="/auth"
-            className="gradient-primary text-white font-semibold px-8 py-3.5 rounded-lg shadow-glow hover:opacity-90 transition-opacity inline-flex items-center gap-2 text-lg"
+            className="gradient-primary text-white font-semibold px-8 py-3.5 rounded-xl shadow-glow hover:opacity-90 transition-all hover:shadow-glow-sm inline-flex items-center gap-2 text-lg"
           >
             Start Free Trial
             <ArrowRight className="w-5 h-5" />
           </Link>
           <a
             href="#how-it-works"
-            className="glass-card text-white font-semibold px-8 py-3.5 rounded-lg hover:bg-white/10 transition-colors inline-flex items-center gap-2 text-lg"
+            className="glass-card text-white font-semibold px-8 py-3.5 rounded-xl hover:bg-white/10 transition-colors inline-flex items-center gap-2 text-lg border border-white/10"
           >
             <Play className="w-5 h-5" />
             See How It Works
@@ -89,21 +90,17 @@ export default function HeroSection() {
 
         {/* Powered By */}
         <div className="animate-fade-up">
-          <p className="text-xs text-slate-500 uppercase tracking-widest mb-4">
-            Powered By
+          <p className="text-xs text-slate-500 uppercase tracking-widest mb-5">
+            Powered By Leading AI Models
           </p>
-          <div className="flex items-center justify-center gap-8 flex-wrap opacity-50">
-            {poweredBy.map((item) => (
-              <div key={item.name} className="flex items-center gap-2">
-                <img
-                  src={item.logo}
-                  alt={item.name}
-                  className="h-6 w-auto brightness-0 invert"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
-                />
-                <span className="text-sm text-slate-400">{item.name}</span>
+          <div className="flex items-center justify-center gap-6 sm:gap-10 flex-wrap">
+            {poweredBy.map((name) => (
+              <div
+                key={name}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]"
+              >
+                <Brain className="h-4 w-4 text-slate-500" />
+                <span className="text-sm text-slate-400 font-medium">{name}</span>
               </div>
             ))}
           </div>

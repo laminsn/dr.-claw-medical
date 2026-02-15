@@ -129,7 +129,7 @@ export default function PersonasSection() {
               </ul>
 
               <Link
-                to="/get-started"
+                to="/auth"
                 className="inline-flex items-center gap-1 text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors"
               >
                 Get Started

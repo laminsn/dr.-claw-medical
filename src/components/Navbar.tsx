@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
+import logo from "@/assets/dr-claw-logo-transparent.png";
 
 const navLinks = [
   { label: "Features", href: "#features" },
@@ -30,7 +31,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
             <img
-              src="/Dr. Claw Logo.png"
+              src={logo}
               alt="Dr. Claw"
               className="h-9 w-9"
             />

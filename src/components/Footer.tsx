@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Shield, FileCheck, Lock } from "lucide-react";
+import logo from "@/assets/dr-claw-logo-transparent.png";
 
 const productLinks = [
   { label: "Features", href: "#features" },
@@ -11,12 +12,12 @@ const productLinks = [
 ];
 
 const solutionLinks = [
-  { label: "Healthcare", href: "/solutions/healthcare" },
-  { label: "Marketing", href: "/solutions/marketing" },
-  { label: "Executive", href: "/solutions/executive" },
-  { label: "Research", href: "/solutions/research" },
-  { label: "Operations", href: "/solutions/operations" },
-  { label: "HR", href: "/solutions/hr" },
+  { label: "Healthcare", href: "/auth" },
+  { label: "Marketing", href: "/auth" },
+  { label: "Executive", href: "/auth" },
+  { label: "Research", href: "/auth" },
+  { label: "Operations", href: "/auth" },
+  { label: "HR", href: "/auth" },
 ];
 
 const complianceLinks = [
@@ -37,7 +38,7 @@ export default function Footer() {
           <div className="col-span-2">
             <Link to="/" className="flex items-center gap-2 mb-4">
               <img
-                src="/Dr. Claw Logo.png"
+                src={logo}
                 alt="Dr. Claw"
                 className="h-9 w-9"
               />
