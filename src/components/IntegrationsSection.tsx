@@ -5,6 +5,7 @@ import {
   Shield,
   Database,
   Cloud,
+  Contact,
 } from "lucide-react";
 
 const integrationGroups = [
@@ -13,6 +14,12 @@ const integrationGroups = [
     icon: Brain,
     color: "text-blue-400",
     items: ["OpenAI", "Claude", "Gemini", "MiniMax", "Kimi", "Mistral"],
+  },
+  {
+    title: "CRM Platforms",
+    icon: Contact,
+    color: "text-orange-400",
+    items: ["GoHighLevel", "HubSpot", "Salesforce", "Zoho CRM", "Pipedrive"],
   },
   {
     title: "Voice & Speech",
@@ -36,13 +43,7 @@ const integrationGroups = [
     title: "Productivity",
     icon: Database,
     color: "text-amber-400",
-    items: ["Notion", "Airtable", "Google Workspace"],
-  },
-  {
-    title: "Cloud & Storage",
-    icon: Cloud,
-    color: "text-pink-400",
-    items: ["AWS S3", "Google Cloud", "Azure"],
+    items: ["Notion", "Airtable", "Zapier"],
   },
 ];
 
@@ -96,7 +97,7 @@ export default function IntegrationsSection() {
 
         {/* Bottom note */}
         <p className="text-center text-sm text-slate-500 mt-8 animate-fade-up">
-          18+ integrations available &middot; Custom integrations on Enterprise plans
+          23+ integrations available &middot; Custom integrations on Enterprise plans
         </p>
       </div>
     </section>

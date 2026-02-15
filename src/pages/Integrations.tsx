@@ -25,6 +25,10 @@ import {
   AudioWaveform,
   PhoneCall,
   BookOpen,
+  Rocket,
+  CloudCog,
+  Contact,
+  GitBranch,
   type LucideIcon,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
@@ -68,6 +72,11 @@ const iconMap: Record<string, LucideIcon> = {
   "audio-waveform": AudioWaveform,
   "phone-call": PhoneCall,
   "book-open": BookOpen,
+  rocket: Rocket,
+  hub: Hexagon,
+  "cloud-cog": CloudCog,
+  contact: Contact,
+  "git-branch": GitBranch,
 };
 
 function resolveIcon(name: string): LucideIcon {
@@ -87,6 +96,7 @@ const tierColors: Record<string, string> = {
 const categoryColors: Record<string, string> = {
   llm: "bg-violet-500/15 text-violet-400 border-violet-500/30",
   voice: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
+  crm: "bg-orange-500/15 text-orange-400 border-orange-500/30",
   cloud: "bg-sky-500/15 text-sky-400 border-sky-500/30",
   productivity: "bg-amber-500/15 text-amber-400 border-amber-500/30",
   healthcare: "bg-rose-500/15 text-rose-400 border-rose-500/30",
@@ -96,6 +106,7 @@ const categoryColors: Record<string, string> = {
 const categoryLabel: Record<string, string> = {
   llm: "AI Models",
   voice: "Voice AI",
+  crm: "CRM",
   cloud: "Cloud",
   productivity: "Productivity",
   healthcare: "Healthcare",
