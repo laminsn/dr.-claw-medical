@@ -12,6 +12,10 @@ import {
   Brain,
   Plus,
   MessageSquare,
+  Timer,
+  CheckCircle2,
+  DollarSign,
+  Sparkles,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardSidebar from "@/components/DashboardSidebar";
@@ -20,6 +24,9 @@ import {
   TrendChart,
   OutcomeChart,
   AgentTasksTable,
+  HoursSavedChart,
+  MoneySavedChart,
+  AgentHoursSavedChart,
 } from "@/components/dashboard/AnalyticsCharts";
 
 const recentActivity = [
@@ -99,6 +106,39 @@ const agentPerformance = [
   },
 ];
 
+const impactStats = [
+  {
+    label: "Hours Saved",
+    value: "712",
+    subtext: "this month",
+    change: "+14%",
+    trend: "up" as const,
+    icon: Timer,
+    color: "from-emerald-500 to-green-500",
+    detail: "vs. 625 hrs last month",
+  },
+  {
+    label: "Tasks Completed",
+    value: "14,238",
+    subtext: "all time",
+    change: "+847",
+    trend: "up" as const,
+    icon: CheckCircle2,
+    color: "from-primary to-blue-500",
+    detail: "2,847 this week alone",
+  },
+  {
+    label: "Money Saved",
+    value: "$82,000",
+    subtext: "this month",
+    change: "+22%",
+    trend: "up" as const,
+    icon: DollarSign,
+    color: "from-amber-500 to-orange-500",
+    detail: "~$984k annualized",
+  },
+];
+
 const Dashboard = () => {
   return (
     <div className="flex min-h-screen bg-background">
@@ -137,6 +177,54 @@ const Dashboard = () => {
                   Integrations
                 </button>
               </Link>
+            </div>
+          </div>
+
+          {/* ─── IMPACT SUMMARY ─── */}
+          <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-card via-card to-primary/[0.04] p-6">
+            <div className="absolute top-3 right-4 flex items-center gap-1.5 text-xs text-muted-foreground/60">
+              <Sparkles className="h-3.5 w-3.5 text-amber-400/60" />
+              AI Impact Summary
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {impactStats.map((stat) => (
+                <div key={stat.label} className="flex items-start gap-4">
+                  <div
+                    className={`flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-br ${stat.color} shadow-glow-sm shrink-0`}
+                  >
+                    <stat.icon className="h-7 w-7 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-3xl font-bold font-heading text-foreground tracking-tight">
+                        {stat.value}
+                      </p>
+                      <span
+                        className={`inline-flex items-center gap-0.5 text-xs font-semibold ${
+                          stat.trend === "up" ? "text-emerald-400" : "text-red-400"
+                        }`}
+                      >
+                        {stat.trend === "up" ? (
+                          <ArrowUpRight className="h-3.5 w-3.5" />
+                        ) : (
+                          <ArrowDownRight className="h-3.5 w-3.5" />
+                        )}
+                        {stat.change}
+                      </span>
+                    </div>
+                    <p className="text-sm font-medium text-foreground/80 mt-0.5">
+                      {stat.label}{" "}
+                      <span className="text-muted-foreground font-normal">
+                        {stat.subtext}
+                      </span>
+                    </p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">
+                      {stat.detail}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -204,6 +292,25 @@ const Dashboard = () => {
                 </p>
               </div>
             ))}
+          </div>
+
+          {/* ─── IMPACT CHARTS ─── */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="bg-card rounded-xl border border-white/[0.06] p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-1">Hours Saved Over Time</h3>
+              <p className="text-xs text-muted-foreground mb-4">AI automation vs. manual effort</p>
+              <HoursSavedChart />
+            </div>
+            <div className="bg-card rounded-xl border border-white/[0.06] p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-1">Hours Saved by Agent</h3>
+              <p className="text-xs text-muted-foreground mb-4">Top contributing agents this month</p>
+              <AgentHoursSavedChart />
+            </div>
+            <div className="bg-card rounded-xl border border-white/[0.06] p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-1">Money Saved Breakdown</h3>
+              <p className="text-xs text-muted-foreground mb-4">Cost savings by category</p>
+              <MoneySavedChart />
+            </div>
           </div>
 
           {/* Analytics charts */}

@@ -22,6 +22,15 @@ import Settings from "./pages/Settings";
 import Terms from "./pages/Terms";
 import PhiMonitor from "./pages/PhiMonitor";
 import EmailCampaigns from "./pages/EmailCampaigns";
+import PatientPortal from "./pages/PatientPortal";
+import ReportingDashboard from "./pages/ReportingDashboard";
+import WorkflowBuilder from "./pages/WorkflowBuilder";
+import KnowledgeBase from "./pages/KnowledgeBase";
+import BillingManagement from "./pages/BillingManagement";
+import NotificationsCenter from "./pages/NotificationsCenter";
+import AgentPlayground from "./pages/AgentPlayground";
+import CustomDashboards from "./pages/CustomDashboards";
+import ApiPortal from "./pages/ApiPortal";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -54,6 +63,15 @@ const App = () => (
             <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/dashboard/phi-monitor" element={<ProtectedRoute><PhiMonitor /></ProtectedRoute>} />
             <Route path="/dashboard/campaigns" element={<ProtectedRoute><EmailCampaigns /></ProtectedRoute>} />
+            <Route path="/dashboard/patients" element={<ProtectedRoute><PatientPortal /></ProtectedRoute>} />
+            <Route path="/dashboard/reports" element={<ProtectedRoute><ReportingDashboard /></ProtectedRoute>} />
+            <Route path="/dashboard/workflows" element={<ProtectedRoute><WorkflowBuilder /></ProtectedRoute>} />
+            <Route path="/dashboard/knowledge" element={<ProtectedRoute><KnowledgeBase /></ProtectedRoute>} />
+            <Route path="/dashboard/billing" element={<ProtectedRoute><BillingManagement /></ProtectedRoute>} />
+            <Route path="/dashboard/notifications" element={<ProtectedRoute><NotificationsCenter /></ProtectedRoute>} />
+            <Route path="/dashboard/playground" element={<ProtectedRoute><AgentPlayground /></ProtectedRoute>} />
+            <Route path="/dashboard/custom-dashboards" element={<ProtectedRoute><CustomDashboards /></ProtectedRoute>} />
+            <Route path="/dashboard/api" element={<ProtectedRoute><ApiPortal /></ProtectedRoute>} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Terms />} />
             <Route path="/security" element={<Terms />} />
