@@ -398,10 +398,10 @@ const Agents = () => {
           {/* ── Header ─────────────────────────────── */}
           <div className="mb-8">
             <h1 className="font-display text-3xl font-bold text-foreground tracking-tight">
-              AI Agents
+              Healthcare AI Agents
             </h1>
             <p className="text-muted-foreground mt-1">
-              Create, customize, and deploy unlimited AI agents
+              Create, customize, and deploy clinical AI agents for your practice
             </p>
           </div>
 

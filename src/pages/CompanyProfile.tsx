@@ -93,11 +93,11 @@ const CompanyProfile = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-                Company Profile
+                Practice Profile
               </h1>
               <p className="text-muted-foreground mt-1">
-                Provide your company details to enhance AI agent effectiveness
-                across all roles.
+                Provide your practice details to enhance clinical AI agent effectiveness
+                across all departments.
               </p>
             </div>
             <Button

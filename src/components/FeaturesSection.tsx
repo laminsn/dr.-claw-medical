@@ -12,58 +12,58 @@ import {
 
 const features = [
   {
-    icon: Zap,
-    title: "Custom Agent Builder",
+    icon: Stethoscope,
+    title: "Clinical Agent Builder",
     description:
-      "Create and name your own AI agents, assign skills, and choose the models that power them.",
+      "Create AI agents for front desk, clinical coordination, patient outreach, and every role in your practice.",
   },
   {
     icon: Brain,
-    title: "Multi-LLM Choice",
+    title: "Multi-LLM Clinical Engine",
     description:
-      "OpenAI, Claude, Gemini, MiniMax, Kimi — switch between models per agent for the best results.",
+      "OpenAI, Claude, Gemini, MiniMax, Kimi — choose the best model for each clinical workflow.",
   },
   {
-    icon: Stethoscope,
-    title: "30+ AI Skills",
+    icon: Zap,
+    title: "30+ Medical AI Skills",
     description:
-      "From C-suite strategy to healthcare operations to content creation — one platform, every skill.",
+      "Patient scheduling, insurance verification, clinical documentation, referral management, and more.",
   },
   {
     icon: Shield,
-    title: "Enterprise Security",
+    title: "HIPAA-First Security",
     description:
-      "HIPAA compliant, BAA available, SOC 2 certified, end-to-end encryption, and PHI protection.",
+      "HIPAA compliant, BAA available, SOC 2 certified, PHI auto-redaction, and end-to-end encryption.",
   },
   {
     icon: Mic,
-    title: "Voice AI",
+    title: "Medical Voice AI",
     description:
-      "Natural voice agents for calls, follow-ups, patient outreach, and hands-free workflows.",
+      "Voice agents for patient calls, appointment reminders, post-op follow-ups, and clinical dictation.",
   },
   {
     icon: Bot,
-    title: "Quick-Start Templates",
+    title: "Healthcare Templates",
     description:
-      "16 pre-built agent templates to get you started — deploy a working agent in one click.",
+      "Pre-built agents for front desk, clinical coordinator, insurance verifier, post-op care, and more.",
   },
   {
     icon: Plug,
-    title: "Your Integrations",
+    title: "EHR & Practice Integrations",
     description:
-      "Connect your own API keys and use your preferred AI providers. Full control, zero lock-in.",
+      "Connect to Epic, Cerner, athenahealth, and 40+ healthcare integrations. Bring your own API keys.",
   },
   {
     icon: FileText,
-    title: "Professional Content",
+    title: "Clinical Documentation",
     description:
-      "Copywriting, grant proposals, research papers, marketing campaigns — all AI-powered.",
+      "AI-generated clinical notes, referral letters, prior authorizations, and patient communications.",
   },
   {
     icon: Users,
-    title: "Team Collaboration",
+    title: "Care Team Collaboration",
     description:
-      "Multi-seat plans, role-based access, and a shared agent library for your entire team.",
+      "Multi-provider access, role-based permissions, and shared agent workflows across your practice.",
   },
 ];
 
@@ -78,11 +78,11 @@ export default function FeaturesSection() {
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-heading mb-4">
             Everything You Need to{" "}
-            <span className="gradient-hero-text">Deploy AI Agents</span>
+            <span className="gradient-hero-text">Automate Healthcare</span>
           </h2>
           <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-            A complete platform for building, customizing, and managing AI
-            agents across your organization.
+            A complete AI platform purpose-built for medical practices, clinics,
+            and health systems — from patient intake to clinical operations.
           </p>
         </div>
 

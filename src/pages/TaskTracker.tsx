@@ -1540,10 +1540,10 @@ const TaskTracker = () => {
             <div>
               <h1 className="font-display text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
                 <ListTodo className="h-7 w-7 text-primary" />
-                Task Tracker
+                Clinical Task Tracker
               </h1>
               <p className="text-muted-foreground mt-1">
-                Monitor and track all agent tasks in real time
+                Monitor and track all clinical agent tasks across your healthcare practice
               </p>
             </div>
             <Button

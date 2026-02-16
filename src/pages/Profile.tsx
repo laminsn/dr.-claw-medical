@@ -123,8 +123,8 @@ const Profile = () => {
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="font-display text-2xl font-bold text-foreground">Profile Settings</h1>
-              <p className="text-sm text-muted-foreground mt-1">Manage your account and preferences</p>
+              <h1 className="font-display text-2xl font-bold text-foreground">Provider Profile</h1>
+              <p className="text-sm text-muted-foreground mt-1">Manage your clinical account, practice details, and preferences</p>
             </div>
             <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${roleBadgeColor}`}>
               {role.replace("_", " ")}

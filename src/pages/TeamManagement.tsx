@@ -438,11 +438,10 @@ const TeamManagement = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-                Team Management
+                Care Team Management
               </h1>
               <p className="text-muted-foreground mt-1">
-                Invite teammates, manage roles, and control access to your AI
-                agents.
+                Invite providers, staff, and administrators. Manage clinical roles and agent access.
               </p>
             </div>
             <Button

@@ -210,10 +210,10 @@ const AgentCommunication = () => {
           <div>
             <h1 className="font-display text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
               <MessageSquare className="h-6 w-6 text-primary" />
-              Communication Center
+              Patient Communication Center
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Unified inbox — observe all agent conversations in real time
+              Unified clinical inbox — monitor all patient-agent conversations in real time
             </p>
           </div>
           <div className="flex items-center gap-3">

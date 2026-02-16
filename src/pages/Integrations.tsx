@@ -202,10 +202,10 @@ const Integrations = () => {
           {/* ── Header ─────────────────────────────────── */}
           <div>
             <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-              Integrations
+              EHR & Healthcare Integrations
             </h1>
             <p className="text-muted-foreground mt-1">
-              Connect your API keys to power your AI agents.
+              Connect your EHR, practice management, and clinical tools to power your AI agents.
             </p>
           </div>
 

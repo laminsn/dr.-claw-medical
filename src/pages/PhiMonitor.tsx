@@ -374,10 +374,10 @@ const PhiMonitor = () => {
             <div>
               <h1 className="font-display text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
                 <Shield className="h-7 w-7 text-primary" />
-                PHI Monitor
+                PHI Security Monitor
               </h1>
               <p className="text-muted-foreground mt-1">
-                HIPAA PHI violation detection, risk monitoring, and compliance dashboard
+                Real-time HIPAA compliance monitoring, PHI violation detection, and risk assessment dashboard.
               </p>
             </div>
             <Badge className="bg-green-500/10 border border-green-500/30 text-green-400 text-xs px-3 py-1">

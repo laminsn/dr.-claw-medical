@@ -127,10 +127,10 @@ const AdminDashboard = () => {
           <div className="flex items-start justify-between mb-8">
             <div>
               <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-                <Shield className="h-6 w-6 text-primary" /> Admin Dashboard
+                <Shield className="h-6 w-6 text-primary" /> Practice Admin Dashboard
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Manage users, roles, and permissions across your organization
+                Manage providers, clinical roles, and permissions across your healthcare organization
               </p>
             </div>
           </div>

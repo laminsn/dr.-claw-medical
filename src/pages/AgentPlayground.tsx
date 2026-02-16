@@ -597,10 +597,10 @@ const AgentPlayground = () => {
           {/* ── Header ─────────────────────────────── */}
           <div>
             <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-              Agent Playground
+              Clinical Agent Playground
             </h1>
             <p className="text-muted-foreground mt-1">
-              Interactive sandbox for testing and tuning your AI agents.
+              Test and refine your healthcare AI agents before deploying them to your practice.
             </p>
           </div>
 

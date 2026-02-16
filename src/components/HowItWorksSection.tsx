@@ -3,21 +3,21 @@ import { UserPlus, Puzzle, Rocket } from "lucide-react";
 const steps = [
   {
     icon: UserPlus,
-    title: "Create Your Account",
+    title: "Register Your Practice",
     description:
-      "One-step registration gets you an instant workspace. No setup calls, no waiting.",
+      "One-step registration gets your clinic an instant HIPAA-compliant workspace. No setup calls.",
   },
   {
     icon: Puzzle,
-    title: "Build Your Agents",
+    title: "Build Your Clinical Agents",
     description:
-      "Name your agents, assign skills from our library of 30+, and connect your own API keys.",
+      "Choose from healthcare templates or build custom agents. Assign medical skills and connect your EHR.",
   },
   {
     icon: Rocket,
-    title: "Deploy & Scale",
+    title: "Transform Patient Care",
     description:
-      "Your agents start working immediately. Scale across your entire organization on demand.",
+      "Your agents start automating scheduling, documentation, and outreach immediately across your practice.",
   },
 ];
 
@@ -35,7 +35,7 @@ export default function HowItWorksSection() {
             <span className="gradient-hero-text">Minutes</span>
           </h2>
           <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-            Three simple steps to deploy your AI agent team.
+            Three simple steps to automate your healthcare practice.
           </p>
         </div>
 

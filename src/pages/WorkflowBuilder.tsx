@@ -611,10 +611,10 @@ const WorkflowBuilder = () => {
             <div>
               <h1 className="text-3xl font-bold font-heading gradient-hero-text flex items-center gap-3">
                 <GitBranch className="h-7 w-7 text-primary" />
-                Workflow Builder
+                Care Workflow Builder
               </h1>
               <p className="text-muted-foreground mt-1">
-                Design, manage, and monitor automated agent workflows
+                Design automated clinical pipelines — from patient intake to post-op follow-up.
               </p>
             </div>
             <Button

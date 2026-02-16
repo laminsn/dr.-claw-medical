@@ -338,10 +338,10 @@ const AgentCollaboration = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-                Agent Collaboration
+                Clinical Agent Collaboration
               </h1>
               <p className="text-muted-foreground mt-1">
-                Link accounts, configure agent communication, and manage cross-team collaboration.
+                Coordinate care across clinical agents, departments, and partner organizations.
               </p>
             </div>
             <Button
