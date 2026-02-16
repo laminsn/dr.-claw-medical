@@ -22,7 +22,6 @@ import {
   ScrollText,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import logo from "@/assets/dr-claw-logo-transparent.png";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Overview", path: "/dashboard" },
@@ -53,7 +52,9 @@ const DashboardSidebar = () => {
       }`}
     >
       <div className="flex items-center gap-3 p-4 border-b border-sidebar-border">
-        <img src={logo} alt="Dr. Claw" className="h-8 w-8 shrink-0" />
+        <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center shadow-glow-sm shrink-0">
+          <Zap className="h-4 w-4 text-white" />
+        </div>
         {!collapsed && (
           <span className="font-display font-bold text-sm">Dr. Claw</span>
         )}

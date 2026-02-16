@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Play, Shield, FileCheck, Lock, Bot, Zap, Brain, Sparkles } from "lucide-react";
-import logo from "@/assets/dr-claw-logo-transparent.png";
 
 const poweredBy = ["OpenAI", "Claude", "Gemini", "MiniMax", "Kimi", "ElevenLabs"];
 
@@ -24,7 +23,7 @@ export default function HeroSection() {
 
       {/* Floating decorative elements */}
       <div className="absolute top-32 right-[12%] hidden lg:block animate-float opacity-10">
-        <img src={logo} alt="" className="h-28 w-28" />
+        <Zap className="h-28 w-28 text-primary" />
       </div>
       <div className="absolute bottom-40 left-[8%] hidden lg:block animate-float opacity-[0.06]" style={{ animationDelay: "3s" }}>
         <Bot className="h-16 w-16 text-primary" />

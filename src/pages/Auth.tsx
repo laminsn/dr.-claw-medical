@@ -2,19 +2,48 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { lovable } from "@/integrations/lovable/index";
-import logo from "@/assets/dr-claw-logo-transparent.png";
+import { Zap as BrandIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
-import { Shield, Lock, CheckCircle, ArrowRight, ArrowLeft } from "lucide-react";
+import { Shield, Lock, CheckCircle, ArrowRight, ArrowLeft, Check, Star, AlertTriangle } from "lucide-react";
+
+/* ---------- Password strength ---------- */
+function getPasswordStrength(pw: string): { score: number; label: string; color: string } {
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+  if (score <= 1) return { score, label: "Weak", color: "bg-red-500" };
+  if (score <= 2) return { score, label: "Fair", color: "bg-yellow-500" };
+  if (score <= 3) return { score, label: "Good", color: "bg-blue-500" };
+  return { score, label: "Strong", color: "bg-green-500" };
+}
+
+/* ---------- Simple rate-limit ---------- */
+const loginAttempts: { count: number; lastAttempt: number } = { count: 0, lastAttempt: 0 };
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 60_000; // 1 minute
+
+const PLANS = [
+  { id: "starter", name: "Starter", price: "$147", agents: "2 Agents", skills: "5 Skills" },
+  { id: "professional", name: "Professional", price: "$297", agents: "10 Agents", skills: "Unlimited", popular: true },
+  { id: "advanced", name: "Advanced", price: "$447", agents: "25 Agents", skills: "Unlimited + Custom" },
+  { id: "enterprise", name: "Enterprise", price: "Custom", agents: "Unlimited", skills: "Unlimited" },
+];
 
 const Auth = () => {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [selectedPlan, setSelectedPlan] = useState("professional");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const { signIn, signUp, user } = useAuth();
@@ -29,16 +58,48 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
+    // Rate-limit check
+    const now = Date.now();
+    if (now - loginAttempts.lastAttempt > LOCKOUT_MS) {
+      loginAttempts.count = 0;
+    }
+    if (loginAttempts.count >= MAX_ATTEMPTS) {
+      const remaining = Math.ceil((LOCKOUT_MS - (now - loginAttempts.lastAttempt)) / 1000);
+      toast({ title: "Too many attempts", description: `Please wait ${remaining}s before trying again.`, variant: "destructive" });
+      setLoading(false);
+      return;
+    }
+    loginAttempts.count++;
+    loginAttempts.lastAttempt = now;
+
     if (mode === "signin") {
       const { error } = await signIn(email, password);
       if (error) {
         toast({ title: "Sign in failed", description: error.message, variant: "destructive" });
       } else {
+        loginAttempts.count = 0; // reset on success
         navigate("/dashboard");
       }
     } else {
       if (!fullName.trim()) {
         toast({ title: "Name required", description: "Please enter your full name to create an account.", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+      if (!selectedPlan) {
+        toast({ title: "Plan required", description: "Please select a plan for your free trial.", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+      if (!agreedToTerms) {
+        toast({ title: "Terms required", description: "Please agree to the Terms of Service to continue.", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+      // Password strength gate
+      const strength = getPasswordStrength(password);
+      if (strength.score < 3) {
+        toast({ title: "Weak password", description: "Password must include uppercase, numbers, and special characters (12+ chars recommended).", variant: "destructive" });
         setLoading(false);
         return;
       }
@@ -95,7 +156,9 @@ const Auth = () => {
         <div className="glass-card rounded-2xl border border-white/[0.06] p-8 shadow-glow">
           {/* Logo & heading */}
           <div className="flex flex-col items-center text-center mb-6">
-            <img src={logo} alt="Dr. Claw" className="h-14 w-14 mb-4" />
+            <div className="h-14 w-14 rounded-xl gradient-primary flex items-center justify-center shadow-glow-sm mb-4">
+              <BrandIcon className="h-7 w-7 text-white" />
+            </div>
             <h1 className="text-2xl font-bold font-heading gradient-hero-text">
               {mode === "signin" ? "Welcome Back" : "Create Your Account"}
             </h1>
@@ -216,14 +279,95 @@ const Auth = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
                 className="h-11 bg-white/[0.03] border-white/10 focus:border-primary/50 transition-colors"
               />
+              {/* Password strength meter (signup) */}
+              {mode === "signup" && password.length > 0 && (() => {
+                const s = getPasswordStrength(password);
+                return (
+                  <div className="space-y-1.5 mt-1.5">
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i <= s.score ? s.color : "bg-white/10"}`} />
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {s.score < 3 && <AlertTriangle className="h-3 w-3 text-yellow-500" />}
+                      <p className="text-[10px] text-muted-foreground">{s.label} — {s.score < 3 ? "use 12+ chars, uppercase, numbers & symbols" : "meets requirements"}</p>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
+
+            {/* Package Selection (signup only) */}
+            {mode === "signup" && (
+              <div className="space-y-2">
+                <Label className="text-sm text-muted-foreground">
+                  Select Your Plan <span className="text-red-400">*</span>
+                </Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {PLANS.map((plan) => (
+                    <button
+                      key={plan.id}
+                      type="button"
+                      onClick={() => setSelectedPlan(plan.id)}
+                      className={`relative text-left rounded-lg border p-3 transition-all ${
+                        selectedPlan === plan.id
+                          ? "border-primary bg-primary/10 shadow-glow-sm"
+                          : "border-white/10 bg-white/[0.02] hover:border-primary/30"
+                      }`}
+                    >
+                      {plan.popular && (
+                        <span className="absolute -top-2 right-2 px-1.5 py-0.5 text-[9px] font-bold gradient-primary text-white rounded-full flex items-center gap-0.5">
+                          <Star className="h-2 w-2 fill-white" /> Popular
+                        </span>
+                      )}
+                      {selectedPlan === plan.id && (
+                        <span className="absolute top-2 right-2">
+                          <Check className="h-3.5 w-3.5 text-primary" />
+                        </span>
+                      )}
+                      <p className="text-xs font-semibold text-foreground">{plan.name}</p>
+                      <p className="text-sm font-bold gradient-hero-text">{plan.price}<span className="text-[10px] text-muted-foreground font-normal">{plan.price !== "Custom" ? "/mo" : ""}</span></p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{plan.agents} &middot; {plan.skills}</p>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground">All plans include a 14-day free trial. No credit card required.</p>
+              </div>
+            )}
+
+            {/* Terms checkbox (signup only) */}
+            {mode === "signup" && (
+              <div className="flex items-start gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setAgreedToTerms(!agreedToTerms)}
+                  className={`mt-0.5 h-4 w-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
+                    agreedToTerms ? "bg-primary border-primary" : "border-white/20 hover:border-primary/50"
+                  }`}
+                >
+                  {agreedToTerms && <Check className="h-3 w-3 text-white" />}
+                </button>
+                <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
+                  I agree to Dr. Claw's{" "}
+                  <Link to="/terms" className="text-primary hover:text-primary/80 underline underline-offset-2" target="_blank">
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link to="/terms" className="text-primary hover:text-primary/80 underline underline-offset-2" target="_blank">
+                    Privacy Policy
+                  </Link>
+                  , including data handling and liability provisions.
+                </p>
+              </div>
+            )}
 
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || (mode === "signup" && (!agreedToTerms || !selectedPlan))}
               className="w-full h-12 gradient-primary text-white font-semibold text-sm shadow-glow-sm hover:opacity-90 transition-opacity mt-2"
             >
               {loading ? (
@@ -283,13 +427,13 @@ const Auth = () => {
           {/* Terms */}
           <p className="text-[11px] text-muted-foreground/40 text-center mt-5 leading-relaxed">
             By continuing, you agree to Dr. Claw's{" "}
-            <span className="underline underline-offset-2 cursor-pointer hover:text-muted-foreground/60 transition-colors">
+            <Link to="/terms" className="underline underline-offset-2 cursor-pointer hover:text-muted-foreground/60 transition-colors" target="_blank">
               Terms of Service
-            </span>{" "}
+            </Link>{" "}
             and{" "}
-            <span className="underline underline-offset-2 cursor-pointer hover:text-muted-foreground/60 transition-colors">
+            <Link to="/terms" className="underline underline-offset-2 cursor-pointer hover:text-muted-foreground/60 transition-colors" target="_blank">
               Privacy Policy
-            </span>
+            </Link>
             .
           </p>
         </div>
