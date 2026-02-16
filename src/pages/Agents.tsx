@@ -20,6 +20,13 @@ import {
   Clock,
   Trash2,
   Save,
+  Archive,
+  RotateCcw,
+  Activity,
+  ChevronDown,
+  ChevronRight,
+  ArrowRightLeft,
+  Eraser,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
@@ -61,6 +68,17 @@ interface MyAgent {
   model: string;
   active: boolean;
   capabilities: AgentCapabilities;
+  archived?: boolean;
+  taskCount: number;
+}
+
+interface ActivityEntry {
+  id: string;
+  agentId: string;
+  agentName: string;
+  action: string;
+  timestamp: string;
+  status: "success" | "warning" | "error";
 }
 
 const MODEL_OPTIONS = [
@@ -78,6 +96,17 @@ const CAPABILITY_OPTIONS: { key: keyof AgentCapabilities; label: string; descrip
   { key: "distressDetection", label: "Distress Detection", description: "Identifies signs of distress in patient or caller interactions and escalates to appropriate human staff immediately.", icon: HeartPulse, color: "text-rose-400" },
   { key: "taskCreation", label: "Create & Assign Tasks", description: "Allows this agent to autonomously create, assign, and track tasks for itself or other agents based on conversation context.", icon: ListTodo, color: "text-cyan-400" },
   { key: "hrAssistant", label: "HR Assistant", description: "Assists staff with payroll inquiries, clock-ins/outs, receiving documents, training reminders, and PTO tracking.", icon: Clock, color: "text-amber-400" },
+];
+
+const MOCK_ACTIVITY: ActivityEntry[] = [
+  { id: "a1", agentId: "1", agentName: "Dr. Front Desk", action: "Scheduled appointment for patient #4821", timestamp: "2 min ago", status: "success" },
+  { id: "a2", agentId: "2", agentName: "Marketing Maven", action: "Generated social media campaign draft", timestamp: "8 min ago", status: "success" },
+  { id: "a3", agentId: "1", agentName: "Dr. Front Desk", action: "Insurance verification timeout for patient #3190", timestamp: "15 min ago", status: "warning" },
+  { id: "a4", agentId: "3", agentName: "Grant Pro", action: "Failed to retrieve grant database — API rate limit exceeded", timestamp: "22 min ago", status: "error" },
+  { id: "a5", agentId: "1", agentName: "Dr. Front Desk", action: "Sent follow-up reminder to patient #2755", timestamp: "30 min ago", status: "success" },
+  { id: "a6", agentId: "2", agentName: "Marketing Maven", action: "Content tone flagged for review — possible compliance issue", timestamp: "45 min ago", status: "warning" },
+  { id: "a7", agentId: "3", agentName: "Grant Pro", action: "Completed research summary for NIH R01 grant", timestamp: "1 hr ago", status: "success" },
+  { id: "a8", agentId: "1", agentName: "Dr. Front Desk", action: "Distress signal detected — escalated call to clinical staff", timestamp: "1.5 hr ago", status: "error" },
 ];
 
 function getSkillName(skillId: string): string {
@@ -100,6 +129,8 @@ const Agents = () => {
       model: "openai",
       active: true,
       capabilities: { ...DEFAULT_CAPABILITIES, distressDetection: true, voiceRecognition: true, taskCreation: true },
+      archived: false,
+      taskCount: 12,
     },
     {
       id: "2",
@@ -108,6 +139,8 @@ const Agents = () => {
       model: "claude",
       active: true,
       capabilities: { ...DEFAULT_CAPABILITIES, taskCreation: true },
+      archived: false,
+      taskCount: 8,
     },
     {
       id: "3",
@@ -116,6 +149,8 @@ const Agents = () => {
       model: "claude",
       active: false,
       capabilities: { ...DEFAULT_CAPABILITIES },
+      archived: false,
+      taskCount: 3,
     },
   ]);
 
@@ -124,7 +159,7 @@ const Agents = () => {
   const [newAgentModel, setNewAgentModel] = useState("openai");
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [searchSkills, setSearchSkills] = useState("");
-  const [activeTab, setActiveTab] = useState<"my-agents" | "templates">("my-agents");
+  const [activeTab, setActiveTab] = useState<"my-agents" | "templates" | "monitor">("my-agents");
 
   // Deploy template dialog state
   const [deployOpen, setDeployOpen] = useState(false);
@@ -140,6 +175,20 @@ const Agents = () => {
   const [configSkills, setConfigSkills] = useState<string[]>([]);
   const [configCapabilities, setConfigCapabilities] = useState<AgentCapabilities>({ ...DEFAULT_CAPABILITIES });
   const [configSearchSkills, setConfigSearchSkills] = useState("");
+
+  // Activity monitor state
+  const [activityFilter, setActivityFilter] = useState<"all" | "success" | "warning" | "error">("all");
+
+  // Archive / delete state
+  const [deleteConfirmStep, setDeleteConfirmStep] = useState(false);
+  const [archivedExpanded, setArchivedExpanded] = useState(false);
+
+  // Transfer dialog state
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [transferAction, setTransferAction] = useState<"archive" | "delete">("archive");
+  const [transferTargetId, setTransferTargetId] = useState<string>("unassigned");
+  const [transferAgentId, setTransferAgentId] = useState<string | null>(null);
+  const [transferTaskCount, setTransferTaskCount] = useState(0);
 
   // ── Handlers ────────────────────────────────────
 
@@ -175,6 +224,8 @@ const Agents = () => {
       model: newAgentModel,
       active: true,
       capabilities: { ...DEFAULT_CAPABILITIES },
+      archived: false,
+      taskCount: 0,
     };
     setMyAgents((prev) => [...prev, newAgent]);
     setCreateOpen(false);
@@ -199,6 +250,8 @@ const Agents = () => {
       model: deployModel,
       active: true,
       capabilities: { ...DEFAULT_CAPABILITIES },
+      archived: false,
+      taskCount: 0,
     };
     setMyAgents((prev) => [...prev, newAgent]);
     setDeployOpen(false);
@@ -244,10 +297,79 @@ const Agents = () => {
 
   const handleDeleteAgent = () => {
     if (!configAgent) return;
+    if (!deleteConfirmStep) {
+      setDeleteConfirmStep(true);
+      return;
+    }
+    // If agent has tasks, open transfer dialog
+    if (configAgent.taskCount > 0) {
+      setTransferAgentId(configAgent.id);
+      setTransferTaskCount(configAgent.taskCount);
+      setTransferAction("delete");
+      setTransferTargetId("unassigned");
+      setTransferOpen(true);
+      return;
+    }
+    executeDeleteAgent();
+  };
+
+  const executeDeleteAgent = () => {
+    if (!configAgent) return;
     setMyAgents((prev) => prev.filter((a) => a.id !== configAgent.id));
     toast({ title: "Agent Deleted", description: `${configAgent.name} has been removed.` });
     setConfigOpen(false);
     setConfigAgent(null);
+    setDeleteConfirmStep(false);
+    setTransferOpen(false);
+  };
+
+  const handleArchiveAgent = () => {
+    if (!configAgent) return;
+    // If agent has tasks, open transfer dialog
+    if (configAgent.taskCount > 0) {
+      setTransferAgentId(configAgent.id);
+      setTransferTaskCount(configAgent.taskCount);
+      setTransferAction("archive");
+      setTransferTargetId("unassigned");
+      setTransferOpen(true);
+      return;
+    }
+    executeArchiveAgent();
+  };
+
+  const executeArchiveAgent = () => {
+    if (!configAgent) return;
+    setMyAgents((prev) =>
+      prev.map((a) => (a.id === configAgent.id ? { ...a, archived: true, active: false } : a))
+    );
+    toast({ title: "Agent Archived", description: `${configAgent.name} has been archived.` });
+    setConfigOpen(false);
+    setConfigAgent(null);
+    setTransferOpen(false);
+  };
+
+  const handleRestoreAgent = (agentId: string) => {
+    setMyAgents((prev) =>
+      prev.map((a) => (a.id === agentId ? { ...a, archived: false } : a))
+    );
+    const agent = myAgents.find((a) => a.id === agentId);
+    toast({ title: "Agent Restored", description: `${agent?.name ?? "Agent"} has been restored.` });
+  };
+
+  const handleClearMemory = () => {
+    if (!configAgent) return;
+    toast({
+      title: "Agent Memory Cleared",
+      description: "Agent memory cleared. Conversation history and learned patterns have been reset.",
+    });
+  };
+
+  const handleTransferConfirm = () => {
+    if (transferAction === "archive") {
+      executeArchiveAgent();
+    } else {
+      executeDeleteAgent();
+    }
   };
 
   // ── Filtered skills ───────
@@ -311,6 +433,19 @@ const Agents = () => {
                 Quick-Start Templates
               </span>
             </button>
+            <button
+              onClick={() => setActiveTab("monitor")}
+              className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === "monitor"
+                  ? "gradient-primary text-primary-foreground shadow-glow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <Activity className="h-4 w-4" />
+                Monitor
+              </span>
+            </button>
           </div>
 
           {/* ── My Agents Tab ──────────────────────── */}
@@ -318,7 +453,7 @@ const Agents = () => {
             <div>
               <div className="flex items-center justify-between mb-6">
                 <p className="text-sm text-muted-foreground">
-                  {myAgents.filter((a) => a.active).length} active of {myAgents.length} agents — no limit on how many you can connect
+                  {myAgents.filter((a) => a.active && !a.archived).length} active of {myAgents.filter((a) => !a.archived).length} agents — no limit on how many you can connect
                 </p>
                 <Button
                   className="gradient-primary text-primary-foreground rounded-xl shadow-glow-sm hover:opacity-90 gap-2"
@@ -330,7 +465,7 @@ const Agents = () => {
               </div>
 
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {myAgents.map((agent) => {
+                {myAgents.filter((a) => !a.archived).map((agent) => {
                   const modelOption = MODEL_OPTIONS.find((m) => m.id === agent.model);
                   const visibleSkills = agent.skills.slice(0, 3);
                   const extraCount = agent.skills.length - 3;
@@ -451,6 +586,60 @@ const Agents = () => {
                   <p className="text-xs text-muted-foreground mt-1">No limit — connect as many agents as you want</p>
                 </button>
               </div>
+
+              {/* ── Archived Agents ──────────────────── */}
+              {myAgents.filter((a) => a.archived).length > 0 && (
+                <div className="mt-8">
+                  <button
+                    onClick={() => setArchivedExpanded(!archivedExpanded)}
+                    className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-4"
+                  >
+                    {archivedExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    <Archive className="h-4 w-4" />
+                    Archived ({myAgents.filter((a) => a.archived).length})
+                  </button>
+                  {archivedExpanded && (
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {myAgents.filter((a) => a.archived).map((agent) => {
+                        const modelOption = MODEL_OPTIONS.find((m) => m.id === agent.model);
+                        return (
+                          <div
+                            key={agent.id}
+                            className="rounded-xl border border-border bg-card/40 p-4 opacity-60 hover:opacity-80 transition-all"
+                          >
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center">
+                                <Bot className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                              <div>
+                                <h3 className="font-display font-bold text-foreground text-sm leading-tight">{agent.name}</h3>
+                                <Badge variant="secondary" className={`text-[10px] mt-0.5 bg-primary/10 border-0 ${modelOption?.color ?? "text-primary"}`}>
+                                  {modelOption?.label ?? agent.model}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 mb-3">
+                              <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-400">
+                                Archived
+                              </Badge>
+                              <span className="text-[10px] text-muted-foreground">{agent.skills.length} skills</span>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full gap-2 text-xs border-primary/30 text-primary hover:bg-primary/10"
+                              onClick={() => handleRestoreAgent(agent.id)}
+                            >
+                              <RotateCcw className="h-3 w-3" />
+                              Restore
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -497,6 +686,94 @@ const Agents = () => {
               </div>
             </div>
           )}
+
+          {/* ── Monitor Tab ────────────────────────── */}
+          {activeTab === "monitor" && (
+            <div>
+              <p className="text-sm text-muted-foreground mb-4">
+                Real-time activity feed across all agents.
+              </p>
+
+              {/* Filter chips */}
+              <div className="flex items-center gap-2 mb-6">
+                {(["all", "success", "warning", "error"] as const).map((filter) => {
+                  const colorMap = {
+                    all: "border-border text-foreground bg-card hover:bg-card/80",
+                    success: "border-green-500/30 text-green-400 bg-green-500/10 hover:bg-green-500/20",
+                    warning: "border-amber-500/30 text-amber-400 bg-amber-500/10 hover:bg-amber-500/20",
+                    error: "border-red-500/30 text-red-400 bg-red-500/10 hover:bg-red-500/20",
+                  };
+                  const activeColorMap = {
+                    all: "border-primary bg-primary/20 text-primary",
+                    success: "border-green-400 bg-green-500/25 text-green-300 shadow-glow-sm",
+                    warning: "border-amber-400 bg-amber-500/25 text-amber-300 shadow-glow-sm",
+                    error: "border-red-400 bg-red-500/25 text-red-300 shadow-glow-sm",
+                  };
+                  return (
+                    <button
+                      key={filter}
+                      onClick={() => setActivityFilter(filter)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all capitalize ${
+                        activityFilter === filter ? activeColorMap[filter] : colorMap[filter]
+                      }`}
+                    >
+                      {filter === "all" ? "All" : filter.charAt(0).toUpperCase() + filter.slice(1)}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Activity feed */}
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <div className="max-h-[500px] overflow-y-auto divide-y divide-border">
+                  {MOCK_ACTIVITY
+                    .filter((entry) => activityFilter === "all" || entry.status === activityFilter)
+                    .map((entry) => {
+                      const statusDot = {
+                        success: "bg-green-500",
+                        warning: "bg-amber-500",
+                        error: "bg-red-500",
+                      };
+                      const statusBg = {
+                        success: "bg-green-500/10",
+                        warning: "bg-amber-500/10",
+                        error: "bg-red-500/10",
+                      };
+                      return (
+                        <div key={entry.id} className={`flex items-start gap-3 p-4 ${statusBg[entry.status]} hover:bg-primary/5 transition-colors`}>
+                          <span className="relative flex h-2.5 w-2.5 mt-1.5 shrink-0">
+                            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${statusDot[entry.status]} opacity-75`} />
+                            <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${statusDot[entry.status]}`} />
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className="text-sm font-semibold text-foreground">{entry.agentName}</span>
+                              <Badge
+                                variant="outline"
+                                className={`text-[9px] capitalize ${
+                                  entry.status === "success"
+                                    ? "border-green-500/30 text-green-400"
+                                    : entry.status === "warning"
+                                    ? "border-amber-500/30 text-amber-400"
+                                    : "border-red-500/30 text-red-400"
+                                }`}
+                              >
+                                {entry.status}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground leading-relaxed">{entry.action}</p>
+                          </div>
+                          <span className="text-[11px] text-muted-foreground whitespace-nowrap shrink-0 mt-0.5">{entry.timestamp}</span>
+                        </div>
+                      );
+                    })}
+                  {MOCK_ACTIVITY.filter((entry) => activityFilter === "all" || entry.status === activityFilter).length === 0 && (
+                    <div className="text-center py-12 text-muted-foreground text-sm">No activity matches the selected filter.</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── Agent Settings Dialog ────────────── */}
@@ -504,7 +781,7 @@ const Agents = () => {
           open={configOpen}
           onOpenChange={(open) => {
             setConfigOpen(open);
-            if (!open) setConfigAgent(null);
+            if (!open) { setConfigAgent(null); setDeleteConfirmStep(false); }
           }}
         >
           {configAgent && (
@@ -662,27 +939,125 @@ const Agents = () => {
                 </div>
 
                 {/* Action buttons */}
-                <div className="flex items-center gap-3 pt-2">
+                <div className="space-y-3 pt-2">
                   <Button
-                    className="flex-1 gradient-primary text-primary-foreground rounded-xl shadow-glow-sm hover:opacity-90 gap-2"
+                    className="w-full gradient-primary text-primary-foreground rounded-xl shadow-glow-sm hover:opacity-90 gap-2"
                     disabled={!configName.trim()}
                     onClick={handleSaveConfig}
                   >
                     <Save className="h-4 w-4" />
                     Save Changes
                   </Button>
-                  <Button
-                    variant="outline"
-                    className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 gap-2"
-                    onClick={handleDeleteAgent}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1 border-amber-500/30 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300 gap-2"
+                      onClick={handleArchiveAgent}
+                    >
+                      <Archive className="h-4 w-4" />
+                      Archive
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1 border-violet-500/30 text-violet-400 hover:bg-violet-500/10 hover:text-violet-300 gap-2"
+                      onClick={handleClearMemory}
+                    >
+                      <Eraser className="h-4 w-4" />
+                      Clear Memory
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1 border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 gap-2"
+                      onClick={handleDeleteAgent}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      {deleteConfirmStep ? "Are you sure?" : "Delete"}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </DialogContent>
           )}
+        </Dialog>
+
+        {/* ── Transfer Tasks Dialog ────────────── */}
+        <Dialog
+          open={transferOpen}
+          onOpenChange={(open) => {
+            setTransferOpen(open);
+            if (!open) { setTransferAgentId(null); setTransferTaskCount(0); }
+          }}
+        >
+          <DialogContent className="max-w-md bg-card border-border">
+            <DialogHeader>
+              <DialogTitle className="font-display text-xl font-bold flex items-center gap-2">
+                <ArrowRightLeft className="h-5 w-5 text-primary" />
+                Transfer Agent Tasks
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-5 mt-2">
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
+                <p className="text-xs text-amber-400">
+                  This agent has <span className="font-bold">{transferTaskCount}</span> active task{transferTaskCount !== 1 ? "s" : ""} that need to be reassigned before {transferAction === "archive" ? "archiving" : "deleting"}.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Transfer tasks to:</Label>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => setTransferTargetId("unassigned")}
+                    className={`w-full flex items-center gap-3 rounded-lg border p-3 text-left transition-all ${
+                      transferTargetId === "unassigned" ? "border-primary bg-primary/10" : "border-border bg-background hover:border-primary/20"
+                    }`}
+                  >
+                    <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${transferTargetId === "unassigned" ? "border-primary" : "border-muted-foreground/40"}`}>
+                      {transferTargetId === "unassigned" && <div className="h-2 w-2 rounded-full bg-primary" />}
+                    </div>
+                    <span className="text-sm text-foreground font-medium">Keep tasks unassigned</span>
+                  </button>
+                  {myAgents
+                    .filter((a) => !a.archived && a.id !== transferAgentId)
+                    .map((agent) => (
+                      <button
+                        key={agent.id}
+                        onClick={() => setTransferTargetId(agent.id)}
+                        className={`w-full flex items-center gap-3 rounded-lg border p-3 text-left transition-all ${
+                          transferTargetId === agent.id ? "border-primary bg-primary/10" : "border-border bg-background hover:border-primary/20"
+                        }`}
+                      >
+                        <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${transferTargetId === agent.id ? "border-primary" : "border-muted-foreground/40"}`}>
+                          {transferTargetId === agent.id && <div className="h-2 w-2 rounded-full bg-primary" />}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Bot className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm text-foreground font-medium">{agent.name}</span>
+                          {agent.active && <span className="h-1.5 w-1.5 rounded-full bg-green-500" />}
+                        </div>
+                      </button>
+                    ))}
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => { setTransferOpen(false); setTransferAgentId(null); }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1 gradient-primary text-primary-foreground rounded-xl shadow-glow-sm hover:opacity-90 gap-2"
+                  onClick={handleTransferConfirm}
+                >
+                  <ArrowRightLeft className="h-4 w-4" />
+                  {transferAction === "archive" ? "Transfer & Archive" : "Transfer & Delete"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
         </Dialog>
 
         {/* ── Deploy Template Dialog ────────────── */}

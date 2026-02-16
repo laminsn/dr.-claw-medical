@@ -40,6 +40,11 @@ import {
   Send,
   Gamepad2,
   Hash,
+  LayoutDashboard,
+  Target,
+  CalendarCheck,
+  Bug,
+  Smartphone,
   type LucideIcon,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
@@ -99,6 +104,11 @@ const iconMap: Record<string, LucideIcon> = {
   send: Send,
   "gamepad-2": Gamepad2,
   hash: Hash,
+  "layout-dashboard": LayoutDashboard,
+  target: Target,
+  "calendar-check": CalendarCheck,
+  bug: Bug,
+  smartphone: Smartphone,
 };
 
 function resolveIcon(name: string): LucideIcon {
@@ -126,6 +136,7 @@ const categoryColors: Record<string, string> = {
   ehr: "bg-red-500/15 text-red-400 border-red-500/30",
   video: "bg-indigo-500/15 text-indigo-400 border-indigo-500/30",
   messaging: "bg-teal-500/15 text-teal-400 border-teal-500/30",
+  "project-management": "bg-pink-500/15 text-pink-400 border-pink-500/30",
 };
 
 const categoryLabel: Record<string, string> = {
@@ -139,6 +150,7 @@ const categoryLabel: Record<string, string> = {
   ehr: "EHR / EMR",
   video: "Video",
   messaging: "Messaging",
+  "project-management": "Project Mgmt",
 };
 
 // ---------------------------------------------------------------------------

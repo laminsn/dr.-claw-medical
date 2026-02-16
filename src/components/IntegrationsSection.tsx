@@ -1,12 +1,13 @@
 import {
   Brain,
   Mic,
-  MessageSquare,
   Database,
   Contact,
   HeartPulse,
   Send,
   Mail,
+  Target,
+  Smartphone,
 } from "lucide-react";
 
 const integrationGroups = [
@@ -44,13 +45,25 @@ const integrationGroups = [
     title: "Messaging & Video",
     icon: Send,
     color: "text-cyan-400",
-    items: ["Slack", "Telegram", "Discord", "Zoom", "Twilio"],
+    items: ["Slack", "Telegram", "Discord", "Zoom", "Twilio", "WhatsApp"],
+  },
+  {
+    title: "Project Management",
+    icon: Target,
+    color: "text-pink-400",
+    items: ["Trello", "Asana", "Monday.com", "Jira"],
   },
   {
     title: "Productivity",
     icon: Database,
     color: "text-amber-400",
     items: ["Notion", "Airtable", "Zapier", "SendGrid"],
+  },
+  {
+    title: "Mobile Messaging",
+    icon: Smartphone,
+    color: "text-green-400",
+    items: ["WhatsApp Business", "Apple Messages"],
   },
 ];
 
@@ -104,7 +117,7 @@ export default function IntegrationsSection() {
 
         {/* Bottom note */}
         <p className="text-center text-sm text-slate-500 mt-8 animate-fade-up">
-          40+ integrations available &middot; Custom integrations on Enterprise plans
+          55+ integrations available &middot; Custom integrations on Enterprise plans
         </p>
       </div>
     </section>
