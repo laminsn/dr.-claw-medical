@@ -11,6 +11,7 @@ import {
   Pencil,
   Eye,
   Wrench,
+  Clock,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +45,8 @@ interface TeamMember {
   agentAccess: string;
   avatarColor: string;
   customPermissions: string[];
+  lastSeen?: string;
+  department?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -106,6 +109,8 @@ const initialMembers: TeamMember[] = [
     agentAccess: "All Agents",
     avatarColor: avatarColors.Owner,
     customPermissions: [...allPermissions],
+    lastSeen: "Just now",
+    department: "Administration",
   },
   {
     id: "2",
@@ -116,6 +121,8 @@ const initialMembers: TeamMember[] = [
     agentAccess: "All Agents",
     avatarColor: avatarColors.Admin,
     customPermissions: [...allPermissions],
+    lastSeen: "5 min ago",
+    department: "Operations",
   },
   {
     id: "3",
@@ -132,6 +139,8 @@ const initialMembers: TeamMember[] = [
       "Manage Skills",
       "View Reports",
     ],
+    lastSeen: "12 min ago",
+    department: "Marketing",
   },
   {
     id: "4",
@@ -148,6 +157,8 @@ const initialMembers: TeamMember[] = [
       "Manage Skills",
       "View Reports",
     ],
+    lastSeen: "1 hour ago",
+    department: "Clinical",
   },
   {
     id: "5",
@@ -158,6 +169,8 @@ const initialMembers: TeamMember[] = [
     agentAccess: "3 Agents",
     avatarColor: avatarColors.Viewer,
     customPermissions: ["View Dashboard", "View Reports"],
+    lastSeen: "3 hours ago",
+    department: "Billing",
   },
   {
     id: "6",
@@ -168,6 +181,7 @@ const initialMembers: TeamMember[] = [
     agentAccess: "All Agents",
     avatarColor: avatarColors.Admin,
     customPermissions: [...allPermissions],
+    department: "IT",
   },
   {
     id: "7",
@@ -178,6 +192,7 @@ const initialMembers: TeamMember[] = [
     agentAccess: "3 Agents",
     avatarColor: avatarColors.Viewer,
     customPermissions: ["View Dashboard", "View Reports"],
+    department: "HR",
   },
   {
     id: "8",
@@ -194,6 +209,8 @@ const initialMembers: TeamMember[] = [
       "Manage Skills",
       "View Reports",
     ],
+    lastSeen: "30 min ago",
+    department: "Research",
   },
 ];
 
@@ -535,14 +552,27 @@ const TeamManagement = () => {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {member.email}
-                      </p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
+                        <span>{member.email}</span>
+                        {member.department && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 border border-white/10">
+                            {member.department}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
                   {/* Badges + Actions */}
                   <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                    {/* Last Seen */}
+                    {member.lastSeen && (
+                      <span className="text-[10px] text-muted-foreground/60 flex items-center gap-1 min-w-[70px]">
+                        <Clock className="h-3 w-3" />
+                        {member.lastSeen}
+                      </span>
+                    )}
+
                     {/* Role Badge */}
                     <Badge
                       variant="outline"

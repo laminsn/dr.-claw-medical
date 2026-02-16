@@ -20,6 +20,8 @@ import {
   MessageSquare,
   ListTodo,
   ScrollText,
+  ShieldAlert,
+  Mail,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -36,6 +38,8 @@ const menuItems = [
   { icon: ScrollText, label: "Data Logs", path: "/dashboard/logs" },
   { icon: GraduationCap, label: "Training", path: "/dashboard/training" },
   { icon: User, label: "Profile", path: "/dashboard/profile" },
+  { icon: ShieldAlert, label: "PHI Monitor", path: "/dashboard/phi-monitor" },
+  { icon: Mail, label: "Campaigns", path: "/dashboard/campaigns" },
   { icon: Shield, label: "Admin", path: "/dashboard/admin" },
   { icon: Settings, label: "Settings", path: "/dashboard/settings" },
 ];

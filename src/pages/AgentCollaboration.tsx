@@ -11,6 +11,9 @@ import {
   Send,
   Save,
   Check,
+  Users,
+  UserCheck,
+  Shield,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Badge } from "@/components/ui/badge";
@@ -184,6 +187,13 @@ const AgentCollaboration = () => {
   // Core state
   const [channels, setChannels] = useState<Channel[]>(initialChannels);
   const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>(initialLinkedAccounts);
+
+  // Collaboration scoping
+  const departments = ["Administration", "Clinical", "Marketing", "Operations", "Billing", "HR", "IT", "Research"];
+  const [allowedDepartments, setAllowedDepartments] = useState<string[]>(departments);
+  const teammates = ["Dr. Sarah Chen", "James Wilson", "Maria Rodriguez", "Kevin Park", "Lisa Thompson", "Tom Bradley"];
+  const [allowedTeammates, setAllowedTeammates] = useState<string[]>(teammates);
+  const [scopeMode, setScopeMode] = useState<"all" | "departments" | "teammates">("all");
 
   // Dialog state
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
@@ -360,6 +370,118 @@ const AgentCollaboration = () => {
               </div>
             ))}
           </div>
+
+          {/* ── Collaboration Scope ──────────────────────── */}
+          <section className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold font-heading text-foreground flex items-center gap-2">
+                <Shield className="h-5 w-5 text-primary" />
+                Collaboration Scope
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Define which departments, accounts, and teammates can collaborate with your agents.
+              </p>
+            </div>
+
+            {/* Scope Mode Selector */}
+            <div className="flex gap-2">
+              {([
+                { value: "all" as const, label: "All Access", icon: Users, desc: "Everyone can collaborate" },
+                { value: "departments" as const, label: "By Department", icon: Building2, desc: "Restrict to specific departments" },
+                { value: "teammates" as const, label: "By Teammate", icon: UserCheck, desc: "Restrict to specific people" },
+              ]).map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setScopeMode(opt.value)}
+                  className={`flex-1 rounded-xl border p-4 text-left transition-all ${
+                    scopeMode === opt.value
+                      ? "border-primary bg-primary/10 shadow-glow-sm"
+                      : "border-white/10 bg-white/[0.02] hover:border-primary/30"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <opt.icon className={`h-4 w-4 ${scopeMode === opt.value ? "text-primary" : "text-muted-foreground"}`} />
+                    <p className="text-sm font-semibold text-foreground">{opt.label}</p>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">{opt.desc}</p>
+                </button>
+              ))}
+            </div>
+
+            {/* Department Toggles */}
+            {scopeMode === "departments" && (
+              <div className="glass-card rounded-xl p-5 space-y-3">
+                <p className="text-sm font-medium text-foreground">Allowed Departments</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {departments.map((dept) => {
+                    const enabled = allowedDepartments.includes(dept);
+                    return (
+                      <button
+                        key={dept}
+                        onClick={() =>
+                          setAllowedDepartments((prev) =>
+                            enabled ? prev.filter((d) => d !== dept) : [...prev, dept]
+                          )
+                        }
+                        className={`rounded-lg border px-3 py-2 text-xs font-medium transition-all ${
+                          enabled
+                            ? "border-primary/40 bg-primary/10 text-foreground"
+                            : "border-white/10 bg-white/[0.02] text-muted-foreground hover:border-primary/20"
+                        }`}
+                      >
+                        {enabled && <Check className="h-3 w-3 inline mr-1" />}
+                        {dept}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  {allowedDepartments.length} of {departments.length} departments can collaborate
+                </p>
+              </div>
+            )}
+
+            {/* Teammate Toggles */}
+            {scopeMode === "teammates" && (
+              <div className="glass-card rounded-xl p-5 space-y-3">
+                <p className="text-sm font-medium text-foreground">Allowed Teammates</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {teammates.map((name) => {
+                    const enabled = allowedTeammates.includes(name);
+                    return (
+                      <button
+                        key={name}
+                        onClick={() =>
+                          setAllowedTeammates((prev) =>
+                            enabled ? prev.filter((n) => n !== name) : [...prev, name]
+                          )
+                        }
+                        className={`rounded-lg border px-3 py-2 text-xs font-medium transition-all text-left ${
+                          enabled
+                            ? "border-primary/40 bg-primary/10 text-foreground"
+                            : "border-white/10 bg-white/[0.02] text-muted-foreground hover:border-primary/20"
+                        }`}
+                      >
+                        {enabled && <Check className="h-3 w-3 inline mr-1" />}
+                        {name}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  {allowedTeammates.length} of {teammates.length} teammates can collaborate
+                </p>
+              </div>
+            )}
+
+            {scopeMode === "all" && (
+              <div className="glass-card rounded-xl p-5">
+                <p className="text-sm text-muted-foreground">
+                  All departments and teammates have full collaboration access. Switch to "By Department" or "By Teammate" to restrict scope.
+                </p>
+              </div>
+            )}
+          </section>
 
           {/* ── Internal Agent Collaboration ───────────── */}
           <section className="space-y-4">

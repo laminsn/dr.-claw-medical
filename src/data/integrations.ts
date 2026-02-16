@@ -2,7 +2,7 @@ export interface Integration {
   id: string;
   name: string;
   description: string;
-  category: "llm" | "voice" | "cloud" | "productivity" | "healthcare" | "communication" | "crm" | "ehr" | "video" | "messaging";
+  category: "llm" | "voice" | "cloud" | "productivity" | "healthcare" | "communication" | "crm" | "ehr" | "video" | "messaging" | "project-management";
   icon: string;
   website: string;
   apiKeyLabel: string;
@@ -23,6 +23,7 @@ export const integrationCategories = [
   { id: "ehr", name: "EHR / EMR", description: "Electronic health record systems" },
   { id: "video", name: "Video & Meetings", description: "Video conferencing and virtual meetings" },
   { id: "messaging", name: "Messaging Platforms", description: "Chat and messaging platforms" },
+  { id: "project-management", name: "Project Management", description: "Task and project management tools" },
 ];
 
 export const integrations: Integration[] = [
@@ -741,6 +742,113 @@ export const integrations: Integration[] = [
       "Slash commands",
       "Interactive blocks",
       "File sharing",
+    ],
+    tier: "professional",
+    popular: true,
+  },
+
+  // ---------------------------------------------------------------------------
+  // Project Management
+  // ---------------------------------------------------------------------------
+  {
+    id: "trello",
+    name: "Trello",
+    description: "Visual project management with boards, lists, and cards. Sync agent tasks with Trello boards for team visibility.",
+    category: "project-management",
+    icon: "layout-dashboard",
+    website: "https://trello.com",
+    apiKeyLabel: "Trello API Key",
+    apiKeyPlaceholder: "Enter your Trello API key",
+    features: [
+      "Board sync",
+      "Card creation from tasks",
+      "Label mapping",
+      "Due date sync",
+      "Checklist sync",
+      "Webhook notifications",
+    ],
+    tier: "professional",
+    popular: true,
+  },
+  {
+    id: "asana",
+    name: "Asana",
+    description: "Work management platform for teams. Sync agent tasks, projects, and timelines with Asana workspaces.",
+    category: "project-management",
+    icon: "target",
+    website: "https://asana.com",
+    apiKeyLabel: "Asana Access Token",
+    apiKeyPlaceholder: "Enter your Asana personal access token",
+    features: [
+      "Project sync",
+      "Task assignment",
+      "Timeline view",
+      "Custom fields",
+      "Portfolio tracking",
+      "Status updates",
+    ],
+    tier: "professional",
+    popular: true,
+  },
+  {
+    id: "monday",
+    name: "Monday.com",
+    description: "Work OS for managing projects, tasks, and team workflows. Connect agent operations to Monday boards.",
+    category: "project-management",
+    icon: "calendar-check",
+    website: "https://monday.com",
+    apiKeyLabel: "Monday API Token",
+    apiKeyPlaceholder: "Enter your Monday.com API token",
+    features: [
+      "Board integration",
+      "Item creation",
+      "Status columns",
+      "Timeline sync",
+      "Automations",
+      "Dashboards",
+    ],
+    tier: "advanced",
+  },
+  {
+    id: "jira",
+    name: "Jira",
+    description: "Issue and project tracking for agile teams. Sync agent tasks with Jira issues and sprints.",
+    category: "project-management",
+    icon: "bug",
+    website: "https://www.atlassian.com/software/jira",
+    apiKeyLabel: "Jira API Token",
+    apiKeyPlaceholder: "Enter your Jira Cloud API token",
+    features: [
+      "Issue sync",
+      "Sprint planning",
+      "Board integration",
+      "Custom workflows",
+      "Epics & stories",
+      "JQL queries",
+    ],
+    tier: "advanced",
+  },
+
+  // ---------------------------------------------------------------------------
+  // WhatsApp
+  // ---------------------------------------------------------------------------
+  {
+    id: "whatsapp",
+    name: "WhatsApp Business",
+    description: "Connect agents to WhatsApp Business API for patient and client messaging. Supports QR code pairing for WhatsApp Web.",
+    category: "messaging",
+    icon: "smartphone",
+    website: "https://business.whatsapp.com",
+    apiKeyLabel: "WhatsApp Business Token",
+    apiKeyPlaceholder: "Enter your WhatsApp Business API token",
+    features: [
+      "QR code pairing",
+      "Template messages",
+      "Media messages",
+      "Read receipts",
+      "Quick replies",
+      "Contact management",
+      "End-to-end encryption",
     ],
     tier: "professional",
     popular: true,

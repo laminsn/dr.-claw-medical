@@ -20,6 +20,8 @@ import TaskTracker from "./pages/TaskTracker";
 import DataLogs from "./pages/DataLogs";
 import Settings from "./pages/Settings";
 import Terms from "./pages/Terms";
+import PhiMonitor from "./pages/PhiMonitor";
+import EmailCampaigns from "./pages/EmailCampaigns";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -50,6 +52,8 @@ const App = () => (
             <Route path="/dashboard/logs" element={<ProtectedRoute><DataLogs /></ProtectedRoute>} />
             <Route path="/dashboard/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
             <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/dashboard/phi-monitor" element={<ProtectedRoute><PhiMonitor /></ProtectedRoute>} />
+            <Route path="/dashboard/campaigns" element={<ProtectedRoute><EmailCampaigns /></ProtectedRoute>} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Terms />} />
             <Route path="/security" element={<Terms />} />
