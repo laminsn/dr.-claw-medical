@@ -3,8 +3,6 @@ import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Bot,
-  Phone,
-  CalendarCheck,
   FileText,
   Users,
   Settings,
@@ -19,6 +17,9 @@ import {
   Building2,
   UserPlus,
   Link2,
+  MessageSquare,
+  ListTodo,
+  ScrollText,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/dr-claw-logo-transparent.png";
@@ -31,9 +32,10 @@ const menuItems = [
   { icon: Building2, label: "Company Profile", path: "/dashboard/company" },
   { icon: UserPlus, label: "Team", path: "/dashboard/team" },
   { icon: Link2, label: "Collaboration", path: "/dashboard/collaboration" },
+  { icon: MessageSquare, label: "Communication", path: "/dashboard/communication" },
+  { icon: ListTodo, label: "Task Tracker", path: "/dashboard/tasks" },
+  { icon: ScrollText, label: "Data Logs", path: "/dashboard/logs" },
   { icon: GraduationCap, label: "Training", path: "/dashboard/training" },
-  { icon: Phone, label: "Outreach", path: "/dashboard/outreach" },
-  { icon: FileText, label: "Documents", path: "/dashboard/documents" },
   { icon: User, label: "Profile", path: "/dashboard/profile" },
   { icon: Shield, label: "Admin", path: "/dashboard/admin" },
   { icon: Settings, label: "Settings", path: "/dashboard/settings" },
