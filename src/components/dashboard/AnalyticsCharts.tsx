@@ -204,8 +204,102 @@ const AgentTasksTable = () => {
   );
 };
 
+const hoursSavedData = [
+  { month: "Sep", hours: 320, manual: 480 },
+  { month: "Oct", hours: 410, manual: 520 },
+  { month: "Nov", hours: 485, manual: 560 },
+  { month: "Dec", hours: 540, manual: 610 },
+  { month: "Jan", hours: 625, manual: 680 },
+  { month: "Feb", hours: 712, manual: 750 },
+];
+
+const moneySavedData = [
+  { name: "Labor Costs", value: 42500, color: "hsl(217, 100%, 59%)" },
+  { name: "Operational Efficiency", value: 18200, color: "hsl(190, 95%, 50%)" },
+  { name: "Error Reduction", value: 8900, color: "hsl(142, 72%, 45%)" },
+  { name: "Patient Retention", value: 12400, color: "hsl(280, 72%, 55%)" },
+];
+
+const agentHoursSaved = [
+  { agent: "Front Desk", hours: 186 },
+  { agent: "Clinical Coord", hours: 142 },
+  { agent: "Content Engine", hours: 98 },
+  { agent: "Patient Outreach", hours: 87 },
+  { agent: "Insurance Verifier", hours: 72 },
+  { agent: "Financial Analyst", hours: 64 },
+  { agent: "Grant Writer", hours: 38 },
+  { agent: "HR Coordinator", hours: 25 },
+];
+
+const HoursSavedChart = () => (
+  <ResponsiveContainer width="100%" height={220}>
+    <AreaChart data={hoursSavedData}>
+      <defs>
+        <linearGradient id="colorHoursSaved" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="5%" stopColor="hsl(142, 72%, 45%)" stopOpacity={0.3} />
+          <stop offset="95%" stopColor="hsl(142, 72%, 45%)" stopOpacity={0} />
+        </linearGradient>
+        <linearGradient id="colorManualHours" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="5%" stopColor="hsl(220, 12%, 40%)" stopOpacity={0.2} />
+          <stop offset="95%" stopColor="hsl(220, 12%, 40%)" stopOpacity={0} />
+        </linearGradient>
+      </defs>
+      <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 16%)" vertical={false} />
+      <XAxis dataKey="month" tick={{ fill: "hsl(220, 10%, 50%)", fontSize: 11 }} axisLine={false} tickLine={false} />
+      <YAxis tick={{ fill: "hsl(220, 10%, 50%)", fontSize: 11 }} axisLine={false} tickLine={false} />
+      <Tooltip contentStyle={customTooltipStyle} />
+      <Area type="monotone" dataKey="manual" stroke="hsl(220, 12%, 40%)" strokeWidth={1.5} strokeDasharray="4 4" fill="url(#colorManualHours)" name="Without AI (est.)" />
+      <Area type="monotone" dataKey="hours" stroke="hsl(142, 72%, 45%)" strokeWidth={2} fill="url(#colorHoursSaved)" name="Hours Saved by AI" />
+    </AreaChart>
+  </ResponsiveContainer>
+);
+
+const MoneySavedChart = () => (
+  <div className="flex items-center gap-6">
+    <ResponsiveContainer width={140} height={140}>
+      <PieChart>
+        <Pie
+          data={moneySavedData}
+          cx="50%"
+          cy="50%"
+          innerRadius={40}
+          outerRadius={65}
+          paddingAngle={3}
+          dataKey="value"
+          strokeWidth={0}
+        >
+          {moneySavedData.map((entry, i) => (
+            <Cell key={i} fill={entry.color} />
+          ))}
+        </Pie>
+      </PieChart>
+    </ResponsiveContainer>
+    <div className="space-y-2.5">
+      {moneySavedData.map((item) => (
+        <div key={item.name} className="flex items-center gap-2.5">
+          <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+          <span className="text-xs text-muted-foreground">{item.name}</span>
+          <span className="text-xs font-semibold text-foreground ml-auto">${(item.value / 1000).toFixed(1)}k</span>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const AgentHoursSavedChart = () => (
+  <ResponsiveContainer width="100%" height={220}>
+    <BarChart data={agentHoursSaved} layout="vertical" barSize={14}>
+      <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 16%)" horizontal={false} />
+      <XAxis type="number" tick={{ fill: "hsl(220, 10%, 50%)", fontSize: 11 }} axisLine={false} tickLine={false} />
+      <YAxis type="category" dataKey="agent" tick={{ fill: "hsl(220, 10%, 50%)", fontSize: 11 }} axisLine={false} tickLine={false} width={110} />
+      <Tooltip contentStyle={customTooltipStyle} />
+      <Bar dataKey="hours" fill="hsl(142, 72%, 45%)" radius={[0, 4, 4, 0]} name="Hours Saved" />
+    </BarChart>
+  </ResponsiveContainer>
+);
+
 // Keep old names as aliases for backwards compatibility
 const CallVolumeChart = TaskVolumeChart;
 const CallHistoryTable = AgentTasksTable;
 
-export { CallVolumeChart, TaskVolumeChart, TrendChart, OutcomeChart, CallHistoryTable, AgentTasksTable };
+export { CallVolumeChart, TaskVolumeChart, TrendChart, OutcomeChart, CallHistoryTable, AgentTasksTable, HoursSavedChart, MoneySavedChart, AgentHoursSavedChart };

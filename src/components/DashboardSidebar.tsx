@@ -22,24 +22,42 @@ import {
   ScrollText,
   ShieldAlert,
   Mail,
+  Heart,
+  BarChart3,
+  GitBranch,
+  BookOpen,
+  CreditCard,
+  Bell,
+  MessageCircle,
+  LayoutGrid,
+  Code2,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Overview", path: "/dashboard" },
   { icon: Bot, label: "AI Agents", path: "/dashboard/agents" },
+  { icon: MessageCircle, label: "Agent Playground", path: "/dashboard/playground" },
   { icon: Zap, label: "Skills Center", path: "/dashboard/skills" },
+  { icon: GitBranch, label: "Workflows", path: "/dashboard/workflows" },
   { icon: Plug, label: "Integrations", path: "/dashboard/integrations" },
+  { icon: Heart, label: "Patient Portal", path: "/dashboard/patients" },
   { icon: Building2, label: "Company Profile", path: "/dashboard/company" },
   { icon: UserPlus, label: "Team", path: "/dashboard/team" },
   { icon: Link2, label: "Collaboration", path: "/dashboard/collaboration" },
   { icon: MessageSquare, label: "Communication", path: "/dashboard/communication" },
   { icon: ListTodo, label: "Task Tracker", path: "/dashboard/tasks" },
+  { icon: BookOpen, label: "Knowledge Base", path: "/dashboard/knowledge" },
+  { icon: BarChart3, label: "Reports", path: "/dashboard/reports" },
+  { icon: LayoutGrid, label: "Custom Dashboards", path: "/dashboard/custom-dashboards" },
   { icon: ScrollText, label: "Data Logs", path: "/dashboard/logs" },
-  { icon: GraduationCap, label: "Training", path: "/dashboard/training" },
-  { icon: User, label: "Profile", path: "/dashboard/profile" },
-  { icon: ShieldAlert, label: "PHI Monitor", path: "/dashboard/phi-monitor" },
+  { icon: Bell, label: "Notifications", path: "/dashboard/notifications" },
   { icon: Mail, label: "Campaigns", path: "/dashboard/campaigns" },
+  { icon: GraduationCap, label: "Training", path: "/dashboard/training" },
+  { icon: ShieldAlert, label: "PHI Monitor", path: "/dashboard/phi-monitor" },
+  { icon: Code2, label: "API Portal", path: "/dashboard/api" },
+  { icon: CreditCard, label: "Billing", path: "/dashboard/billing" },
+  { icon: User, label: "Profile", path: "/dashboard/profile" },
   { icon: Shield, label: "Admin", path: "/dashboard/admin" },
   { icon: Settings, label: "Settings", path: "/dashboard/settings" },
 ];
@@ -64,14 +82,14 @@ const DashboardSidebar = () => {
         )}
       </div>
 
-      <nav className="flex-1 py-4 space-y-1 px-2">
+      <nav className="flex-1 py-4 space-y-1 px-2 overflow-y-auto">
         {menuItems.map((item) => {
           const active = location.pathname === item.path;
           return (
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 active
                   ? "bg-sidebar-accent text-sidebar-primary"
                   : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
