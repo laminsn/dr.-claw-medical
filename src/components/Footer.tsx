@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
-import { Shield, FileCheck, Lock } from "lucide-react";
-import logo from "@/assets/dr-claw-logo-transparent.png";
+import { Shield, FileCheck, Lock, Zap } from "lucide-react";
 
 const productLinks = [
   { label: "Features", href: "#features" },
@@ -37,11 +36,9 @@ export default function Footer() {
           {/* Column 1-2: Logo + Description + Badges */}
           <div className="col-span-2">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <img
-                src={logo}
-                alt="Dr. Claw"
-                className="h-9 w-9"
-              />
+              <div className="h-9 w-9 rounded-lg gradient-primary flex items-center justify-center shadow-glow-sm">
+                <Zap className="h-5 w-5 text-white" />
+              </div>
               <span className="text-xl font-bold font-heading gradient-hero-text">
                 Dr. Claw
               </span>

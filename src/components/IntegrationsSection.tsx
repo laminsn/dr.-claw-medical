@@ -2,10 +2,11 @@ import {
   Brain,
   Mic,
   MessageSquare,
-  Shield,
   Database,
-  Cloud,
   Contact,
+  HeartPulse,
+  Send,
+  Mail,
 } from "lucide-react";
 
 const integrationGroups = [
@@ -22,28 +23,34 @@ const integrationGroups = [
     items: ["GoHighLevel", "HubSpot", "Salesforce", "Zoho CRM", "Pipedrive"],
   },
   {
+    title: "EHR / EMR",
+    icon: HeartPulse,
+    color: "text-red-400",
+    items: ["Epic EHR", "Oracle Cerner", "Allscripts", "Nuance DAX"],
+  },
+  {
+    title: "Google Workspace",
+    icon: Mail,
+    color: "text-emerald-400",
+    items: ["Gmail", "Drive", "Docs", "Sheets", "Slides", "Meet"],
+  },
+  {
     title: "Voice & Speech",
     icon: Mic,
     color: "text-violet-400",
     items: ["ElevenLabs", "Deepgram", "VAPI"],
   },
   {
-    title: "Communication",
-    icon: MessageSquare,
+    title: "Messaging & Video",
+    icon: Send,
     color: "text-cyan-400",
-    items: ["Twilio", "Slack", "SendGrid"],
-  },
-  {
-    title: "Healthcare",
-    icon: Shield,
-    color: "text-emerald-400",
-    items: ["Epic EHR", "Cerner", "AWS HealthLake"],
+    items: ["Slack", "Telegram", "Discord", "Zoom", "Twilio"],
   },
   {
     title: "Productivity",
     icon: Database,
     color: "text-amber-400",
-    items: ["Notion", "Airtable", "Zapier"],
+    items: ["Notion", "Airtable", "Zapier", "SendGrid"],
   },
 ];
 
@@ -97,7 +104,7 @@ export default function IntegrationsSection() {
 
         {/* Bottom note */}
         <p className="text-center text-sm text-slate-500 mt-8 animate-fade-up">
-          23+ integrations available &middot; Custom integrations on Enterprise plans
+          40+ integrations available &middot; Custom integrations on Enterprise plans
         </p>
       </div>
     </section>

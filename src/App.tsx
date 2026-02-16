@@ -18,6 +18,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AgentCommunication from "./pages/AgentCommunication";
 import TaskTracker from "./pages/TaskTracker";
 import DataLogs from "./pages/DataLogs";
+import Settings from "./pages/Settings";
+import Terms from "./pages/Terms";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -47,6 +49,11 @@ const App = () => (
             <Route path="/dashboard/tasks" element={<ProtectedRoute><TaskTracker /></ProtectedRoute>} />
             <Route path="/dashboard/logs" element={<ProtectedRoute><DataLogs /></ProtectedRoute>} />
             <Route path="/dashboard/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Terms />} />
+            <Route path="/security" element={<Terms />} />
+            <Route path="/compliance/:type" element={<Terms />} />
             <Route path="/dashboard/*" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

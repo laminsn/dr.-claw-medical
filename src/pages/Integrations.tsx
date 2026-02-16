@@ -29,6 +29,17 @@ import {
   CloudCog,
   Contact,
   GitBranch,
+  HeartPulse,
+  Hospital,
+  ClipboardList,
+  AudioLines,
+  Video,
+  HardDrive,
+  FileText,
+  Presentation,
+  Send,
+  Gamepad2,
+  Hash,
   type LucideIcon,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
@@ -77,6 +88,17 @@ const iconMap: Record<string, LucideIcon> = {
   "cloud-cog": CloudCog,
   contact: Contact,
   "git-branch": GitBranch,
+  "heart-pulse": HeartPulse,
+  hospital: Hospital,
+  "clipboard-list": ClipboardList,
+  "audio-lines": AudioLines,
+  video: Video,
+  "hard-drive": HardDrive,
+  "file-text": FileText,
+  presentation: Presentation,
+  send: Send,
+  "gamepad-2": Gamepad2,
+  hash: Hash,
 };
 
 function resolveIcon(name: string): LucideIcon {
@@ -101,6 +123,9 @@ const categoryColors: Record<string, string> = {
   productivity: "bg-amber-500/15 text-amber-400 border-amber-500/30",
   healthcare: "bg-rose-500/15 text-rose-400 border-rose-500/30",
   communication: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  ehr: "bg-red-500/15 text-red-400 border-red-500/30",
+  video: "bg-indigo-500/15 text-indigo-400 border-indigo-500/30",
+  messaging: "bg-teal-500/15 text-teal-400 border-teal-500/30",
 };
 
 const categoryLabel: Record<string, string> = {
@@ -111,6 +136,9 @@ const categoryLabel: Record<string, string> = {
   productivity: "Productivity",
   healthcare: "Healthcare",
   communication: "Communication",
+  ehr: "EHR / EMR",
+  video: "Video",
+  messaging: "Messaging",
 };
 
 // ---------------------------------------------------------------------------
