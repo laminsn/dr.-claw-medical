@@ -15,6 +15,9 @@ import CompanyProfile from "./pages/CompanyProfile";
 import TeamManagement from "./pages/TeamManagement";
 import AgentCollaboration from "./pages/AgentCollaboration";
 import AdminDashboard from "./pages/AdminDashboard";
+import AgentCommunication from "./pages/AgentCommunication";
+import TaskTracker from "./pages/TaskTracker";
+import DataLogs from "./pages/DataLogs";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -40,6 +43,9 @@ const App = () => (
             <Route path="/dashboard/company" element={<ProtectedRoute><CompanyProfile /></ProtectedRoute>} />
             <Route path="/dashboard/team" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
             <Route path="/dashboard/collaboration" element={<ProtectedRoute><AgentCollaboration /></ProtectedRoute>} />
+            <Route path="/dashboard/communication" element={<ProtectedRoute><AgentCommunication /></ProtectedRoute>} />
+            <Route path="/dashboard/tasks" element={<ProtectedRoute><TaskTracker /></ProtectedRoute>} />
+            <Route path="/dashboard/logs" element={<ProtectedRoute><DataLogs /></ProtectedRoute>} />
             <Route path="/dashboard/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
             <Route path="/dashboard/*" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
