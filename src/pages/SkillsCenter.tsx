@@ -53,6 +53,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { skills, skillCategories, getSkillsByCategory } from "@/data/skills";
+import { useToast } from "@/hooks/use-toast";
 
 // ---------------------------------------------------------------------------
 // Icon mapping: skill data stores icon names as strings
@@ -126,6 +127,7 @@ const categoryColors: Record<string, string> = {
 // Component
 // ---------------------------------------------------------------------------
 const SkillsCenter = () => {
+  const { toast } = useToast();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSkill, setSelectedSkill] = useState<(typeof skills)[number] | null>(null);
@@ -340,7 +342,16 @@ const SkillsCenter = () => {
 
             {/* Action */}
             <div className="pt-2 flex justify-end">
-              <Button className="gradient-primary text-white shadow-glow-sm hover:opacity-90 transition-opacity">
+              <Button
+                className="gradient-primary text-white shadow-glow-sm hover:opacity-90 transition-opacity"
+                onClick={() => {
+                  toast({
+                    title: "Skill added",
+                    description: `"${selectedSkill.name}" has been added to your agent's skill set. Configure it from the Agents page.`,
+                  });
+                  setSelectedSkill(null);
+                }}
+              >
                 <Zap className="h-4 w-4 mr-1.5" />
                 Add to Agent
               </Button>

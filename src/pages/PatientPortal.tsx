@@ -324,7 +324,7 @@ const PatientPortal = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [patients] = useState<Patient[]>(mockPatients);
-  const [appointments] = useState<Appointment[]>(mockAppointments);
+  const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
   const [messages, setMessages] = useState<PatientMessage[]>(mockMessages);
   const [carePlans] = useState<CarePlan[]>(mockCarePlans);
 
@@ -340,6 +340,9 @@ const PatientPortal = () => {
 
   // Actions
   const handleReply = (msg: PatientMessage) => {
+    setMessages((prev) =>
+      prev.map((m) => (m.id === msg.id ? { ...m, read: true } : m)),
+    );
     toast({
       title: "Reply sent",
       description: `Your reply to ${msg.patientName} has been queued for delivery.`,
@@ -364,9 +367,19 @@ const PatientPortal = () => {
   };
 
   const handleCheckIn = (apt: Appointment) => {
+    const statusFlow: Record<AppointmentStatus, AppointmentStatus> = {
+      "Waiting": "Checked In",
+      "Checked In": "In Progress",
+      "In Progress": "Completed",
+      "Completed": "Completed",
+    };
+    const newStatus = statusFlow[apt.status];
+    setAppointments((prev) =>
+      prev.map((a) => (a.id === apt.id ? { ...a, status: newStatus } : a)),
+    );
     toast({
       title: "Status updated",
-      description: `${apt.patientName}'s appointment status has been updated.`,
+      description: `${apt.patientName} is now "${newStatus}".`,
     });
   };
 

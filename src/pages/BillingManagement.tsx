@@ -211,9 +211,43 @@ const BillingManagement = () => {
   };
 
   const handleDownloadInvoice = (invoice: Invoice) => {
+    const invoiceText = [
+      "=".repeat(50),
+      "                    INVOICE",
+      "=".repeat(50),
+      "",
+      `Invoice Number: ${invoice.number}`,
+      `Date:           ${invoice.date}`,
+      `Amount:         ${invoice.amount}`,
+      `Status:         ${invoice.status}`,
+      "",
+      "-".repeat(50),
+      "Billed To:",
+      "  Your Practice Name",
+      "  billing@clinic.com",
+      "",
+      "Plan:           Professional",
+      "Billing Period:  Monthly",
+      "",
+      "-".repeat(50),
+      `Total Due:      ${invoice.amount}`,
+      "=".repeat(50),
+      "",
+      "Dr. Claw Medical — AI Healthcare Platform",
+      "Thank you for your business.",
+    ].join("\n");
+    const blob = new Blob([invoiceText], { type: "text/plain;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${invoice.number}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
     toast({
-      title: "Downloading Invoice",
-      description: `Downloading ${invoice.number} as PDF...`,
+      title: "Invoice downloaded",
+      description: `${invoice.number} has been saved to your device.`,
     });
   };
 

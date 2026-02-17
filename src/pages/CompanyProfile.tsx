@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Building2,
   MapPin,
@@ -20,67 +20,86 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
+const STORAGE_KEY = "dr-claw-company-profile";
+
+const defaultCompanyData = {
+  // Basic Information
+  companyName: "",
+  legalEntityName: "",
+  industry: "",
+  companySize: "",
+  foundedYear: "",
+  website: "",
+  companyEmail: "",
+  phoneNumber: "",
+
+  // Address
+  streetAddress: "",
+  suiteUnit: "",
+  city: "",
+  stateProvince: "",
+  postalCode: "",
+  country: "",
+
+  // Financial Information
+  annualRevenue: "",
+  revenueGrowthYoY: "",
+  fundingStage: "",
+  totalFundingRaised: "",
+  fiscalYearEnd: "",
+  taxIdEin: "",
+
+  // Company Description
+  missionStatement: "",
+  companyDescription: "",
+  productsAndServices: "",
+  targetMarket: "",
+  competitiveAdvantages: "",
+
+  // Operational Details
+  numberOfLocations: "",
+  primaryEhrEmrSystem: "",
+  keyTechnologiesUsed: "",
+  complianceRequirements: "",
+  insurancePayerMix: "",
+
+  // Brand & Culture
+  brandVoiceTone: "",
+  coreValues: "",
+  keyDifferentiators: "",
+};
+
+function loadCompanyData() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) return { ...defaultCompanyData, ...JSON.parse(stored) };
+  } catch { /* ignore */ }
+  return defaultCompanyData;
+}
+
 const CompanyProfile = () => {
   const { toast } = useToast();
   const [showTaxId, setShowTaxId] = useState(false);
-
-  const [companyData, setCompanyData] = useState({
-    // Basic Information
-    companyName: "",
-    legalEntityName: "",
-    industry: "",
-    companySize: "",
-    foundedYear: "",
-    website: "",
-    companyEmail: "",
-    phoneNumber: "",
-
-    // Address
-    streetAddress: "",
-    suiteUnit: "",
-    city: "",
-    stateProvince: "",
-    postalCode: "",
-    country: "",
-
-    // Financial Information
-    annualRevenue: "",
-    revenueGrowthYoY: "",
-    fundingStage: "",
-    totalFundingRaised: "",
-    fiscalYearEnd: "",
-    taxIdEin: "",
-
-    // Company Description
-    missionStatement: "",
-    companyDescription: "",
-    productsAndServices: "",
-    targetMarket: "",
-    competitiveAdvantages: "",
-
-    // Operational Details
-    numberOfLocations: "",
-    primaryEhrEmrSystem: "",
-    keyTechnologiesUsed: "",
-    complianceRequirements: "",
-    insurancePayerMix: "",
-
-    // Brand & Culture
-    brandVoiceTone: "",
-    coreValues: "",
-    keyDifferentiators: "",
-  });
+  const [companyData, setCompanyData] = useState(loadCompanyData);
 
   const updateField = (field: keyof typeof companyData, value: string) => {
     setCompanyData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSave = () => {
-    toast({
-      title: "Company profile saved",
-      description:
-        "Your company data will be used to enhance agent performance.",
-    });
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(companyData));
+      toast({
+        title: "Company profile saved",
+        description:
+          "Your company data has been saved and will be used to enhance agent performance.",
+      });
+    } catch {
+      toast({
+        title: "Save failed",
+        description: "Unable to save company profile. Please try again.",
+      });
+    }
   };
 
   return (
