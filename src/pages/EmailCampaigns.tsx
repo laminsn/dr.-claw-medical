@@ -1261,10 +1261,10 @@ const EmailCampaigns = () => {
           <div className="mb-8">
             <h1 className="font-display text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
               <Mail className="h-7 w-7 text-primary" />
-              Email Campaigns & Testimonials
+              Patient Engagement Campaigns
             </h1>
             <p className="text-muted-foreground mt-1">
-              Manage weekly email campaigns and collect user testimonials
+              Manage patient outreach campaigns, satisfaction surveys, and testimonial collection.
             </p>
           </div>
 

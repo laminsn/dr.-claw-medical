@@ -502,10 +502,10 @@ const NotificationsCenter = () => {
             <div>
               <h1 className="text-3xl font-bold font-heading gradient-hero-text flex items-center gap-3">
                 <BellRing className="h-7 w-7 text-primary" />
-                Notifications Center
+                Clinical Alerts & Notifications
               </h1>
               <p className="text-muted-foreground mt-1">
-                Centralized notification hub for alerts, updates, and system events
+                Real-time alerts for PHI violations, patient tasks, agent errors, and practice events.
               </p>
             </div>
             <Button

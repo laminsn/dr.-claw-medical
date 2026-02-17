@@ -12,11 +12,11 @@ export default function CTASection() {
 
           <div className="relative z-10 text-center py-16 px-6 sm:px-12">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-heading text-white mb-4">
-              Ready to Deploy Your AI Team?
+              Ready to Transform Your Practice?
             </h2>
             <p className="text-lg text-blue-100 max-w-2xl mx-auto mb-10">
-              Join thousands of organizations using Dr. Claw AI agents to
-              automate operations, create content, and scale smarter.
+              Join thousands of healthcare providers using Dr. Claw AI agents to
+              automate clinical operations, reduce no-shows, and deliver better patient care.
             </p>
 
             {/* CTAs */}

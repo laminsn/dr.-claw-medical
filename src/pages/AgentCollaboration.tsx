@@ -14,6 +14,8 @@ import {
   Users,
   UserCheck,
   Shield,
+  Lock,
+  ShieldAlert,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +41,14 @@ import { useToast } from "@/hooks/use-toast";
 // ---------------------------------------------------------------------------
 type PermissionLevel = "full" | "partial" | "none";
 
+type AgentZone = "clinical" | "operations" | "external";
+
+const ZONE_CONFIG: Record<AgentZone, { label: string; shortLabel: string; color: string; bgColor: string }> = {
+  clinical: { label: "Zone 1 — Clinical (PHI)", shortLabel: "Clinical", color: "text-red-400", bgColor: "bg-red-500/15 border-red-500/30 text-red-400" },
+  operations: { label: "Zone 2 — Operations", shortLabel: "Operations", color: "text-amber-400", bgColor: "bg-amber-500/15 border-amber-500/30 text-amber-400" },
+  external: { label: "Zone 3 — External", shortLabel: "External", color: "text-blue-400", bgColor: "bg-blue-500/15 border-blue-500/30 text-blue-400" },
+};
+
 interface DataSharing {
   context: boolean;
   documents: boolean;
@@ -51,6 +61,8 @@ interface Channel {
   id: string;
   agent1Name: string;
   agent2Name: string;
+  agent1Zone: AgentZone;
+  agent2Zone: AgentZone;
   permission: PermissionLevel;
   enabled: boolean;
   dataSharing: DataSharing;
@@ -73,6 +85,8 @@ const initialChannels: Channel[] = [
     id: "ch-1",
     agent1Name: "Marketing Maven",
     agent2Name: "Content Engine",
+    agent1Zone: "external",
+    agent2Zone: "external",
     permission: "full",
     enabled: true,
     dataSharing: { context: true, documents: true, analytics: true, skillInvocation: true, customerData: true },
@@ -81,6 +95,8 @@ const initialChannels: Channel[] = [
     id: "ch-2",
     agent1Name: "Dr. Front Desk",
     agent2Name: "Clinical Coordinator",
+    agent1Zone: "clinical",
+    agent2Zone: "clinical",
     permission: "full",
     enabled: true,
     dataSharing: { context: true, documents: true, analytics: true, skillInvocation: true, customerData: true },
@@ -89,6 +105,8 @@ const initialChannels: Channel[] = [
     id: "ch-3",
     agent1Name: "Grant Pro",
     agent2Name: "Financial Analyst",
+    agent1Zone: "operations",
+    agent2Zone: "operations",
     permission: "partial",
     enabled: true,
     dataSharing: { context: true, documents: true, analytics: true, skillInvocation: false, customerData: false },
@@ -97,6 +115,8 @@ const initialChannels: Channel[] = [
     id: "ch-4",
     agent1Name: "Marketing Maven",
     agent2Name: "Grant Pro",
+    agent1Zone: "external",
+    agent2Zone: "operations",
     permission: "partial",
     enabled: true,
     dataSharing: { context: true, documents: false, analytics: true, skillInvocation: false, customerData: false },
@@ -105,6 +125,8 @@ const initialChannels: Channel[] = [
     id: "ch-5",
     agent1Name: "Strategic Advisor",
     agent2Name: "Financial Analyst",
+    agent1Zone: "operations",
+    agent2Zone: "operations",
     permission: "full",
     enabled: true,
     dataSharing: { context: true, documents: true, analytics: true, skillInvocation: true, customerData: true },
@@ -113,6 +135,8 @@ const initialChannels: Channel[] = [
     id: "ch-6",
     agent1Name: "HR Coordinator",
     agent2Name: "Operations Manager",
+    agent1Zone: "operations",
+    agent2Zone: "operations",
     permission: "partial",
     enabled: false,
     dataSharing: { context: true, documents: true, analytics: false, skillInvocation: false, customerData: false },
@@ -177,6 +201,20 @@ const statusBadgeClass: Record<string, string> = {
   active: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
   pending: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
 };
+
+const isZoneViolation = (zone1: AgentZone, zone2: AgentZone): boolean => {
+  // Clinical agents can NEVER talk to External agents
+  if ((zone1 === "clinical" && zone2 === "external") || (zone1 === "external" && zone2 === "clinical")) return true;
+  return false;
+};
+
+const requiresSanitizationGate = (zone1: AgentZone, zone2: AgentZone): boolean => {
+  // Clinical to Operations requires sanitization
+  if ((zone1 === "clinical" && zone2 === "operations") || (zone1 === "operations" && zone2 === "clinical")) return true;
+  return false;
+};
+
+const CLINICAL_AGENTS = ["Dr. Front Desk", "Clinical Coordinator"];
 
 // ---------------------------------------------------------------------------
 // Component
@@ -338,10 +376,10 @@ const AgentCollaboration = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-                Agent Collaboration
+                Clinical Agent Collaboration
               </h1>
               <p className="text-muted-foreground mt-1">
-                Link accounts, configure agent communication, and manage cross-team collaboration.
+                Coordinate care across clinical agents, departments, and partner organizations.
               </p>
             </div>
             <Button
@@ -483,6 +521,81 @@ const AgentCollaboration = () => {
             )}
           </section>
 
+          {/* ── Zone Isolation Firewall ───────────────────── */}
+          <section className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold font-heading text-foreground flex items-center gap-2">
+                <Lock className="h-5 w-5 text-red-400" />
+                Agent Isolation Zones
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Hard-walled security zones prevent PHI data from crossing boundaries. Zone 1 agents can never communicate with Zone 3 agents.
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-3 gap-4">
+              {(Object.entries(ZONE_CONFIG) as [AgentZone, typeof ZONE_CONFIG["clinical"]][]).map(([zone, config]) => {
+                const zoneAgents = allAgentNames.filter((_, i) => {
+                  const zoneMap: Record<string, AgentZone> = {
+                    "Marketing Maven": "external", "Content Engine": "external",
+                    "Dr. Front Desk": "clinical", "Clinical Coordinator": "clinical",
+                    "Grant Pro": "operations", "Financial Analyst": "operations",
+                    "Strategic Advisor": "operations", "HR Coordinator": "operations",
+                    "Operations Manager": "operations",
+                  };
+                  return zoneMap[allAgentNames[i]] === zone;
+                });
+                return (
+                  <div key={zone} className={`rounded-xl border p-4 ${zone === "clinical" ? "border-red-500/30 bg-red-500/5" : zone === "operations" ? "border-amber-500/30 bg-amber-500/5" : "border-blue-500/30 bg-blue-500/5"}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Shield className={`h-4 w-4 ${config.color}`} />
+                      <h3 className={`text-sm font-semibold ${config.color}`}>{config.shortLabel}</h3>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mb-3">{config.label}</p>
+                    <div className="space-y-1">
+                      {zoneAgents.map((name) => (
+                        <div key={name} className="flex items-center gap-2 text-xs text-foreground/80">
+                          <span className={`h-1.5 w-1.5 rounded-full ${zone === "clinical" ? "bg-red-400" : zone === "operations" ? "bg-amber-400" : "bg-blue-400"}`} />
+                          {name}
+                        </div>
+                      ))}
+                    </div>
+                    {zone === "clinical" && (
+                      <div className="mt-3 pt-3 border-t border-red-500/20">
+                        <p className="text-[10px] text-red-400 font-medium flex items-center gap-1">
+                          <Lock className="h-3 w-3" />
+                          No external communication allowed
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Zone Communication Rules */}
+            <div className="glass-card rounded-xl p-5 space-y-3">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <ShieldAlert className="h-4 w-4 text-red-400" />
+                Zone Communication Rules
+              </h3>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-3 text-center">
+                  <p className="text-xs font-medium text-green-400 mb-1">Allowed</p>
+                  <p className="text-[10px] text-muted-foreground">Same Zone ↔ Same Zone</p>
+                </div>
+                <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-center">
+                  <p className="text-xs font-medium text-amber-400 mb-1">Sanitization Required</p>
+                  <p className="text-[10px] text-muted-foreground">Clinical → Operations (de-identified only)</p>
+                </div>
+                <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-center">
+                  <p className="text-xs font-medium text-red-400 mb-1">Blocked</p>
+                  <p className="text-[10px] text-muted-foreground">Clinical ↔ External (never)</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* ── Internal Agent Collaboration ───────────── */}
           <section className="space-y-4">
             <div>
@@ -511,6 +624,27 @@ const AgentCollaboration = () => {
                     <span className="text-sm font-semibold text-foreground truncate">
                       {channel.agent2Name}
                     </span>
+                  </div>
+
+                  {/* Zone badges */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <Badge variant="outline" className={`text-[9px] ${ZONE_CONFIG[channel.agent1Zone].bgColor}`}>
+                      {ZONE_CONFIG[channel.agent1Zone].shortLabel}
+                    </Badge>
+                    <span className="text-[10px] text-muted-foreground">↔</span>
+                    <Badge variant="outline" className={`text-[9px] ${ZONE_CONFIG[channel.agent2Zone].bgColor}`}>
+                      {ZONE_CONFIG[channel.agent2Zone].shortLabel}
+                    </Badge>
+                    {isZoneViolation(channel.agent1Zone, channel.agent2Zone) && (
+                      <Badge variant="outline" className="text-[9px] bg-red-500/15 border-red-500/30 text-red-400">
+                        <ShieldAlert className="h-2.5 w-2.5 mr-0.5" /> BLOCKED
+                      </Badge>
+                    )}
+                    {requiresSanitizationGate(channel.agent1Zone, channel.agent2Zone) && (
+                      <Badge variant="outline" className="text-[9px] bg-amber-500/15 border-amber-500/30 text-amber-400">
+                        Sanitization Gate
+                      </Badge>
+                    )}
                   </div>
 
                   {/* Permission badge */}
@@ -556,7 +690,7 @@ const AgentCollaboration = () => {
                 Linked Company Accounts
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Connect with partner organizations to enable cross-company agent collaboration.
+                Connect with partner organizations for operational collaboration. Zone 1 (Clinical) agents are excluded from all cross-organization sharing to protect PHI.
               </p>
             </div>
 
@@ -918,47 +1052,59 @@ const AgentCollaboration = () => {
                     <div
                       key={agent.name}
                       className={`flex items-center justify-between rounded-xl border p-3 transition-all ${
-                        agent.shared
+                        CLINICAL_AGENTS.includes(agent.name)
+                          ? "border-red-500/20 bg-red-500/5"
+                          : agent.shared
                           ? "border-primary/30 bg-primary/5"
                           : "border-white/10 bg-white/5"
                       }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <Checkbox
-                          checked={agent.shared}
-                          onCheckedChange={(checked) => {
-                            setAccountSharedAgentsList((prev) =>
-                              prev.map((a, i) =>
-                                i === idx ? { ...a, shared: !!checked } : a,
-                              ),
-                            );
-                          }}
-                        />
-                        <span className="text-sm text-foreground">{agent.name}</span>
-                      </div>
-                      {agent.shared && (
-                        <div className="flex items-center gap-1">
-                          {(["full", "partial", "none"] as PermissionLevel[]).map((perm) => (
-                            <button
-                              key={perm}
-                              type="button"
-                              onClick={() => {
+                      {CLINICAL_AGENTS.includes(agent.name) ? (
+                        <div className="flex items-center gap-3 opacity-50">
+                          <Lock className="h-4 w-4 text-red-400" />
+                          <span className="text-sm text-foreground">{agent.name}</span>
+                          <Badge variant="outline" className="text-[9px] bg-red-500/15 border-red-500/30 text-red-400">Zone 1 — Locked</Badge>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-3">
+                            <Checkbox
+                              checked={agent.shared}
+                              onCheckedChange={(checked) => {
                                 setAccountSharedAgentsList((prev) =>
                                   prev.map((a, i) =>
-                                    i === idx ? { ...a, permission: perm } : a,
+                                    i === idx ? { ...a, shared: !!checked } : a,
                                   ),
                                 );
                               }}
-                              className={`px-2 py-0.5 rounded-md text-[10px] font-semibold capitalize transition-all ${
-                                agent.permission === perm
-                                  ? permissionBadgeClass[perm]
-                                  : "text-muted-foreground hover:bg-white/10"
-                              }`}
-                            >
-                              {perm}
-                            </button>
-                          ))}
-                        </div>
+                            />
+                            <span className="text-sm text-foreground">{agent.name}</span>
+                          </div>
+                          {agent.shared && (
+                            <div className="flex items-center gap-1">
+                              {(["full", "partial", "none"] as PermissionLevel[]).map((perm) => (
+                                <button
+                                  key={perm}
+                                  type="button"
+                                  onClick={() => {
+                                    setAccountSharedAgentsList((prev) =>
+                                      prev.map((a, i) =>
+                                        i === idx ? { ...a, permission: perm } : a,
+                                      ),
+                                    );
+                                  }}
+                                  className={`px-2 py-0.5 rounded-md text-[10px] font-semibold capitalize transition-all ${
+                                    agent.permission === perm
+                                      ? permissionBadgeClass[perm]
+                                      : "text-muted-foreground hover:bg-white/10"
+                                  }`}
+                                >
+                                  {perm}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   ))}

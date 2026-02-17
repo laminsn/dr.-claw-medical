@@ -1,10 +1,10 @@
 const stats = [
-  { value: "10,000+", label: "Users" },
-  { value: "2M+", label: "Agent Tasks/mo" },
-  { value: "30+", label: "AI Skills" },
+  { value: "10,000+", label: "Healthcare Providers" },
+  { value: "2M+", label: "Clinical Tasks/mo" },
+  { value: "30+", label: "Medical AI Skills" },
   { value: "94%", label: "Task Completion" },
-  { value: "<5 min", label: "Setup" },
-  { value: "99.9%", label: "Uptime" },
+  { value: "<5 min", label: "Practice Setup" },
+  { value: "99.9%", label: "HIPAA Uptime" },
 ];
 
 export default function StatsSection() {

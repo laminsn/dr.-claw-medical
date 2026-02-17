@@ -156,6 +156,74 @@ const categoryLabel: Record<string, string> = {
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Zone classification for integrations
+// ---------------------------------------------------------------------------
+type AgentZone = "clinical" | "operations" | "external" | "all";
+
+const INTEGRATION_ZONE_ACCESS: Record<string, AgentZone[]> = {
+  // EHR/EMR — Clinical zone only
+  epic: ["clinical"],
+  cerner: ["clinical"],
+  allscripts: ["clinical"],
+  nuance: ["clinical"],
+  // AI Models — All zones
+  openai: ["clinical", "operations", "external"],
+  anthropic: ["clinical", "operations", "external"],
+  "google-gemini": ["clinical", "operations", "external"],
+  minimax: ["operations", "external"],
+  kimi: ["operations", "external"],
+  mistral: ["operations", "external"],
+  cohere: ["operations", "external"],
+  // Communication — External zone only
+  twilio: ["external"],
+  sendgrid: ["external"],
+  // CRM — External zone only
+  gohighlevel: ["external"],
+  hubspot: ["external"],
+  salesforce: ["external"],
+  "zoho-crm": ["external"],
+  pipedrive: ["external"],
+  // Voice — External zone only
+  elevenlabs: ["external"],
+  deepgram: ["external"],
+  vapi: ["external"],
+  // Messaging — External zone only
+  telegram: ["external"],
+  discord: ["external"],
+  "slack-v2": ["external"],
+  whatsapp: ["external"],
+  // Cloud — Operations + Clinical
+  aws: ["clinical", "operations"],
+  supabase: ["clinical", "operations"],
+  // Productivity — Operations zone
+  notion: ["operations"],
+  airtable: ["operations"],
+  zapier: ["operations"],
+  n8n: ["operations", "clinical"],
+  "google-mail": ["external"],
+  "google-drive": ["operations"],
+  "google-docs": ["operations"],
+  "google-sheets": ["operations"],
+  "google-slides": ["operations"],
+  // Video — Operations + External
+  zoom: ["operations", "external"],
+  "google-meet": ["operations", "external"],
+  // Internal tools
+  slack: ["operations"],
+  // Project Management — Operations
+  trello: ["operations"],
+  asana: ["operations"],
+  monday: ["operations"],
+  jira: ["operations"],
+};
+
+const ZONE_BADGE_CONFIG: Record<string, { label: string; color: string }> = {
+  clinical: { label: "Zone 1", color: "text-red-400 bg-red-500/10 border-red-500/30" },
+  operations: { label: "Zone 2", color: "text-amber-400 bg-amber-500/10 border-amber-500/30" },
+  external: { label: "Zone 3", color: "text-blue-400 bg-blue-500/10 border-blue-500/30" },
+};
+
 const Integrations = () => {
   const { toast } = useToast();
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -202,11 +270,27 @@ const Integrations = () => {
           {/* ── Header ─────────────────────────────────── */}
           <div>
             <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-              Integrations
+              EHR & Healthcare Integrations
             </h1>
             <p className="text-muted-foreground mt-1">
-              Connect your API keys to power your AI agents.
+              Connect your EHR, practice management, and clinical tools to power your AI agents.
             </p>
+          </div>
+
+          {/* ── Zone Isolation Banner ──────────────────── */}
+          <div className="flex items-start gap-3 p-4 rounded-xl border border-red-500/20 bg-red-500/5">
+            <Lock className="h-5 w-5 text-red-400 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-red-400">Zone-Locked Integrations</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Integrations are restricted by agent security zone. Zone 1 (Clinical/PHI) agents can only access EHR/EMR and approved infrastructure. External CRMs, messaging platforms, and communication tools are blocked for clinical agents to prevent PHI exposure.
+              </p>
+              <div className="flex items-center gap-4 mt-2">
+                <span className="flex items-center gap-1.5 text-[10px]"><span className="h-2 w-2 rounded-full bg-red-400" /> Zone 1: EHR/EMR + Infrastructure only</span>
+                <span className="flex items-center gap-1.5 text-[10px]"><span className="h-2 w-2 rounded-full bg-amber-400" /> Zone 2: Internal tools + productivity</span>
+                <span className="flex items-center gap-1.5 text-[10px]"><span className="h-2 w-2 rounded-full bg-blue-400" /> Zone 3: All integrations</span>
+              </div>
+            </div>
           </div>
 
           {/* ── Category tabs ──────────────────────────── */}
@@ -293,6 +377,16 @@ const Integrations = () => {
                         </li>
                       )}
                     </ul>
+
+                    {/* Zone Access */}
+                    <div className="flex items-center gap-1 mt-2 flex-wrap">
+                      <span className="text-[9px] text-muted-foreground/60 mr-0.5">Zones:</span>
+                      {(INTEGRATION_ZONE_ACCESS[integ.id] || ["operations"]).map((zone) => (
+                        <Badge key={zone} variant="outline" className={`text-[8px] px-1.5 py-0 ${ZONE_BADGE_CONFIG[zone]?.color || ""}`}>
+                          {ZONE_BADGE_CONFIG[zone]?.label || zone}
+                        </Badge>
+                      ))}
+                    </div>
 
                     {/* Bottom row */}
                     <div className="mt-auto pt-4 flex items-center justify-between">

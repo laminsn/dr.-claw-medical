@@ -85,15 +85,15 @@ export default function PersonasSection() {
         {/* Header */}
         <div className="text-center mb-16 animate-fade-up">
           <span className="text-sm font-medium text-blue-400 uppercase tracking-widest mb-3 block">
-            Use Cases
+            Who We Serve
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-heading mb-4">
             Built for{" "}
-            <span className="gradient-hero-text">Every Team</span>
+            <span className="gradient-hero-text">Healthcare Organizations</span>
           </h2>
           <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-            Whether you run a medical practice or a marketing department, Dr.
-            Claw agents adapt to your workflow.
+            From solo practitioners to multi-location health systems — Dr. Claw
+            agents automate every department in your organization.
           </p>
         </div>
 

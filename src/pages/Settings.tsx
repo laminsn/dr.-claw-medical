@@ -78,10 +78,10 @@ const Settings = () => {
         <div className="max-w-3xl mx-auto">
           <div className="mb-8">
             <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-              <SettingsIcon className="h-6 w-6 text-primary" /> Settings
+              <SettingsIcon className="h-6 w-6 text-primary" /> Practice Settings
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Configure platform preferences, security, and compliance
+              Configure HIPAA compliance, clinical security, and practice preferences
             </p>
           </div>
 

@@ -36,21 +36,22 @@ export default function HeroSection() {
         {/* Badge */}
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-300 text-sm font-medium mb-8 animate-fade-in">
           <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-          Enterprise AI Agent Platform
+          Zone-Isolated Healthcare AI Platform
         </div>
 
         {/* Headline */}
         <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold font-heading leading-[1.1] mb-6 animate-fade-up">
-          <span className="gradient-hero-text">AI Agents</span> That{" "}
+          <span className="gradient-hero-text">Healthcare AI Agents</span>{" "}
           <br className="hidden sm:block" />
-          Work For You
+          That Run Your Practice
         </h1>
 
         {/* Subheadline */}
         <p className="text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto mb-8 animate-fade-up leading-relaxed">
-          Deploy AI agents with C-suite strategy skills, healthcare operations,
-          professional content creation, and more. Choose your models, assign
-          skills, and let your AI team handle the rest.
+          Purpose-built AI agents for medical practices, clinics, and health
+          systems. Automate patient scheduling, clinical documentation,
+          insurance verification, care coordination, and more — with zone-isolated
+          security that keeps PHI locked down and HIPAA compliance built in.
         </p>
 
         {/* Trust Badges */}

@@ -30,6 +30,9 @@ import {
   DollarSign,
   UserPlus,
   X,
+  Shield,
+  ShieldAlert,
+  Lock,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
@@ -92,6 +95,50 @@ interface ExecutionLog {
   stepsCompleted: number;
   totalSteps: number;
 }
+
+type AgentZone = "clinical" | "operations" | "external";
+
+const AGENT_ZONE_MAP: Record<string, AgentZone> = {
+  "Front Desk Agent": "clinical",
+  "Insurance Verifier": "clinical",
+  "Clinical Coordinator": "clinical",
+  "Patient Outreach": "external",
+  "Post-Op Care Agent": "clinical",
+  "Patient Survey": "external",
+  "Content Engine": "external",
+  "Marketing Strategist": "external",
+  "Financial Analyst": "operations",
+  "HR Coordinator": "operations",
+  "IT Strategist": "operations",
+  "SMS Notification": "external",
+  "Report Generation": "operations",
+  "Data Collection": "operations",
+  "Training Assignment": "operations",
+  "Review": "operations",
+  "Publish": "external",
+  "Distribution": "external",
+};
+
+const ZONE_BADGE: Record<AgentZone, { label: string; color: string }> = {
+  clinical: { label: "Z1 Clinical", color: "text-red-400 bg-red-500/10 border-red-500/30" },
+  operations: { label: "Z2 Ops", color: "text-amber-400 bg-amber-500/10 border-amber-500/30" },
+  external: { label: "Z3 External", color: "text-blue-400 bg-blue-500/10 border-blue-500/30" },
+};
+
+const hasZoneViolation = (steps: WorkflowStep[]): { hasViolation: boolean; details: string[] } => {
+  const details: string[] = [];
+  for (let i = 0; i < steps.length - 1; i++) {
+    const currentZone = AGENT_ZONE_MAP[steps[i].agent] || "operations";
+    const nextZone = AGENT_ZONE_MAP[steps[i + 1].agent] || "operations";
+    if (currentZone === "clinical" && nextZone === "external") {
+      details.push(`Step ${i + 1} (${steps[i].agent}, Clinical) → Step ${i + 2} (${steps[i + 1].agent}, External): BLOCKED — Clinical agents cannot pass data to external agents`);
+    }
+    if (currentZone === "external" && nextZone === "clinical") {
+      details.push(`Step ${i + 1} (${steps[i].agent}, External) → Step ${i + 2} (${steps[i + 1].agent}, Clinical): BLOCKED — External agents cannot access clinical zone`);
+    }
+  }
+  return { hasViolation: details.length > 0, details };
+};
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -581,11 +628,17 @@ const WorkflowBuilder = () => {
             >
               <StepIcon className="h-3.5 w-3.5 shrink-0" />
               <span className="whitespace-nowrap">{step.name}</span>
+              <span className={`text-[8px] px-1 py-0 rounded ${ZONE_BADGE[AGENT_ZONE_MAP[step.agent] || "operations"].color} ml-1`}>
+                {ZONE_BADGE[AGENT_ZONE_MAP[step.agent] || "operations"].label}
+              </span>
             </div>
             {index < steps.length - 1 && (
               <ArrowRight
                 className={`h-4 w-4 shrink-0 ${
-                  isActive ? "text-green-500/50" : "text-white/10"
+                  (AGENT_ZONE_MAP[step.agent] === "clinical" && AGENT_ZONE_MAP[steps[index + 1]?.agent] === "external") ||
+                  (AGENT_ZONE_MAP[step.agent] === "external" && AGENT_ZONE_MAP[steps[index + 1]?.agent] === "clinical")
+                    ? "text-red-500"
+                    : isActive ? "text-green-500/50" : "text-white/10"
                 }`}
               />
             )}
@@ -611,10 +664,10 @@ const WorkflowBuilder = () => {
             <div>
               <h1 className="text-3xl font-bold font-heading gradient-hero-text flex items-center gap-3">
                 <GitBranch className="h-7 w-7 text-primary" />
-                Workflow Builder
+                Care Workflow Builder
               </h1>
               <p className="text-muted-foreground mt-1">
-                Design, manage, and monitor automated agent workflows
+                Design automated clinical pipelines — from patient intake to post-op follow-up.
               </p>
             </div>
             <Button
@@ -624,6 +677,17 @@ const WorkflowBuilder = () => {
               <Plus className="h-4 w-4 mr-2" />
               New Workflow
             </Button>
+          </div>
+
+          {/* Zone Enforcement Banner */}
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-red-500/5 border border-red-500/20">
+            <Shield className="h-5 w-5 text-red-400 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-red-400">Zone Isolation Enforced</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Workflows cannot chain Clinical (Zone 1) agents directly to External (Zone 3) agents. Data must pass through a sanitization gate via Operations (Zone 2) to strip all PHI identifiers before crossing zone boundaries.
+              </p>
+            </div>
           </div>
 
           {/* ---------------------------------------------------------------- */}
@@ -809,6 +873,21 @@ const WorkflowBuilder = () => {
 
                     {/* Visual Pipeline */}
                     {renderPipeline(wf.steps, wf.status === "active")}
+                    {(() => {
+                      const violation = hasZoneViolation(wf.steps);
+                      if (!violation.hasViolation) return null;
+                      return (
+                        <div className="flex items-start gap-2 p-2.5 rounded-lg bg-red-500/10 border border-red-500/20 mt-2">
+                          <ShieldAlert className="h-4 w-4 text-red-400 mt-0.5 shrink-0" />
+                          <div>
+                            <p className="text-[11px] font-semibold text-red-400">Zone Violation Detected</p>
+                            {violation.details.map((d, i) => (
+                              <p key={i} className="text-[10px] text-red-400/80 mt-0.5">{d}</p>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     {/* Bottom stats */}
                     <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground flex-wrap">
@@ -1031,11 +1110,19 @@ const WorkflowBuilder = () => {
                               <SelectValue placeholder="Select agent..." />
                             </SelectTrigger>
                             <SelectContent>
-                              {AGENT_OPTIONS.map((agent) => (
-                                <SelectItem key={agent} value={agent}>
-                                  {agent}
-                                </SelectItem>
-                              ))}
+                              {AGENT_OPTIONS.map((agent) => {
+                                const zone = AGENT_ZONE_MAP[agent] || "operations";
+                                return (
+                                  <SelectItem key={agent} value={agent}>
+                                    <span className="flex items-center gap-2">
+                                      {agent}
+                                      <span className={`text-[9px] px-1 py-0 rounded ${ZONE_BADGE[zone].color}`}>
+                                        {ZONE_BADGE[zone].label}
+                                      </span>
+                                    </span>
+                                  </SelectItem>
+                                );
+                              })}
                             </SelectContent>
                           </Select>
                         </div>
@@ -1104,6 +1191,26 @@ const WorkflowBuilder = () => {
                       </div>
                     </div>
                   )}
+                  {(() => {
+                    const validSteps = newWorkflowSteps.filter((s) => s.agent.trim());
+                    if (validSteps.length < 2) return null;
+                    const violation = hasZoneViolation(validSteps);
+                    if (!violation.hasViolation) return null;
+                    return (
+                      <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                        <ShieldAlert className="h-4 w-4 text-red-400 mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-xs font-semibold text-red-400">Zone Violation — Cannot Create</p>
+                          {violation.details.map((d, i) => (
+                            <p key={i} className="text-[10px] text-red-400/80 mt-0.5">{d}</p>
+                          ))}
+                          <p className="text-[10px] text-muted-foreground mt-1">
+                            Add an Operations (Zone 2) agent between Clinical and External steps to act as a sanitization gate.
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 

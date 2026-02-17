@@ -436,10 +436,10 @@ const ReportingDashboard = () => {
           {/* Header */}
           <div>
             <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-              Reporting & Exports
+              Clinical Reporting & Exports
             </h1>
             <p className="text-muted-foreground mt-1">
-              Generate, schedule, and export comprehensive reports across your practice
+              Generate HIPAA-compliant clinical reports, compliance audits, and practice analytics.
             </p>
           </div>
 

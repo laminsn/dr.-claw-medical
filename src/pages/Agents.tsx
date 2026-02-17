@@ -27,6 +27,7 @@ import {
   ChevronRight,
   ArrowRightLeft,
   Eraser,
+  Lock,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
@@ -61,6 +62,8 @@ const DEFAULT_CAPABILITIES: AgentCapabilities = {
   hrAssistant: false,
 };
 
+type AgentZone = "clinical" | "operations" | "external";
+
 interface MyAgent {
   id: string;
   name: string;
@@ -70,6 +73,7 @@ interface MyAgent {
   capabilities: AgentCapabilities;
   archived?: boolean;
   taskCount: number;
+  zone: AgentZone;
 }
 
 interface ActivityEntry {
@@ -88,6 +92,33 @@ const MODEL_OPTIONS = [
   { id: "minimax", label: "MiniMax", color: "text-amber-400" },
   { id: "kimi", label: "Kimi", color: "text-rose-400" },
 ];
+
+const ZONE_CONFIG: Record<AgentZone, { label: string; description: string; color: string; border: string; icon: typeof Shield; restrictions: string[] }> = {
+  clinical: {
+    label: "Zone 1 — Clinical (PHI)",
+    description: "Handles protected health information. Internal platform communication only. No email, phone, SMS, or external endpoints.",
+    color: "text-red-400 bg-red-500/15 border-red-500/30",
+    border: "border-red-500/30",
+    icon: Shield,
+    restrictions: ["No email/phone/SMS access", "No external integrations", "Cannot communicate with Zone 3 agents", "EHR/EMR access only"],
+  },
+  operations: {
+    label: "Zone 2 — Operations (Internal)",
+    description: "Internal operations only. Receives de-identified data from Zone 1 through sanitization gate. No direct PHI access.",
+    color: "text-amber-400 bg-amber-500/15 border-amber-500/30",
+    border: "border-amber-500/30",
+    icon: Shield,
+    restrictions: ["No direct PHI access", "De-identified data only from Zone 1", "Internal tools only"],
+  },
+  external: {
+    label: "Zone 3 — External (Public-Facing)",
+    description: "Communicates with patients and external services. Email, SMS, voice, web enabled. Never has access to PHI data.",
+    color: "text-blue-400 bg-blue-500/15 border-blue-500/30",
+    border: "border-blue-500/30",
+    icon: Shield,
+    restrictions: ["Zero PHI access", "Cannot communicate with Zone 1 agents", "Public-facing channels enabled"],
+  },
+};
 
 const CAPABILITY_OPTIONS: { key: keyof AgentCapabilities; label: string; description: string; icon: typeof Shield; color: string }[] = [
   { key: "phiProtection", label: "PHI Protection", description: "Never discusses or exposes Protected Health Information. Redirects requests for PHI to authorized personnel.", icon: Shield, color: "text-red-400" },
@@ -131,6 +162,7 @@ const Agents = () => {
       capabilities: { ...DEFAULT_CAPABILITIES, distressDetection: true, voiceRecognition: true, taskCreation: true },
       archived: false,
       taskCount: 12,
+      zone: "clinical",
     },
     {
       id: "2",
@@ -141,6 +173,7 @@ const Agents = () => {
       capabilities: { ...DEFAULT_CAPABILITIES, taskCreation: true },
       archived: false,
       taskCount: 8,
+      zone: "external",
     },
     {
       id: "3",
@@ -151,6 +184,7 @@ const Agents = () => {
       capabilities: { ...DEFAULT_CAPABILITIES },
       archived: false,
       taskCount: 3,
+      zone: "operations",
     },
   ]);
 
@@ -159,6 +193,7 @@ const Agents = () => {
   const [newAgentModel, setNewAgentModel] = useState("openai");
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [searchSkills, setSearchSkills] = useState("");
+  const [newAgentZone, setNewAgentZone] = useState<AgentZone>("operations");
   const [activeTab, setActiveTab] = useState<"my-agents" | "templates" | "monitor">("my-agents");
 
   // Deploy template dialog state
@@ -175,6 +210,7 @@ const Agents = () => {
   const [configSkills, setConfigSkills] = useState<string[]>([]);
   const [configCapabilities, setConfigCapabilities] = useState<AgentCapabilities>({ ...DEFAULT_CAPABILITIES });
   const [configSearchSkills, setConfigSearchSkills] = useState("");
+  const [configZone, setConfigZone] = useState<AgentZone>("operations");
 
   // Activity monitor state
   const [activityFilter, setActivityFilter] = useState<"all" | "success" | "warning" | "error">("all");
@@ -213,6 +249,7 @@ const Agents = () => {
     setNewAgentModel("openai");
     setSelectedSkills([]);
     setSearchSkills("");
+    setNewAgentZone("operations");
   };
 
   const handleCreate = () => {
@@ -226,6 +263,7 @@ const Agents = () => {
       capabilities: { ...DEFAULT_CAPABILITIES },
       archived: false,
       taskCount: 0,
+      zone: newAgentZone,
     };
     setMyAgents((prev) => [...prev, newAgent]);
     setCreateOpen(false);
@@ -252,6 +290,7 @@ const Agents = () => {
       capabilities: { ...DEFAULT_CAPABILITIES },
       archived: false,
       taskCount: 0,
+      zone: "operations",
     };
     setMyAgents((prev) => [...prev, newAgent]);
     setDeployOpen(false);
@@ -268,6 +307,7 @@ const Agents = () => {
     setConfigSkills([...agent.skills]);
     setConfigCapabilities({ ...agent.capabilities });
     setConfigSearchSkills("");
+    setConfigZone(agent.zone);
     setConfigOpen(true);
   };
 
@@ -286,7 +326,7 @@ const Agents = () => {
     setMyAgents((prev) =>
       prev.map((a) =>
         a.id === configAgent.id
-          ? { ...a, name: configName.trim(), model: configModel, skills: [...configSkills], capabilities: { ...configCapabilities } }
+          ? { ...a, name: configName.trim(), model: configModel, skills: [...configSkills], capabilities: { ...configCapabilities }, zone: configZone }
           : a
       )
     );
@@ -398,10 +438,10 @@ const Agents = () => {
           {/* ── Header ─────────────────────────────── */}
           <div className="mb-8">
             <h1 className="font-display text-3xl font-bold text-foreground tracking-tight">
-              AI Agents
+              Healthcare AI Agents
             </h1>
             <p className="text-muted-foreground mt-1">
-              Create, customize, and deploy unlimited AI agents
+              Create, customize, and deploy clinical AI agents for your practice
             </p>
           </div>
 
@@ -478,6 +518,10 @@ const Agents = () => {
                         agent.active ? "border-primary/20 bg-card" : "border-border bg-card/60 opacity-75"
                       }`}
                     >
+                      <div className={`h-1 rounded-t-xl -mx-5 -mt-5 mb-4 ${
+                        agent.zone === "clinical" ? "bg-red-500/40" : agent.zone === "operations" ? "bg-amber-500/40" : "bg-blue-500/40"
+                      }`} />
+
                       <div className="absolute top-4 right-4">
                         <span className="relative flex h-2.5 w-2.5">
                           {agent.active && (
@@ -495,6 +539,9 @@ const Agents = () => {
                           <h3 className="font-display font-bold text-foreground leading-tight">{agent.name}</h3>
                           <Badge variant="secondary" className={`text-xs mt-0.5 bg-primary/10 border-0 ${modelOption?.color ?? "text-primary"}`}>
                             {modelOption?.label ?? agent.model}
+                          </Badge>
+                          <Badge variant="outline" className={`text-[10px] mt-0.5 ${ZONE_CONFIG[agent.zone].color}`}>
+                            {ZONE_CONFIG[agent.zone].label}
                           </Badge>
                         </div>
                       </div>
@@ -804,6 +851,28 @@ const Agents = () => {
                   />
                 </div>
 
+                {/* Zone Classification */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Security Zone</Label>
+                  <div className="space-y-2">
+                    {(Object.entries(ZONE_CONFIG) as [AgentZone, typeof ZONE_CONFIG["clinical"]][]).map(([zone, config]) => (
+                      <button
+                        key={zone}
+                        onClick={() => setConfigZone(zone)}
+                        className={`w-full text-left rounded-lg border p-2.5 transition-all ${
+                          configZone === zone ? `${config.border} bg-primary/5` : "border-border bg-background hover:border-primary/20"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <config.icon className={`h-3.5 w-3.5 ${config.color.split(' ')[0]}`} />
+                          <p className="text-xs font-semibold text-foreground">{config.label}</p>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{config.description}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Model Selection */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">AI Model</Label>
@@ -874,6 +943,17 @@ const Agents = () => {
                       </p>
                     </div>
                   </div>
+                  {configZone === "clinical" && (
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                      <Lock className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs font-semibold text-amber-400">Zone 1 Restrictions Active</p>
+                        <p className="text-[11px] text-amber-400/80 mt-0.5">
+                          Clinical zone agents are restricted to internal platform communication only. Email, SMS, voice, and external messaging capabilities are automatically disabled. This agent can only communicate with other Zone 1 (Clinical) agents.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Skills */}
@@ -1159,6 +1239,33 @@ const Agents = () => {
                       {newAgentModel === model.id && <span className="absolute top-1.5 right-1.5"><Check className="h-3 w-3 text-primary" /></span>}
                       <Brain className={`h-5 w-5 ${newAgentModel === model.id ? model.color : "text-muted-foreground"}`} />
                       <span className={`text-xs font-medium ${newAgentModel === model.id ? "text-foreground" : "text-muted-foreground"}`}>{model.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* Zone Classification */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Security Zone</Label>
+                <p className="text-xs text-muted-foreground mb-2">Determines what data, channels, and integrations this agent can access.</p>
+                <div className="space-y-2">
+                  {(Object.entries(ZONE_CONFIG) as [AgentZone, typeof ZONE_CONFIG["clinical"]][]).map(([zone, config]) => (
+                    <button
+                      key={zone}
+                      onClick={() => setNewAgentZone(zone)}
+                      className={`w-full text-left rounded-xl border p-3 transition-all ${
+                        newAgentZone === zone ? `${config.border} bg-primary/5` : "border-border bg-background hover:border-primary/20"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <config.icon className={`h-4 w-4 ${config.color.split(' ')[0]}`} />
+                        <p className="text-sm font-semibold text-foreground">{config.label}</p>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">{config.description}</p>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {config.restrictions.map((r) => (
+                          <span key={r} className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-muted-foreground">{r}</span>
+                        ))}
+                      </div>
                     </button>
                   ))}
                 </div>

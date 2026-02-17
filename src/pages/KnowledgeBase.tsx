@@ -459,10 +459,10 @@ const KnowledgeBase = () => {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-                Knowledge Base
+                Medical Knowledge Base
               </h1>
               <p className="text-muted-foreground mt-1">
-                Manage documents, protocols, and reference materials for your AI agents.
+                Manage clinical protocols, SOPs, insurance policies, and training materials for your AI agents.
               </p>
             </div>
             <Button

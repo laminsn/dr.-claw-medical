@@ -42,7 +42,7 @@ const recentActivity = [
 
 const primaryStats = [
   {
-    label: "Active Agents",
+    label: "Active Clinical Agents",
     value: "12",
     change: "+3",
     trend: "up" as const,
@@ -50,7 +50,7 @@ const primaryStats = [
     color: "from-primary to-blue-600",
   },
   {
-    label: "Agent Tasks This Week",
+    label: "Patient Tasks This Week",
     value: "2,847",
     change: "+18%",
     trend: "up" as const,
@@ -58,7 +58,7 @@ const primaryStats = [
     color: "from-cyan-500 to-accent",
   },
   {
-    label: "Skills Deployed",
+    label: "Medical Skills Active",
     value: "34",
     change: "+8",
     trend: "up" as const,
@@ -66,7 +66,7 @@ const primaryStats = [
     color: "from-violet-500 to-purple-600",
   },
   {
-    label: "Team Members",
+    label: "Care Team Members",
     value: "8",
     change: "+2",
     trend: "up" as const,
@@ -77,7 +77,7 @@ const primaryStats = [
 
 const agentPerformance = [
   {
-    label: "Task Success Rate",
+    label: "Clinical Task Success",
     value: "94.2%",
     change: "+2.1%",
     trend: "up" as const,
@@ -91,14 +91,14 @@ const agentPerformance = [
     icon: Clock,
   },
   {
-    label: "Documents Generated",
+    label: "Clinical Docs Generated",
     value: "156",
     change: "+24",
     trend: "up" as const,
     icon: FileText,
   },
   {
-    label: "Conversations",
+    label: "Patient Conversations",
     value: "892",
     change: "+15%",
     trend: "up" as const,
@@ -150,10 +150,10 @@ const Dashboard = () => {
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-                Command Center
+                Clinical Command Center
               </h1>
               <p className="text-muted-foreground mt-1">
-                Your AI team is active. Here's what they've been up to.
+                Your healthcare AI team is active. Here's how they're improving patient care.
               </p>
             </div>
 
@@ -316,18 +316,18 @@ const Dashboard = () => {
           {/* Analytics charts */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="bg-card rounded-xl border border-white/[0.06] p-5">
-              <h3 className="text-sm font-semibold text-foreground mb-1">Task Volume</h3>
-              <p className="text-xs text-muted-foreground mb-4">Weekly agent task breakdown</p>
+              <h3 className="text-sm font-semibold text-foreground mb-1">Clinical Task Volume</h3>
+              <p className="text-xs text-muted-foreground mb-4">Weekly patient care task breakdown</p>
               <TaskVolumeChart />
             </div>
             <div className="bg-card rounded-xl border border-white/[0.06] p-5">
-              <h3 className="text-sm font-semibold text-foreground mb-1">Growth Trend</h3>
-              <p className="text-xs text-muted-foreground mb-4">Total tasks over time</p>
+              <h3 className="text-sm font-semibold text-foreground mb-1">Practice Growth</h3>
+              <p className="text-xs text-muted-foreground mb-4">Clinical operations over time</p>
               <TrendChart />
             </div>
             <div className="bg-card rounded-xl border border-white/[0.06] p-5">
-              <h3 className="text-sm font-semibold text-foreground mb-1">Task Outcomes</h3>
-              <p className="text-xs text-muted-foreground mb-4">Completion breakdown</p>
+              <h3 className="text-sm font-semibold text-foreground mb-1">Care Outcomes</h3>
+              <p className="text-xs text-muted-foreground mb-4">Patient task completion breakdown</p>
               <OutcomeChart />
             </div>
           </div>
@@ -336,13 +336,13 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Agent tasks table - 2 cols */}
             <div className="lg:col-span-2 bg-card rounded-xl border border-white/[0.06] p-5">
-              <h3 className="text-sm font-semibold text-foreground mb-4">Recent Agent Tasks</h3>
+              <h3 className="text-sm font-semibold text-foreground mb-4">Recent Clinical Tasks</h3>
               <AgentTasksTable />
             </div>
 
             {/* Recent activity - 1 col */}
             <div className="bg-card rounded-xl border border-white/[0.06] p-5">
-              <h3 className="text-sm font-semibold text-foreground mb-4">Recent Activity</h3>
+              <h3 className="text-sm font-semibold text-foreground mb-4">Practice Activity Feed</h3>
               <div className="space-y-4">
                 {recentActivity.map((item, idx) => (
                   <div key={idx} className="flex gap-3">

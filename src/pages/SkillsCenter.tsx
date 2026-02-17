@@ -153,10 +153,10 @@ const SkillsCenter = () => {
           {/* ── Header ─────────────────────────────────── */}
           <div>
             <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-              Skills Library
+              Medical Skills Library
             </h1>
             <p className="text-muted-foreground mt-1">
-              Browse and explore 30+ AI skills to power your agents.
+              Browse 30+ healthcare AI skills — from patient intake to clinical documentation.
             </p>
           </div>
 

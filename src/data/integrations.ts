@@ -830,6 +830,31 @@ export const integrations: Integration[] = [
   },
 
   // ---------------------------------------------------------------------------
+  // Workflow Automation
+  // ---------------------------------------------------------------------------
+  {
+    id: "n8n",
+    name: "n8n",
+    description: "Open-source workflow automation for healthcare. Self-hosted for full PHI control with HIPAA-compliant data processing.",
+    category: "productivity",
+    icon: "git-branch",
+    website: "https://n8n.io",
+    apiKeyLabel: "n8n API Key",
+    apiKeyPlaceholder: "Enter your n8n instance API key",
+    features: [
+      "Self-hosted for PHI control",
+      "400+ integrations",
+      "HIPAA-compliant workflows",
+      "Conditional branching",
+      "Webhook triggers",
+      "EHR data pipelines",
+      "Custom code nodes",
+    ],
+    tier: "professional",
+    popular: true,
+  },
+
+  // ---------------------------------------------------------------------------
   // WhatsApp
   // ---------------------------------------------------------------------------
   {

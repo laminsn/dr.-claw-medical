@@ -270,10 +270,10 @@ const DataLogs = () => {
             <div>
               <h1 className="font-display text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
                 <ScrollText className="h-7 w-7 text-primary" />
-                Data Logs
+                Clinical Audit Logs
               </h1>
               <p className="text-muted-foreground mt-1">
-                Complete activity log for all agents, integrations, and system events
+                Complete HIPAA-compliant audit trail for all clinical agents, integrations, and system events
               </p>
             </div>
             <Button variant="outline" size="sm" className="gap-2 text-xs border-border hover:bg-white/5">

@@ -21,6 +21,8 @@ import {
   Tag,
   Calendar,
   FileText,
+  Shield,
+  Lock,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
@@ -49,10 +51,36 @@ interface Conversation {
   lastMessage: string;
   lastTimestamp: string;
   unread: number;
+  zone: AgentZone;
   status: "active" | "resolved" | "pending";
   tags: string[];
   messages: Message[];
 }
+
+type AgentZone = "clinical" | "operations" | "external";
+
+const AGENT_ZONE_MAP: Record<string, AgentZone> = {
+  "Dr. Front Desk": "clinical",
+  "Clinical Coordinator": "clinical",
+  "Marketing Maven": "external",
+  "Content Engine": "external",
+  "Patient Outreach": "external",
+  "Grant Pro": "operations",
+  "Financial Analyst": "operations",
+  "HR Coordinator": "operations",
+};
+
+const ZONE_ALLOWED_CHANNELS: Record<AgentZone, ChannelType[]> = {
+  clinical: ["chat"], // Internal platform only
+  operations: ["chat"], // Internal only
+  external: ["sms", "email", "voice", "chat", "web"], // All channels
+};
+
+const ZONE_BADGE_CONFIG: Record<AgentZone, { label: string; color: string }> = {
+  clinical: { label: "Zone 1 — Clinical", color: "text-red-400 bg-red-500/15 border-red-500/30" },
+  operations: { label: "Zone 2 — Operations", color: "text-amber-400 bg-amber-500/15 border-amber-500/30" },
+  external: { label: "Zone 3 — External", color: "text-blue-400 bg-blue-500/15 border-blue-500/30" },
+};
 
 const CHANNEL_CONFIG: Record<ChannelType, { icon: typeof MessageSquare; label: string; color: string }> = {
   sms: { icon: MessageCircle, label: "SMS", color: "text-green-400 bg-green-500/15 border-green-500/30" },
@@ -70,19 +98,20 @@ const mockConversations: Conversation[] = [
     contactPhone: "(555) 234-5678",
     agentName: "Dr. Front Desk",
     agentId: "1",
-    channel: "sms",
-    lastMessage: "Your appointment has been confirmed for Thursday at 2:00 PM.",
+    channel: "chat",
+    zone: "clinical",
+    lastMessage: "Your appointment has been confirmed for Thursday at 2:00 PM via internal platform.",
     lastTimestamp: "2 min ago",
     unread: 2,
     status: "active",
     tags: ["appointment", "new-patient"],
     messages: [
-      { id: "m1", sender: "contact", text: "Hi, I'd like to schedule an appointment for this week.", timestamp: "10:32 AM", channel: "sms", read: true },
-      { id: "m2", sender: "agent", text: "Hello Sarah! I'd be happy to help you schedule an appointment. We have availability on Thursday at 2:00 PM or Friday at 10:00 AM. Which works best for you?", timestamp: "10:33 AM", channel: "sms", read: true },
-      { id: "m3", sender: "contact", text: "Thursday at 2 PM works great!", timestamp: "10:35 AM", channel: "sms", read: true },
-      { id: "m4", sender: "agent", text: "Your appointment has been confirmed for Thursday at 2:00 PM. You'll receive a reminder 24 hours before. Is there anything else I can help with?", timestamp: "10:35 AM", channel: "sms", read: true },
-      { id: "m5", sender: "contact", text: "Do I need to bring anything?", timestamp: "10:41 AM", channel: "sms", read: false },
-      { id: "m6", sender: "contact", text: "Also, do you accept Blue Cross insurance?", timestamp: "10:42 AM", channel: "sms", read: false },
+      { id: "m1", sender: "contact", text: "Hi, I'd like to schedule an appointment for this week.", timestamp: "10:32 AM", channel: "chat", read: true },
+      { id: "m2", sender: "agent", text: "Hello Sarah! I'd be happy to help you schedule an appointment. We have availability on Thursday at 2:00 PM or Friday at 10:00 AM. Which works best for you?", timestamp: "10:33 AM", channel: "chat", read: true },
+      { id: "m3", sender: "contact", text: "Thursday at 2 PM works great!", timestamp: "10:35 AM", channel: "chat", read: true },
+      { id: "m4", sender: "agent", text: "Your appointment has been confirmed for Thursday at 2:00 PM. You'll receive a reminder 24 hours before. Is there anything else I can help with?", timestamp: "10:35 AM", channel: "chat", read: true },
+      { id: "m5", sender: "contact", text: "Do I need to bring anything?", timestamp: "10:41 AM", channel: "chat", read: false },
+      { id: "m6", sender: "contact", text: "Also, do you accept Blue Cross insurance?", timestamp: "10:42 AM", channel: "chat", read: false },
     ],
   },
   {
@@ -93,6 +122,7 @@ const mockConversations: Conversation[] = [
     agentName: "Marketing Maven",
     agentId: "2",
     channel: "email",
+    zone: "external",
     lastMessage: "Draft campaign copy attached for your review.",
     lastTimestamp: "15 min ago",
     unread: 1,
@@ -112,6 +142,7 @@ const mockConversations: Conversation[] = [
     agentName: "Grant Pro",
     agentId: "3",
     channel: "chat",
+    zone: "operations",
     lastMessage: "The NIH R01 application draft is ready for your review.",
     lastTimestamp: "1 hr ago",
     unread: 0,
@@ -130,16 +161,17 @@ const mockConversations: Conversation[] = [
     contactPhone: "(555) 567-8901",
     agentName: "Dr. Front Desk",
     agentId: "1",
-    channel: "voice",
-    lastMessage: "Call completed — prescription refill confirmed with pharmacy.",
+    channel: "chat",
+    zone: "clinical",
+    lastMessage: "Internal note — prescription refill confirmed with pharmacy via platform.",
     lastTimestamp: "2 hrs ago",
     unread: 0,
     status: "resolved",
     tags: ["prescription", "follow-up"],
     messages: [
-      { id: "m1", sender: "contact", text: "[Incoming call] Patient requesting prescription refill for Metformin 500mg", timestamp: "7:45 AM", channel: "voice", read: true },
-      { id: "m2", sender: "agent", text: "Verified patient identity and checked prescription history. Confirmed last refill was 28 days ago. Contacted pharmacy for renewal.", timestamp: "7:48 AM", channel: "voice", read: true },
-      { id: "m3", sender: "agent", text: "Call completed — prescription refill confirmed with pharmacy. Patient notified pickup will be ready in 2 hours.", timestamp: "7:52 AM", channel: "voice", read: true },
+      { id: "m1", sender: "contact", text: "[Internal request] Patient requesting prescription refill for Metformin 500mg", timestamp: "7:45 AM", channel: "chat", read: true },
+      { id: "m2", sender: "agent", text: "Verified patient identity and checked prescription history. Confirmed last refill was 28 days ago. Contacted pharmacy for renewal.", timestamp: "7:48 AM", channel: "chat", read: true },
+      { id: "m3", sender: "agent", text: "Internal note — prescription refill confirmed with pharmacy. Patient notified pickup will be ready in 2 hours.", timestamp: "7:52 AM", channel: "chat", read: true },
     ],
   },
   {
@@ -150,6 +182,7 @@ const mockConversations: Conversation[] = [
     agentName: "Marketing Maven",
     agentId: "2",
     channel: "web",
+    zone: "external",
     lastMessage: "Here's the competitor analysis report you requested.",
     lastTimestamp: "3 hrs ago",
     unread: 0,
@@ -168,15 +201,16 @@ const mockConversations: Conversation[] = [
     contactPhone: "(555) 789-0123",
     agentName: "Dr. Front Desk",
     agentId: "1",
-    channel: "sms",
-    lastMessage: "Reminder: Your follow-up is tomorrow at 9 AM.",
+    channel: "chat",
+    zone: "clinical",
+    lastMessage: "Internal reminder logged: Follow-up is tomorrow at 9 AM.",
     lastTimestamp: "5 hrs ago",
     unread: 0,
     status: "pending",
     tags: ["reminder", "follow-up"],
     messages: [
-      { id: "m1", sender: "agent", text: "Hi Linda, this is a friendly reminder from our office: Your follow-up appointment is scheduled for tomorrow (Wednesday) at 9:00 AM. Please reply CONFIRM to confirm or RESCHEDULE if you need a new time.", timestamp: "3:00 PM", channel: "sms", read: true },
-      { id: "m2", sender: "agent", text: "Reminder: Your follow-up is tomorrow at 9 AM.", timestamp: "3:00 PM", channel: "sms", read: true },
+      { id: "m1", sender: "agent", text: "Internal platform reminder: Linda's follow-up appointment is scheduled for tomorrow (Wednesday) at 9:00 AM. Confirmation pending via front desk.", timestamp: "3:00 PM", channel: "chat", read: true },
+      { id: "m2", sender: "agent", text: "Internal reminder logged: Follow-up is tomorrow at 9 AM.", timestamp: "3:00 PM", channel: "chat", read: true },
     ],
   },
 ];
@@ -210,10 +244,10 @@ const AgentCommunication = () => {
           <div>
             <h1 className="font-display text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
               <MessageSquare className="h-6 w-6 text-primary" />
-              Communication Center
+              Patient Communication Center
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Unified inbox — observe all agent conversations in real time
+              Unified clinical inbox — monitor all patient-agent conversations in real time
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -223,6 +257,14 @@ const AgentCommunication = () => {
               </Badge>
             )}
           </div>
+        </div>
+
+        {/* Zone Isolation Banner */}
+        <div className="border-b border-border px-6 py-2.5 bg-red-500/5 flex items-center gap-3">
+          <Shield className="h-4 w-4 text-red-400 shrink-0" />
+          <p className="text-xs text-red-400/90">
+            <span className="font-semibold">Zone Isolation Active:</span> Clinical (Zone 1) agents communicate via internal platform only — no email, phone, or SMS. External channels are restricted to Zone 3 agents.
+          </p>
         </div>
 
         <div className="flex flex-1 overflow-hidden">
@@ -240,19 +282,26 @@ const AgentCommunication = () => {
                 />
               </div>
               <div className="flex gap-1 overflow-x-auto">
-                {(["all", "sms", "email", "voice", "chat", "web"] as const).map((ch) => (
-                  <button
-                    key={ch}
-                    onClick={() => setChannelFilter(ch)}
-                    className={`px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
-                      channelFilter === ch
-                        ? "gradient-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-                    }`}
-                  >
-                    {ch === "all" ? "All" : CHANNEL_CONFIG[ch].label}
-                  </button>
-                ))}
+                {(["all", "chat", "sms", "email", "voice", "web"] as const).map((ch) => {
+                  const isRestricted = selectedConv && ch !== "all" && !ZONE_ALLOWED_CHANNELS[selectedConv.zone || "external"].includes(ch as ChannelType);
+                  return (
+                    <button
+                      key={ch}
+                      onClick={() => !isRestricted && setChannelFilter(ch)}
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${
+                        isRestricted
+                          ? "text-muted-foreground/30 cursor-not-allowed"
+                          : channelFilter === ch
+                          ? "gradient-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                      }`}
+                      disabled={isRestricted}
+                    >
+                      {isRestricted && <Lock className="h-2.5 w-2.5" />}
+                      {ch === "all" ? "All" : CHANNEL_CONFIG[ch as ChannelType].label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -296,6 +345,9 @@ const AgentCommunication = () => {
                           <span className="text-[11px] text-muted-foreground truncate">
                             via {conv.agentName}
                           </span>
+                          <Badge variant="outline" className={`text-[8px] px-1 py-0 ${ZONE_BADGE_CONFIG[conv.zone || "external"].color}`}>
+                            {(conv.zone || "external") === "clinical" ? "Z1" : (conv.zone || "external") === "operations" ? "Z2" : "Z3"}
+                          </Badge>
                         </div>
                         <p className={`text-xs truncate ${conv.unread > 0 ? "text-foreground/90 font-medium" : "text-muted-foreground"}`}>
                           {conv.lastMessage}
@@ -334,6 +386,11 @@ const AgentCommunication = () => {
                       <span className="text-[11px] text-muted-foreground">
                         Handled by <span className="text-primary font-medium">{selectedConv.agentName}</span>
                       </span>
+                      {selectedConv.zone && (
+                        <Badge variant="outline" className={`text-[9px] ${ZONE_BADGE_CONFIG[selectedConv.zone].color}`}>
+                          {ZONE_BADGE_CONFIG[selectedConv.zone].label}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -420,7 +477,14 @@ const AgentCommunication = () => {
                   </Button>
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-1.5 ml-10">
-                  Messages sent here will override the agent and be sent directly to the contact.
+                  {selectedConv?.zone === "clinical" ? (
+                    <span className="text-red-400 flex items-center gap-1">
+                      <Shield className="h-3 w-3" />
+                      Zone 1 restriction: Messages are internal platform only — no external transmission.
+                    </span>
+                  ) : (
+                    "Messages sent here will override the agent and be sent directly to the contact."
+                  )}
                 </p>
               </div>
             </div>

@@ -11,12 +11,12 @@ const productLinks = [
 ];
 
 const solutionLinks = [
-  { label: "Healthcare", href: "/auth" },
-  { label: "Marketing", href: "/auth" },
-  { label: "Executive", href: "/auth" },
-  { label: "Research", href: "/auth" },
-  { label: "Operations", href: "/auth" },
-  { label: "HR", href: "/auth" },
+  { label: "Medical Practices", href: "/auth" },
+  { label: "Health Systems", href: "/auth" },
+  { label: "Specialty Clinics", href: "/auth" },
+  { label: "Telehealth", href: "/auth" },
+  { label: "Clinical Research", href: "/auth" },
+  { label: "Revenue Cycle", href: "/auth" },
 ];
 
 const complianceLinks = [
@@ -44,9 +44,9 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-sm text-slate-400 leading-relaxed mb-6 max-w-sm">
-              Enterprise AI agent platform for healthcare professionals and
-              businesses. Build, deploy, and manage AI agents with C-suite
-              skills, clinical operations, and professional content creation.
+              The AI agent platform built exclusively for healthcare. Automate
+              patient scheduling, clinical documentation, insurance verification,
+              care coordination, and every operation in your medical practice.
             </p>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1.5 text-xs text-slate-500">

@@ -885,10 +885,10 @@ const CustomDashboards = () => {
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-                Custom Dashboards
+                Custom Clinical Dashboards
               </h1>
               <p className="text-muted-foreground mt-1">
-                Build and customize your own KPI views and analytics dashboards.
+                Build personalized KPI views for clinical operations, patient metrics, and practice performance.
               </p>
             </div>
             <div className="flex items-center gap-2">

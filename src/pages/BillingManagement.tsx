@@ -244,7 +244,7 @@ const BillingManagement = () => {
               Billing & Subscription
             </h1>
             <p className="text-muted-foreground mt-1">
-              Manage your plan, payment methods, and billing history.
+              Manage your practice plan, monitor usage, and track invoices.
             </p>
           </div>
 

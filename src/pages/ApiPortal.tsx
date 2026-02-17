@@ -442,9 +442,9 @@ const ApiPortal = () => {
         <div className="max-w-7xl mx-auto space-y-8">
           {/* Header */}
           <div>
-            <h1 className="text-3xl font-bold font-heading gradient-hero-text">API Developer Portal</h1>
+            <h1 className="text-3xl font-bold font-heading gradient-hero-text">Healthcare API Portal</h1>
             <p className="text-muted-foreground mt-1">
-              Manage API keys, explore endpoints, and test requests
+              Integrate Dr. Claw into your clinical systems with our HIPAA-compliant REST API.
             </p>
           </div>
 

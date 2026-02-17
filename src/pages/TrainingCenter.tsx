@@ -284,10 +284,10 @@ const TrainingCenter = () => {
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">
-              <GraduationCap className="h-7 w-7 text-primary" /> Training Center
+              <GraduationCap className="h-7 w-7 text-primary" /> Clinical Training Center
             </h1>
             <p className="text-muted-foreground mt-1">
-              Step-by-step tutorials to master every feature of Dr. Claw
+              Step-by-step tutorials to master healthcare AI agent deployment with Dr. Claw
             </p>
           </div>
 
