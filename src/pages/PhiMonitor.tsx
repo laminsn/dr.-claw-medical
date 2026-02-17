@@ -41,7 +41,8 @@ type ViolationType =
   | "phi_request"
   | "data_leak_attempt"
   | "unauthorized_access"
-  | "hipaa_breach_risk";
+  | "hipaa_breach_risk"
+  | "zone_boundary_violation";
 
 type Severity = "critical" | "high" | "medium" | "low";
 
@@ -98,6 +99,7 @@ const VIOLATION_TYPE_CONFIG: Record<
   data_leak_attempt: { label: "Data Leak Attempt", icon: FileWarning },
   unauthorized_access: { label: "Unauthorized Access", icon: UserX },
   hipaa_breach_risk: { label: "HIPAA Breach Risk", icon: ShieldAlert },
+  zone_boundary_violation: { label: "Zone Boundary Violation", icon: ShieldAlert },
 };
 
 const STATUS_CONFIG: Record<
@@ -147,6 +149,16 @@ const mockViolations: ViolationEntry[] = [
     notifiedTo: ["admin@clinic.com", "compliance@clinic.com", "dr.chen@clinic.com"],
   },
   {
+    id: "phi-002b",
+    timestamp: "2026-02-16 10:35:22 AM",
+    agentName: "Marketing Maven",
+    violationType: "zone_boundary_violation",
+    severity: "critical",
+    description: "Zone 3 (External) agent attempted to initiate direct communication channel with Zone 1 (Clinical) agent 'Dr. Front Desk'. Cross-zone communication was blocked by the isolation firewall.",
+    status: "blocked",
+    notifiedTo: ["admin@clinic.com", "compliance@clinic.com"],
+  },
+  {
     id: "phi-003",
     timestamp: "2026-02-16 10:22:47 AM",
     agentName: "Dr. Front Desk",
@@ -178,6 +190,16 @@ const mockViolations: ViolationEntry[] = [
       "Agent included patient first name in an internal log entry. Low risk — no external exposure. Flagged for audit.",
     status: "resolved",
     notifiedTo: ["compliance@clinic.com"],
+  },
+  {
+    id: "phi-005b",
+    timestamp: "2026-02-16 09:25:01 AM",
+    agentName: "Dr. Front Desk",
+    violationType: "zone_boundary_violation",
+    severity: "high",
+    description: "Zone 1 (Clinical) agent attempted to share patient appointment context with Zone 3 (External) agent 'Patient Outreach' without passing through sanitization gate. Data transfer blocked.",
+    status: "blocked",
+    notifiedTo: ["admin@clinic.com", "compliance@clinic.com"],
   },
   {
     id: "phi-006",
@@ -252,6 +274,13 @@ const monitorChannels: MonitorChannel[] = [
     icon: RefreshCw,
     status: "ok",
     detail: "GoHighLevel, HubSpot flows clean",
+  },
+  {
+    id: "zone-firewall",
+    label: "Zone Isolation Firewall",
+    icon: Shield,
+    status: "ok",
+    detail: "All zone boundaries enforced — 2 cross-zone attempts blocked today",
   },
 ];
 
@@ -386,8 +415,27 @@ const PhiMonitor = () => {
             </Badge>
           </div>
 
+          {/* Zone Isolation Status */}
+          <div className="flex items-start gap-3 p-4 rounded-xl border border-green-500/20 bg-green-500/5 mb-8">
+            <Shield className="h-5 w-5 text-green-400 mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-green-400">Agent Isolation Zones Active</p>
+                <Badge className="bg-green-500/10 border border-green-500/30 text-green-400 text-[10px]">3 Zones Enforced</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Zone 1 (Clinical/PHI) agents are isolated from Zone 3 (External) agents. All cross-zone data transfers require sanitization through Zone 2 (Operations). Email, phone, and SMS are disabled for clinical zone agents.
+              </p>
+              <div className="flex items-center gap-4 mt-2">
+                <span className="flex items-center gap-1.5 text-[10px]"><span className="h-2 w-2 rounded-full bg-red-400" /> Clinical: Internal Only</span>
+                <span className="flex items-center gap-1.5 text-[10px]"><span className="h-2 w-2 rounded-full bg-amber-400" /> Operations: De-identified</span>
+                <span className="flex items-center gap-1.5 text-[10px]"><span className="h-2 w-2 rounded-full bg-blue-400" /> External: No PHI</span>
+              </div>
+            </div>
+          </div>
+
           {/* ── Stats Cards ────────────────────────────────────────────── */}
-          <div className="grid grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-5 gap-4 mb-8">
             {/* Total PHI Attempts Blocked */}
             <div className="bg-card rounded-xl border border-border p-5">
               <div className="flex items-center justify-between mb-3">
@@ -433,6 +481,16 @@ const PhiMonitor = () => {
               <p className="text-[10px] text-muted-foreground/60 mt-1">
                 Auto-scan every 5 minutes
               </p>
+            </div>
+
+            {/* Zone Violations */}
+            <div className="bg-card rounded-xl border border-border p-5">
+              <div className="flex items-center justify-between mb-3">
+                <ShieldAlert className="h-5 w-5 text-violet-400" />
+                <span className="text-2xl font-bold text-foreground">2</span>
+              </div>
+              <p className="text-xs text-muted-foreground">Zone Boundary Violations</p>
+              <p className="text-[10px] text-muted-foreground/60 mt-1">All blocked automatically</p>
             </div>
           </div>
 

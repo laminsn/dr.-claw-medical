@@ -36,7 +36,7 @@ export default function HeroSection() {
         {/* Badge */}
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-300 text-sm font-medium mb-8 animate-fade-in">
           <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-          Healthcare AI Agent Platform
+          Zone-Isolated Healthcare AI Platform
         </div>
 
         {/* Headline */}
@@ -50,7 +50,8 @@ export default function HeroSection() {
         <p className="text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto mb-8 animate-fade-up leading-relaxed">
           Purpose-built AI agents for medical practices, clinics, and health
           systems. Automate patient scheduling, clinical documentation,
-          insurance verification, care coordination, and more — all HIPAA compliant.
+          insurance verification, care coordination, and more — with zone-isolated
+          security that keeps PHI locked down and HIPAA compliance built in.
         </p>
 
         {/* Trust Badges */}

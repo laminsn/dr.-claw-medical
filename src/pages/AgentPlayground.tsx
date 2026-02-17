@@ -20,6 +20,7 @@ import {
   MessageSquare,
   SlidersHorizontal,
   Play,
+  Lock,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,23 @@ interface TestScenario {
   icon: typeof Calendar;
   firstMessage: string;
 }
+
+type AgentZone = "clinical" | "operations" | "external";
+
+const AGENT_ZONE_MAP: Record<string, AgentZone> = {
+  "front-desk": "clinical",
+  "clinical-coordinator": "clinical",
+  "patient-outreach": "external",
+  "content-engine": "external",
+  "financial-analyst": "operations",
+  "hr-coordinator": "operations",
+};
+
+const ZONE_CONFIG: Record<AgentZone, { label: string; shortLabel: string; color: string; bgColor: string; description: string }> = {
+  clinical: { label: "Zone 1 — Clinical (PHI)", shortLabel: "Clinical", color: "text-red-400", bgColor: "bg-red-500/15 border-red-500/30 text-red-400", description: "Internal platform only. No email, phone, SMS, or external endpoints." },
+  operations: { label: "Zone 2 — Operations", shortLabel: "Operations", color: "text-amber-400", bgColor: "bg-amber-500/15 border-amber-500/30 text-amber-400", description: "Internal tools only. Receives de-identified data from Zone 1." },
+  external: { label: "Zone 3 — External", shortLabel: "External", color: "text-blue-400", bgColor: "bg-blue-500/15 border-blue-500/30 text-blue-400", description: "Patient-facing channels enabled. Zero PHI access." },
+};
 
 // ---------------------------------------------------------------------------
 // Data
@@ -619,12 +637,21 @@ const AgentPlayground = () => {
                     <SelectContent>
                       {AGENTS.map((agent) => (
                         <SelectItem key={agent.id} value={agent.id}>
-                          {agent.name} &mdash; {agent.model}
+                          <span className="flex items-center gap-2">
+                            {agent.name} &mdash; {agent.model}
+                            <span className={`text-[9px] px-1 py-0 rounded ${ZONE_CONFIG[AGENT_ZONE_MAP[agent.id] || "operations"].bgColor}`}>
+                              {ZONE_CONFIG[AGENT_ZONE_MAP[agent.id] || "operations"].shortLabel}
+                            </span>
+                          </span>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
+                {/* Zone Badge */}
+                <Badge variant="outline" className={`text-[10px] ${ZONE_CONFIG[AGENT_ZONE_MAP[selectedAgentId] || "operations"].bgColor}`}>
+                  {ZONE_CONFIG[AGENT_ZONE_MAP[selectedAgentId] || "operations"].label}
+                </Badge>
                 <div className="hidden md:flex items-center gap-1.5 flex-wrap">
                   {selectedAgent.skills
                     .filter((s) => skillToggles[s.id])
@@ -656,6 +683,14 @@ const AgentPlayground = () => {
             <div className="flex-1 flex flex-col min-w-0">
               {/* Chat Container */}
               <div className="bg-card rounded-xl border border-white/[0.06] flex flex-col" style={{ height: "560px" }}>
+                {AGENT_ZONE_MAP[selectedAgentId] === "clinical" && (
+                  <div className="px-4 py-2 bg-red-500/5 border-b border-red-500/20 flex items-center gap-2">
+                    <Shield className="h-3.5 w-3.5 text-red-400 shrink-0" />
+                    <p className="text-[10px] text-red-400/90">
+                      <span className="font-semibold">Zone 1 Test Mode:</span> In production, this agent is restricted to internal platform communication. No external channels or cross-zone data sharing.
+                    </p>
+                  </div>
+                )}
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-5 space-y-4">
                   {messages.map((msg) => (
@@ -783,6 +818,36 @@ const AgentPlayground = () => {
                 <div className="flex items-center gap-2">
                   <SlidersHorizontal className="h-4 w-4 text-primary" />
                   <h3 className="text-sm font-semibold text-foreground">Controls</h3>
+                </div>
+
+                <Separator className="bg-white/[0.06]" />
+
+                {/* Zone Restrictions */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Shield className="h-3.5 w-3.5 text-red-400" />
+                    Security Zone
+                  </Label>
+                  <div className={`rounded-lg border p-3 ${
+                    AGENT_ZONE_MAP[selectedAgentId] === "clinical" ? "border-red-500/30 bg-red-500/5" :
+                    AGENT_ZONE_MAP[selectedAgentId] === "operations" ? "border-amber-500/30 bg-amber-500/5" :
+                    "border-blue-500/30 bg-blue-500/5"
+                  }`}>
+                    <p className={`text-xs font-semibold ${ZONE_CONFIG[AGENT_ZONE_MAP[selectedAgentId] || "operations"].color}`}>
+                      {ZONE_CONFIG[AGENT_ZONE_MAP[selectedAgentId] || "operations"].label}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {ZONE_CONFIG[AGENT_ZONE_MAP[selectedAgentId] || "operations"].description}
+                    </p>
+                  </div>
+                  {AGENT_ZONE_MAP[selectedAgentId] === "clinical" && (
+                    <div className="flex items-start gap-2 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                      <Lock className="h-3 w-3 text-red-400 mt-0.5 shrink-0" />
+                      <p className="text-[10px] text-red-400/80 leading-relaxed">
+                        In production, this agent's communications are restricted to the internal platform only. Email, SMS, voice, and external API access are disabled.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <Separator className="bg-white/[0.06]" />
