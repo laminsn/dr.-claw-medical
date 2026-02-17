@@ -23,13 +23,40 @@ import {
   FileText,
   Shield,
   Lock,
+  Plus,
+  Building2,
+  Heart,
+  X,
+  AlertTriangle,
+  GitBranch,
+  ChevronDown,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { containsPhi, redactPhi, sanitizeInput } from "@/lib/security";
 
 type ChannelType = "sms" | "email" | "voice" | "chat" | "web";
+type ContactType = "patient" | "external-partner";
 
 interface Message {
   id: string;
@@ -38,6 +65,15 @@ interface Message {
   timestamp: string;
   channel: ChannelType;
   read: boolean;
+  threadId?: string;
+}
+
+interface Thread {
+  id: string;
+  subject: string;
+  createdAt: string;
+  status: "open" | "closed";
+  messages: Message[];
 }
 
 interface Conversation {
@@ -45,6 +81,8 @@ interface Conversation {
   contactName: string;
   contactEmail: string;
   contactPhone: string;
+  contactType: ContactType;
+  organization?: string;
   agentName: string;
   agentId: string;
   channel: ChannelType;
@@ -55,6 +93,7 @@ interface Conversation {
   status: "active" | "resolved" | "pending";
   tags: string[];
   messages: Message[];
+  threads: Thread[];
 }
 
 type AgentZone = "clinical" | "operations" | "external";
@@ -70,6 +109,12 @@ const AGENT_ZONE_MAP: Record<string, AgentZone> = {
   "HR Coordinator": "operations",
 };
 
+const AVAILABLE_AGENTS = Object.entries(AGENT_ZONE_MAP).map(([name, zone], i) => ({
+  id: String(i + 1),
+  name,
+  zone,
+}));
+
 const ZONE_ALLOWED_CHANNELS: Record<AgentZone, ChannelType[]> = {
   clinical: ["chat"], // Internal platform only
   operations: ["chat"], // Internal only
@@ -80,6 +125,11 @@ const ZONE_BADGE_CONFIG: Record<AgentZone, { label: string; color: string }> = {
   clinical: { label: "Zone 1 — Clinical", color: "text-red-400 bg-red-500/15 border-red-500/30" },
   operations: { label: "Zone 2 — Operations", color: "text-amber-400 bg-amber-500/15 border-amber-500/30" },
   external: { label: "Zone 3 — External", color: "text-blue-400 bg-blue-500/15 border-blue-500/30" },
+};
+
+const CONTACT_TYPE_CONFIG: Record<ContactType, { icon: typeof User; label: string; color: string }> = {
+  patient: { icon: Heart, label: "Patient", color: "text-rose-400 bg-rose-500/15 border-rose-500/30" },
+  "external-partner": { icon: Building2, label: "Partner", color: "text-emerald-400 bg-emerald-500/15 border-emerald-500/30" },
 };
 
 const CHANNEL_CONFIG: Record<ChannelType, { icon: typeof MessageSquare; label: string; color: string }> = {
@@ -96,6 +146,7 @@ const mockConversations: Conversation[] = [
     contactName: "Sarah Mitchell",
     contactEmail: "sarah.m@email.com",
     contactPhone: "(555) 234-5678",
+    contactType: "patient",
     agentName: "Dr. Front Desk",
     agentId: "1",
     channel: "chat",
@@ -113,12 +164,25 @@ const mockConversations: Conversation[] = [
       { id: "m5", sender: "contact", text: "Do I need to bring anything?", timestamp: "10:41 AM", channel: "chat", read: false },
       { id: "m6", sender: "contact", text: "Also, do you accept Blue Cross insurance?", timestamp: "10:42 AM", channel: "chat", read: false },
     ],
+    threads: [
+      {
+        id: "t1",
+        subject: "Insurance Verification",
+        createdAt: "10:42 AM",
+        status: "open",
+        messages: [
+          { id: "t1-m1", sender: "contact", text: "Also, do you accept Blue Cross insurance?", timestamp: "10:42 AM", channel: "chat", read: false },
+        ],
+      },
+    ],
   },
   {
     id: "conv-2",
     contactName: "James Rodriguez",
     contactEmail: "j.rodriguez@company.com",
     contactPhone: "(555) 345-6789",
+    contactType: "external-partner",
+    organization: "Rodriguez Media Group",
     agentName: "Marketing Maven",
     agentId: "2",
     channel: "email",
@@ -133,12 +197,15 @@ const mockConversations: Conversation[] = [
       { id: "m2", sender: "agent", text: "Absolutely! I'll prepare a comprehensive social media campaign package. Let me analyze your brand guidelines and recent engagement data first.", timestamp: "9:16 AM", channel: "email", read: true },
       { id: "m3", sender: "agent", text: "Draft campaign copy attached for your review. I've created 5 LinkedIn posts, 10 Twitter threads, and 3 Instagram carousel concepts. Each aligns with your brand voice and targets your key demographics.", timestamp: "9:45 AM", channel: "email", read: false },
     ],
+    threads: [],
   },
   {
     id: "conv-3",
     contactName: "Dr. Emily Chen",
     contactEmail: "e.chen@hospital.org",
     contactPhone: "(555) 456-7890",
+    contactType: "external-partner",
+    organization: "Metro General Hospital",
     agentName: "Grant Pro",
     agentId: "3",
     channel: "chat",
@@ -153,12 +220,24 @@ const mockConversations: Conversation[] = [
       { id: "m2", sender: "agent", text: "I'll help you with the R01 application. I've reviewed the FOA and your preliminary data. Let me draft the specific aims and significance sections first.", timestamp: "Yesterday", channel: "chat", read: true },
       { id: "m3", sender: "agent", text: "The NIH R01 application draft is ready for your review. I've structured the specific aims around your three primary hypotheses and included budget justification.", timestamp: "8:30 AM", channel: "chat", read: true },
     ],
+    threads: [
+      {
+        id: "t2",
+        subject: "Budget Justification Review",
+        createdAt: "8:30 AM",
+        status: "open",
+        messages: [
+          { id: "t2-m1", sender: "agent", text: "I've drafted the budget justification section separately for your review. Personnel costs, equipment, and travel are itemized.", timestamp: "8:35 AM", channel: "chat", read: true },
+        ],
+      },
+    ],
   },
   {
     id: "conv-4",
     contactName: "Michael Torres",
     contactEmail: "m.torres@clinic.com",
     contactPhone: "(555) 567-8901",
+    contactType: "patient",
     agentName: "Dr. Front Desk",
     agentId: "1",
     channel: "chat",
@@ -173,12 +252,15 @@ const mockConversations: Conversation[] = [
       { id: "m2", sender: "agent", text: "Verified patient identity and checked prescription history. Confirmed last refill was 28 days ago. Contacted pharmacy for renewal.", timestamp: "7:48 AM", channel: "chat", read: true },
       { id: "m3", sender: "agent", text: "Internal note — prescription refill confirmed with pharmacy. Patient notified pickup will be ready in 2 hours.", timestamp: "7:52 AM", channel: "chat", read: true },
     ],
+    threads: [],
   },
   {
     id: "conv-5",
     contactName: "Priya Patel",
     contactEmail: "priya@startup.io",
     contactPhone: "(555) 678-9012",
+    contactType: "external-partner",
+    organization: "HealthTech Startup",
     agentName: "Marketing Maven",
     agentId: "2",
     channel: "web",
@@ -193,12 +275,14 @@ const mockConversations: Conversation[] = [
       { id: "m2", sender: "agent", text: "Starting the competitor analysis now. I'll evaluate market positioning, pricing, feature sets, and growth metrics for each competitor.", timestamp: "6:01 AM", channel: "web", read: true },
       { id: "m3", sender: "agent", text: "Here's the competitor analysis report you requested. Includes SWOT analysis for each competitor, market positioning maps, and key differentiators for your investor deck.", timestamp: "6:45 AM", channel: "web", read: true },
     ],
+    threads: [],
   },
   {
     id: "conv-6",
     contactName: "Linda Nakamura",
     contactEmail: "l.nakamura@firm.com",
     contactPhone: "(555) 789-0123",
+    contactType: "patient",
     agentName: "Dr. Front Desk",
     agentId: "1",
     channel: "chat",
@@ -212,16 +296,89 @@ const mockConversations: Conversation[] = [
       { id: "m1", sender: "agent", text: "Internal platform reminder: Linda's follow-up appointment is scheduled for tomorrow (Wednesday) at 9:00 AM. Confirmation pending via front desk.", timestamp: "3:00 PM", channel: "chat", read: true },
       { id: "m2", sender: "agent", text: "Internal reminder logged: Follow-up is tomorrow at 9 AM.", timestamp: "3:00 PM", channel: "chat", read: true },
     ],
+    threads: [],
+  },
+  {
+    id: "conv-7",
+    contactName: "Riverside Pharmacy",
+    contactEmail: "orders@riversidepharmacy.com",
+    contactPhone: "(555) 890-1234",
+    contactType: "external-partner",
+    organization: "Riverside Pharmacy Inc.",
+    agentName: "Patient Outreach",
+    agentId: "5",
+    channel: "email",
+    zone: "external",
+    lastMessage: "Prescription coordination confirmed — pickup available after 3 PM.",
+    lastTimestamp: "4 hrs ago",
+    unread: 0,
+    status: "resolved",
+    tags: ["pharmacy", "coordination"],
+    messages: [
+      { id: "m1", sender: "agent", text: "Hi, we have a prescription refill coordination request. Order reference attached. No PHI included per policy.", timestamp: "11:00 AM", channel: "email", read: true },
+      { id: "m2", sender: "contact", text: "Received. We'll have it ready by 3 PM today.", timestamp: "11:15 AM", channel: "email", read: true },
+      { id: "m3", sender: "agent", text: "Prescription coordination confirmed — pickup available after 3 PM.", timestamp: "11:16 AM", channel: "email", read: true },
+    ],
+    threads: [],
   },
 ];
 
+/* ── PHI validation helper ─────────────────────────────────── */
+
+function validateFieldsForPhi(fields: Record<string, string>): string[] {
+  const warnings: string[] = [];
+  for (const [label, value] of Object.entries(fields)) {
+    if (value && containsPhi(value)) {
+      warnings.push(`${label} may contain PHI — this will be redacted before transmission.`);
+    }
+  }
+  return warnings;
+}
+
+/* ── Zone violation check for external partner + clinical ──── */
+
+function isExternalPartnerZoneViolation(contactType: ContactType, zone: AgentZone): boolean {
+  // External partners should NEVER be routed to clinical agents (Zone 1 has PHI)
+  // But patients CAN use clinical agents on internal chat
+  if (contactType === "external-partner" && zone === "clinical") return true;
+  return false;
+}
+
 const AgentCommunication = () => {
-  const [conversations] = useState<Conversation[]>(mockConversations);
+  const [conversations, setConversations] = useState<Conversation[]>(mockConversations);
   const [selectedConv, setSelectedConv] = useState<Conversation | null>(mockConversations[0]);
   const [searchQuery, setSearchQuery] = useState("");
   const [channelFilter, setChannelFilter] = useState<ChannelType | "all">("all");
+  const [contactTypeFilter, setContactTypeFilter] = useState<ContactType | "all">("all");
   const [composeText, setComposeText] = useState("");
   const [showDetails, setShowDetails] = useState(true);
+
+  // New Conversation dialog state
+  const [showNewConvDialog, setShowNewConvDialog] = useState(false);
+  const [newConvContactType, setNewConvContactType] = useState<ContactType>("patient");
+  const [newConvName, setNewConvName] = useState("");
+  const [newConvEmail, setNewConvEmail] = useState("");
+  const [newConvPhone, setNewConvPhone] = useState("");
+  const [newConvOrg, setNewConvOrg] = useState("");
+  const [newConvAgent, setNewConvAgent] = useState("");
+  const [newConvChannel, setNewConvChannel] = useState<ChannelType>("chat");
+  const [newConvSubject, setNewConvSubject] = useState("");
+  const [newConvMessage, setNewConvMessage] = useState("");
+  const [newConvPhiWarnings, setNewConvPhiWarnings] = useState<string[]>([]);
+
+  // New Thread dialog state
+  const [showNewThreadDialog, setShowNewThreadDialog] = useState(false);
+  const [newThreadSubject, setNewThreadSubject] = useState("");
+  const [newThreadMessage, setNewThreadMessage] = useState("");
+  const [newThreadPhiWarnings, setNewThreadPhiWarnings] = useState<string[]>([]);
+
+  // Thread view state
+  const [selectedThread, setSelectedThread] = useState<Thread | null>(null);
+  const [threadComposeText, setThreadComposeText] = useState("");
+
+  const selectedAgentZone = newConvAgent ? AGENT_ZONE_MAP[newConvAgent] || "external" : null;
+  const allowedChannels = selectedAgentZone ? ZONE_ALLOWED_CHANNELS[selectedAgentZone] : [];
+  const zoneViolation = selectedAgentZone ? isExternalPartnerZoneViolation(newConvContactType, selectedAgentZone) : false;
 
   const filteredConversations = conversations.filter((conv) => {
     const matchesSearch =
@@ -229,10 +386,223 @@ const AgentCommunication = () => {
       conv.agentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesChannel = channelFilter === "all" || conv.channel === channelFilter;
-    return matchesSearch && matchesChannel;
+    const matchesContactType = contactTypeFilter === "all" || conv.contactType === contactTypeFilter;
+    return matchesSearch && matchesChannel && matchesContactType;
   });
 
   const totalUnread = conversations.reduce((sum, c) => sum + c.unread, 0);
+
+  /* ── New Conversation handlers ──────────────────────────── */
+
+  function resetNewConvForm() {
+    setNewConvContactType("patient");
+    setNewConvName("");
+    setNewConvEmail("");
+    setNewConvPhone("");
+    setNewConvOrg("");
+    setNewConvAgent("");
+    setNewConvChannel("chat");
+    setNewConvSubject("");
+    setNewConvMessage("");
+    setNewConvPhiWarnings([]);
+  }
+
+  function handleNewConvPhiCheck() {
+    const warnings = validateFieldsForPhi({
+      "Contact Name": newConvName,
+      "Email": newConvEmail,
+      "Phone": newConvPhone,
+      "Organization": newConvOrg,
+      "Subject": newConvSubject,
+      "Message": newConvMessage,
+    });
+    setNewConvPhiWarnings(warnings);
+    return warnings;
+  }
+
+  function handleCreateConversation() {
+    const warnings = handleNewConvPhiCheck();
+
+    if (!newConvName.trim() || !newConvAgent || zoneViolation) return;
+
+    const agentEntry = AVAILABLE_AGENTS.find((a) => a.name === newConvAgent);
+    if (!agentEntry) return;
+
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    const convId = `conv-${Date.now()}`;
+
+    // Sanitize and redact PHI from the outgoing message content
+    const safeMessage = warnings.length > 0 ? redactPhi(sanitizeInput(newConvMessage)) : sanitizeInput(newConvMessage);
+    const safeName = sanitizeInput(newConvName);
+    const safeSubject = sanitizeInput(newConvSubject);
+
+    const initialMessage: Message = {
+      id: `${convId}-m1`,
+      sender: "agent",
+      text: safeMessage || `Conversation started with ${safeName}.`,
+      timestamp: timeStr,
+      channel: newConvChannel,
+      read: true,
+    };
+
+    const initialThread: Thread | null = newConvSubject.trim()
+      ? {
+          id: `${convId}-t1`,
+          subject: safeSubject,
+          createdAt: timeStr,
+          status: "open",
+          messages: [{ ...initialMessage, threadId: `${convId}-t1` }],
+        }
+      : null;
+
+    const newConv: Conversation = {
+      id: convId,
+      contactName: safeName,
+      contactEmail: sanitizeInput(newConvEmail),
+      contactPhone: sanitizeInput(newConvPhone),
+      contactType: newConvContactType,
+      organization: newConvContactType === "external-partner" ? sanitizeInput(newConvOrg) : undefined,
+      agentName: agentEntry.name,
+      agentId: agentEntry.id,
+      channel: newConvChannel,
+      zone: agentEntry.zone,
+      lastMessage: initialMessage.text,
+      lastTimestamp: "Just now",
+      unread: 0,
+      status: "active",
+      tags: [newConvContactType === "patient" ? "patient" : "partner", ...(newConvSubject.trim() ? [newConvSubject.toLowerCase().split(" ")[0]] : [])],
+      messages: [initialMessage],
+      threads: initialThread ? [initialThread] : [],
+    };
+
+    setConversations((prev) => [newConv, ...prev]);
+    setSelectedConv(newConv);
+    setSelectedThread(null);
+    setShowNewConvDialog(false);
+    resetNewConvForm();
+  }
+
+  /* ── New Thread handlers ────────────────────────────────── */
+
+  function resetNewThreadForm() {
+    setNewThreadSubject("");
+    setNewThreadMessage("");
+    setNewThreadPhiWarnings([]);
+  }
+
+  function handleCreateThread() {
+    if (!selectedConv || !newThreadSubject.trim()) return;
+
+    const warnings = validateFieldsForPhi({
+      "Subject": newThreadSubject,
+      "Message": newThreadMessage,
+    });
+    setNewThreadPhiWarnings(warnings);
+
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    const threadId = `${selectedConv.id}-t${Date.now()}`;
+
+    const safeSubject = sanitizeInput(newThreadSubject);
+    const safeMessage = warnings.length > 0 ? redactPhi(sanitizeInput(newThreadMessage)) : sanitizeInput(newThreadMessage);
+
+    const threadMsg: Message | null = newThreadMessage.trim()
+      ? {
+          id: `${threadId}-m1`,
+          sender: "agent" as const,
+          text: safeMessage,
+          timestamp: timeStr,
+          channel: selectedConv.channel,
+          read: true,
+          threadId,
+        }
+      : null;
+
+    const newThread: Thread = {
+      id: threadId,
+      subject: safeSubject,
+      createdAt: timeStr,
+      status: "open",
+      messages: threadMsg ? [threadMsg] : [],
+    };
+
+    const updatedConv: Conversation = {
+      ...selectedConv,
+      threads: [...selectedConv.threads, newThread],
+    };
+
+    setConversations((prev) => prev.map((c) => (c.id === selectedConv.id ? updatedConv : c)));
+    setSelectedConv(updatedConv);
+    setSelectedThread(newThread);
+    setShowNewThreadDialog(false);
+    resetNewThreadForm();
+  }
+
+  /* ── Send message in thread ─────────────────────────────── */
+
+  function handleSendThreadMessage() {
+    if (!selectedConv || !selectedThread || !threadComposeText.trim()) return;
+
+    const phiDetected = containsPhi(threadComposeText);
+    const safeText = phiDetected ? redactPhi(sanitizeInput(threadComposeText)) : sanitizeInput(threadComposeText);
+
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
+    const newMsg: Message = {
+      id: `${selectedThread.id}-m${Date.now()}`,
+      sender: "agent",
+      text: safeText,
+      timestamp: timeStr,
+      channel: selectedConv.channel,
+      read: true,
+      threadId: selectedThread.id,
+    };
+
+    const updatedThread = { ...selectedThread, messages: [...selectedThread.messages, newMsg] };
+    const updatedConv = {
+      ...selectedConv,
+      threads: selectedConv.threads.map((t) => (t.id === selectedThread.id ? updatedThread : t)),
+    };
+
+    setConversations((prev) => prev.map((c) => (c.id === selectedConv.id ? updatedConv : c)));
+    setSelectedConv(updatedConv);
+    setSelectedThread(updatedThread);
+    setThreadComposeText("");
+  }
+
+  /* ── Send message in main conversation ──────────────────── */
+
+  function handleSendMessage() {
+    if (!selectedConv || !composeText.trim()) return;
+
+    const phiDetected = containsPhi(composeText);
+    const safeText = phiDetected ? redactPhi(sanitizeInput(composeText)) : sanitizeInput(composeText);
+
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
+    const newMsg: Message = {
+      id: `${selectedConv.id}-m${Date.now()}`,
+      sender: "agent",
+      text: safeText,
+      timestamp: timeStr,
+      channel: selectedConv.channel,
+      read: true,
+    };
+
+    const updatedConv: Conversation = {
+      ...selectedConv,
+      messages: [...selectedConv.messages, newMsg],
+      lastMessage: safeText,
+      lastTimestamp: "Just now",
+    };
+
+    setConversations((prev) => prev.map((c) => (c.id === selectedConv.id ? updatedConv : c)));
+    setSelectedConv(updatedConv);
+    setComposeText("");
+  }
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -247,7 +617,7 @@ const AgentCommunication = () => {
               Patient Communication Center
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Unified clinical inbox — monitor all patient-agent conversations in real time
+              Unified clinical inbox — manage conversations with patients and external partners in real time
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -256,6 +626,234 @@ const AgentCommunication = () => {
                 {totalUnread} unread
               </Badge>
             )}
+            <Dialog open={showNewConvDialog} onOpenChange={(open) => { setShowNewConvDialog(open); if (!open) resetNewConvForm(); }}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="gradient-primary text-primary-foreground shadow-glow-sm hover:opacity-90 gap-1.5 rounded-lg">
+                  <Plus className="h-3.5 w-3.5" />
+                  New Conversation
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[540px] bg-card border-border">
+                <DialogHeader>
+                  <DialogTitle className="font-display text-foreground flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5 text-primary" />
+                    Start New Conversation
+                  </DialogTitle>
+                  <DialogDescription className="text-muted-foreground">
+                    Create a conversation with a patient or external partner. All PHI rules and zone isolation are enforced.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4 py-2">
+                  {/* Contact Type Toggle */}
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Contact Type</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(["patient", "external-partner"] as const).map((ct) => {
+                        const cfg = CONTACT_TYPE_CONFIG[ct];
+                        const Icon = cfg.icon;
+                        return (
+                          <button
+                            key={ct}
+                            onClick={() => { setNewConvContactType(ct); setNewConvAgent(""); setNewConvChannel("chat"); }}
+                            className={`flex items-center gap-2.5 p-3 rounded-lg border transition-all ${
+                              newConvContactType === ct
+                                ? `${cfg.color} border-current`
+                                : "border-border text-muted-foreground hover:bg-white/5"
+                            }`}
+                          >
+                            <Icon className="h-4 w-4" />
+                            <div className="text-left">
+                              <p className="text-sm font-semibold">{cfg.label}</p>
+                              <p className="text-[10px] opacity-70">
+                                {ct === "patient" ? "Clinical or outreach" : "Vendors, labs, partners"}
+                              </p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Contact Details */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="conv-name" className="text-xs">Contact Name *</Label>
+                      <Input
+                        id="conv-name"
+                        value={newConvName}
+                        onChange={(e) => setNewConvName(e.target.value)}
+                        placeholder={newConvContactType === "patient" ? "Patient name" : "Contact name"}
+                        className="bg-white/[0.03] border-white/10 focus:border-primary/50 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="conv-email" className="text-xs">Email</Label>
+                      <Input
+                        id="conv-email"
+                        value={newConvEmail}
+                        onChange={(e) => setNewConvEmail(e.target.value)}
+                        placeholder="email@example.com"
+                        className="bg-white/[0.03] border-white/10 focus:border-primary/50 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="conv-phone" className="text-xs">Phone</Label>
+                      <Input
+                        id="conv-phone"
+                        value={newConvPhone}
+                        onChange={(e) => setNewConvPhone(e.target.value)}
+                        placeholder="(555) 000-0000"
+                        className="bg-white/[0.03] border-white/10 focus:border-primary/50 text-sm"
+                      />
+                    </div>
+                    {newConvContactType === "external-partner" && (
+                      <div className="space-y-1.5">
+                        <Label htmlFor="conv-org" className="text-xs">Organization</Label>
+                        <Input
+                          id="conv-org"
+                          value={newConvOrg}
+                          onChange={(e) => setNewConvOrg(e.target.value)}
+                          placeholder="Company / Lab / Vendor"
+                          className="bg-white/[0.03] border-white/10 focus:border-primary/50 text-sm"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Agent Assignment */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Assign Agent *</Label>
+                    <Select value={newConvAgent} onValueChange={(val) => { setNewConvAgent(val); const z = AGENT_ZONE_MAP[val]; if (z && !ZONE_ALLOWED_CHANNELS[z].includes(newConvChannel)) setNewConvChannel(ZONE_ALLOWED_CHANNELS[z][0]); }}>
+                      <SelectTrigger className="bg-white/[0.03] border-white/10 focus:border-primary/50 text-sm">
+                        <SelectValue placeholder="Select an agent..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {AVAILABLE_AGENTS.map((agent) => {
+                          const disabled = newConvContactType === "external-partner" && agent.zone === "clinical";
+                          return (
+                            <SelectItem key={agent.name} value={agent.name} disabled={disabled}>
+                              <span className="flex items-center gap-2">
+                                {agent.name}
+                                <Badge variant="outline" className={`text-[8px] px-1 py-0 ${ZONE_BADGE_CONFIG[agent.zone].color}`}>
+                                  {agent.zone === "clinical" ? "Z1" : agent.zone === "operations" ? "Z2" : "Z3"}
+                                </Badge>
+                                {disabled && <Lock className="h-3 w-3 text-red-400" />}
+                              </span>
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    {zoneViolation && (
+                      <p className="text-[10px] text-red-400 flex items-center gap-1 mt-1">
+                        <Shield className="h-3 w-3" />
+                        External partners cannot be routed to Clinical (Zone 1) agents — PHI exposure risk.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Channel Selection */}
+                  {selectedAgentZone && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Channel</Label>
+                      <div className="flex gap-1.5 flex-wrap">
+                        {(["chat", "sms", "email", "voice", "web"] as ChannelType[]).map((ch) => {
+                          const allowed = allowedChannels.includes(ch);
+                          const cfg = CHANNEL_CONFIG[ch];
+                          const Icon = cfg.icon;
+                          return (
+                            <button
+                              key={ch}
+                              onClick={() => allowed && setNewConvChannel(ch)}
+                              disabled={!allowed}
+                              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                                !allowed
+                                  ? "text-muted-foreground/30 border-border/30 cursor-not-allowed"
+                                  : newConvChannel === ch
+                                  ? `${cfg.color} border-current`
+                                  : "text-muted-foreground border-border hover:bg-white/5"
+                              }`}
+                            >
+                              {!allowed && <Lock className="h-2.5 w-2.5" />}
+                              <Icon className="h-3 w-3" />
+                              {cfg.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {selectedAgentZone !== "external" && (
+                        <p className="text-[10px] text-amber-400 flex items-center gap-1">
+                          <Shield className="h-3 w-3" />
+                          {selectedAgentZone === "clinical"
+                            ? "Zone 1 agents are restricted to internal chat — no external channels."
+                            : "Zone 2 agents are restricted to internal chat only."}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Subject & Initial Message */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="conv-subject" className="text-xs">Subject / Topic</Label>
+                    <Input
+                      id="conv-subject"
+                      value={newConvSubject}
+                      onChange={(e) => setNewConvSubject(e.target.value)}
+                      placeholder="e.g. Appointment scheduling, Vendor onboarding..."
+                      className="bg-white/[0.03] border-white/10 focus:border-primary/50 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="conv-msg" className="text-xs">Initial Message</Label>
+                    <Textarea
+                      id="conv-msg"
+                      value={newConvMessage}
+                      onChange={(e) => setNewConvMessage(e.target.value)}
+                      placeholder="Enter the opening message for this conversation..."
+                      rows={3}
+                      className="bg-white/[0.03] border-white/10 focus:border-primary/50 text-sm resize-none"
+                    />
+                  </div>
+
+                  {/* PHI Warnings */}
+                  {newConvPhiWarnings.length > 0 && (
+                    <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 space-y-1">
+                      <div className="flex items-center gap-1.5 text-amber-400 text-xs font-semibold">
+                        <AlertTriangle className="h-3.5 w-3.5" />
+                        PHI Detected
+                      </div>
+                      {newConvPhiWarnings.map((w, i) => (
+                        <p key={i} className="text-[11px] text-amber-400/80">{w}</p>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* PHI Compliance Notice */}
+                  <div className="rounded-lg border border-border bg-red-500/5 p-3 flex items-start gap-2">
+                    <Shield className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
+                    <div className="text-[11px] text-red-400/80 space-y-0.5">
+                      <p className="font-semibold text-red-400">PHI Compliance Active</p>
+                      <p>All messages are scanned for PHI before transmission. Zone isolation rules are strictly enforced. External partners never receive PHI — clinical agents (Zone 1) communicate via internal platform only.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <DialogFooter className="gap-2">
+                  <Button variant="outline" onClick={() => { setShowNewConvDialog(false); resetNewConvForm(); }} className="border-border text-muted-foreground hover:text-foreground">
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => { handleNewConvPhiCheck(); handleCreateConversation(); }}
+                    disabled={!newConvName.trim() || !newConvAgent || zoneViolation}
+                    className="gradient-primary text-primary-foreground shadow-glow-sm hover:opacity-90 gap-1.5"
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                    Start Conversation
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
@@ -263,7 +861,7 @@ const AgentCommunication = () => {
         <div className="border-b border-border px-6 py-2.5 bg-red-500/5 flex items-center gap-3">
           <Shield className="h-4 w-4 text-red-400 shrink-0" />
           <p className="text-xs text-red-400/90">
-            <span className="font-semibold">Zone Isolation Active:</span> Clinical (Zone 1) agents communicate via internal platform only — no email, phone, or SMS. External channels are restricted to Zone 3 agents.
+            <span className="font-semibold">Zone Isolation Active:</span> Clinical (Zone 1) agents communicate via internal platform only — no email, phone, or SMS. External channels are restricted to Zone 3 agents. PHI rules apply to all conversations including external partners.
           </p>
         </div>
 
@@ -281,6 +879,29 @@ const AgentCommunication = () => {
                   className="pl-9 bg-white/[0.03] border-white/10 focus:border-primary/50 h-9 text-sm"
                 />
               </div>
+              {/* Contact Type Filter */}
+              <div className="flex gap-1">
+                {(["all", "patient", "external-partner"] as const).map((ct) => (
+                  <button
+                    key={ct}
+                    onClick={() => setContactTypeFilter(ct)}
+                    className={`px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${
+                      contactTypeFilter === ct
+                        ? "gradient-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                    }`}
+                  >
+                    {ct === "all" ? (
+                      "All"
+                    ) : ct === "patient" ? (
+                      <><Heart className="h-3 w-3" /> Patients</>
+                    ) : (
+                      <><Building2 className="h-3 w-3" /> Partners</>
+                    )}
+                  </button>
+                ))}
+              </div>
+              {/* Channel Filter */}
               <div className="flex gap-1 overflow-x-auto">
                 {(["all", "chat", "sms", "email", "voice", "web"] as const).map((ch) => {
                   const isRestricted = selectedConv && ch !== "all" && !ZONE_ALLOWED_CHANNELS[selectedConv.zone || "external"].includes(ch as ChannelType);
@@ -309,11 +930,12 @@ const AgentCommunication = () => {
             <div className="flex-1 overflow-y-auto">
               {filteredConversations.map((conv) => {
                 const ChannelIcon = CHANNEL_CONFIG[conv.channel].icon;
+                const ContactTypeIcon = CONTACT_TYPE_CONFIG[conv.contactType].icon;
                 const isActive = selectedConv?.id === conv.id;
                 return (
                   <button
                     key={conv.id}
-                    onClick={() => setSelectedConv(conv)}
+                    onClick={() => { setSelectedConv(conv); setSelectedThread(null); }}
                     className={`w-full text-left px-4 py-3 border-b border-border/50 transition-colors ${
                       isActive
                         ? "bg-primary/10 border-l-2 border-l-primary"
@@ -322,8 +944,12 @@ const AgentCommunication = () => {
                   >
                     <div className="flex items-start gap-3">
                       <div className="relative shrink-0 mt-0.5">
-                        <div className="h-9 w-9 rounded-full bg-primary/15 flex items-center justify-center">
-                          <User className="h-4 w-4 text-primary" />
+                        <div className={`h-9 w-9 rounded-full flex items-center justify-center ${
+                          conv.contactType === "external-partner" ? "bg-emerald-500/15" : "bg-primary/15"
+                        }`}>
+                          <ContactTypeIcon className={`h-4 w-4 ${
+                            conv.contactType === "external-partner" ? "text-emerald-400" : "text-primary"
+                          }`} />
                         </div>
                         {conv.unread > 0 && (
                           <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] text-primary-foreground flex items-center justify-center font-bold">
@@ -348,10 +974,21 @@ const AgentCommunication = () => {
                           <Badge variant="outline" className={`text-[8px] px-1 py-0 ${ZONE_BADGE_CONFIG[conv.zone || "external"].color}`}>
                             {(conv.zone || "external") === "clinical" ? "Z1" : (conv.zone || "external") === "operations" ? "Z2" : "Z3"}
                           </Badge>
+                          <Badge variant="outline" className={`text-[8px] px-1 py-0 ${CONTACT_TYPE_CONFIG[conv.contactType].color}`}>
+                            {CONTACT_TYPE_CONFIG[conv.contactType].label}
+                          </Badge>
                         </div>
-                        <p className={`text-xs truncate ${conv.unread > 0 ? "text-foreground/90 font-medium" : "text-muted-foreground"}`}>
-                          {conv.lastMessage}
-                        </p>
+                        <div className="flex items-center gap-1.5">
+                          <p className={`text-xs truncate flex-1 ${conv.unread > 0 ? "text-foreground/90 font-medium" : "text-muted-foreground"}`}>
+                            {conv.lastMessage}
+                          </p>
+                          {conv.threads.length > 0 && (
+                            <Badge variant="outline" className="text-[8px] px-1 py-0 text-violet-400 bg-violet-500/10 border-violet-500/30 shrink-0">
+                              <GitBranch className="h-2.5 w-2.5 mr-0.5" />
+                              {conv.threads.length}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </button>
@@ -372,14 +1009,39 @@ const AgentCommunication = () => {
               {/* Thread Header */}
               <div className="px-5 py-3 border-b border-border flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-full bg-primary/15 flex items-center justify-center">
-                    <User className="h-4 w-4 text-primary" />
+                  {selectedThread && (
+                    <button
+                      onClick={() => setSelectedThread(null)}
+                      className="p-1.5 rounded-md hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </button>
+                  )}
+                  <div className={`h-9 w-9 rounded-full flex items-center justify-center ${
+                    selectedConv.contactType === "external-partner" ? "bg-emerald-500/15" : "bg-primary/15"
+                  }`}>
+                    {selectedConv.contactType === "external-partner"
+                      ? <Building2 className="h-4 w-4 text-emerald-400" />
+                      : <Heart className="h-4 w-4 text-primary" />
+                    }
                   </div>
                   <div>
-                    <h3 className="font-display font-bold text-sm text-foreground">
-                      {selectedConv.contactName}
+                    <h3 className="font-display font-bold text-sm text-foreground flex items-center gap-2">
+                      {selectedThread ? (
+                        <>
+                          <GitBranch className="h-3.5 w-3.5 text-violet-400" />
+                          {selectedThread.subject}
+                        </>
+                      ) : (
+                        selectedConv.contactName
+                      )}
                     </h3>
                     <div className="flex items-center gap-2">
+                      {selectedThread && (
+                        <span className="text-[11px] text-muted-foreground">
+                          in {selectedConv.contactName}
+                        </span>
+                      )}
                       <Badge variant="outline" className={`text-[10px] border ${CHANNEL_CONFIG[selectedConv.channel].color} px-1.5 py-0`}>
                         {CHANNEL_CONFIG[selectedConv.channel].label}
                       </Badge>
@@ -391,10 +1053,90 @@ const AgentCommunication = () => {
                           {ZONE_BADGE_CONFIG[selectedConv.zone].label}
                         </Badge>
                       )}
+                      {selectedConv.organization && (
+                        <span className="text-[10px] text-emerald-400/70 flex items-center gap-0.5">
+                          <Building2 className="h-2.5 w-2.5" />
+                          {selectedConv.organization}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  {!selectedThread && (
+                    <Dialog open={showNewThreadDialog} onOpenChange={(open) => { setShowNewThreadDialog(open); if (!open) resetNewThreadForm(); }}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="gap-1.5 text-xs border-border text-muted-foreground hover:text-foreground">
+                          <GitBranch className="h-3 w-3" />
+                          New Thread
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[440px] bg-card border-border">
+                        <DialogHeader>
+                          <DialogTitle className="font-display text-foreground flex items-center gap-2">
+                            <GitBranch className="h-5 w-5 text-violet-400" />
+                            Create Thread
+                          </DialogTitle>
+                          <DialogDescription className="text-muted-foreground">
+                            Start a focused thread within this conversation with {selectedConv.contactName}. PHI rules still apply.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-2">
+                          <div className="space-y-1.5">
+                            <Label htmlFor="thread-subject" className="text-xs">Thread Subject *</Label>
+                            <Input
+                              id="thread-subject"
+                              value={newThreadSubject}
+                              onChange={(e) => setNewThreadSubject(e.target.value)}
+                              placeholder="e.g. Lab results follow-up, Invoice review..."
+                              className="bg-white/[0.03] border-white/10 focus:border-primary/50 text-sm"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label htmlFor="thread-msg" className="text-xs">Initial Message (optional)</Label>
+                            <Textarea
+                              id="thread-msg"
+                              value={newThreadMessage}
+                              onChange={(e) => setNewThreadMessage(e.target.value)}
+                              placeholder="Start the thread with a message..."
+                              rows={3}
+                              className="bg-white/[0.03] border-white/10 focus:border-primary/50 text-sm resize-none"
+                            />
+                          </div>
+                          {newThreadPhiWarnings.length > 0 && (
+                            <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 space-y-1">
+                              <div className="flex items-center gap-1.5 text-amber-400 text-xs font-semibold">
+                                <AlertTriangle className="h-3.5 w-3.5" />
+                                PHI Detected — content will be redacted
+                              </div>
+                              {newThreadPhiWarnings.map((w, i) => (
+                                <p key={i} className="text-[11px] text-amber-400/80">{w}</p>
+                              ))}
+                            </div>
+                          )}
+                          <div className="rounded-lg border border-border bg-red-500/5 p-2.5 flex items-center gap-2">
+                            <Shield className="h-3.5 w-3.5 text-red-400 shrink-0" />
+                            <p className="text-[10px] text-red-400/80">
+                              Thread inherits zone and PHI restrictions from the parent conversation.
+                            </p>
+                          </div>
+                        </div>
+                        <DialogFooter className="gap-2">
+                          <Button variant="outline" onClick={() => { setShowNewThreadDialog(false); resetNewThreadForm(); }} className="border-border text-muted-foreground hover:text-foreground">
+                            Cancel
+                          </Button>
+                          <Button
+                            onClick={handleCreateThread}
+                            disabled={!newThreadSubject.trim()}
+                            className="gradient-primary text-primary-foreground shadow-glow-sm hover:opacity-90 gap-1.5"
+                          >
+                            <GitBranch className="h-3.5 w-3.5" />
+                            Create Thread
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  )}
                   <Badge
                     variant="outline"
                     className={`text-[10px] capitalize ${
@@ -417,9 +1159,32 @@ const AgentCommunication = () => {
                 </div>
               </div>
 
+              {/* Threads Bar (when viewing main conversation) */}
+              {!selectedThread && selectedConv.threads.length > 0 && (
+                <div className="px-5 py-2 border-b border-border bg-violet-500/5 flex items-center gap-2 overflow-x-auto shrink-0">
+                  <GitBranch className="h-3.5 w-3.5 text-violet-400 shrink-0" />
+                  <span className="text-[10px] text-violet-400 font-semibold uppercase tracking-wider shrink-0">Threads:</span>
+                  {selectedConv.threads.map((thread) => (
+                    <button
+                      key={thread.id}
+                      onClick={() => setSelectedThread(thread)}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border border-violet-500/30 text-violet-400 bg-violet-500/10 hover:bg-violet-500/20 transition-colors whitespace-nowrap"
+                    >
+                      {thread.subject}
+                      <Badge variant="outline" className="text-[8px] px-1 py-0 border-violet-500/30 text-violet-400">
+                        {thread.messages.length}
+                      </Badge>
+                      <Badge variant="outline" className={`text-[8px] px-1 py-0 ${thread.status === "open" ? "text-green-400 border-green-500/30" : "text-muted-foreground border-border"}`}>
+                        {thread.status}
+                      </Badge>
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                {selectedConv.messages.map((msg) => {
+                {(selectedThread ? selectedThread.messages : selectedConv.messages).map((msg) => {
                   const isAgent = msg.sender === "agent";
                   return (
                     <div key={msg.id} className={`flex ${isAgent ? "justify-start" : "justify-end"}`}>
@@ -459,9 +1224,15 @@ const AgentCommunication = () => {
                     <Paperclip className="h-4 w-4" />
                   </button>
                   <Input
-                    value={composeText}
-                    onChange={(e) => setComposeText(e.target.value)}
-                    placeholder="Type a message or override agent response..."
+                    value={selectedThread ? threadComposeText : composeText}
+                    onChange={(e) => selectedThread ? setThreadComposeText(e.target.value) : setComposeText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        selectedThread ? handleSendThreadMessage() : handleSendMessage();
+                      }
+                    }}
+                    placeholder={selectedThread ? "Reply in thread..." : "Type a message or override agent response..."}
                     className="flex-1 bg-white/[0.03] border-white/10 focus:border-primary/50 text-sm"
                   />
                   <button className="p-2 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors">
@@ -470,7 +1241,8 @@ const AgentCommunication = () => {
                   <Button
                     size="sm"
                     className="gradient-primary text-primary-foreground shadow-glow-sm hover:opacity-90 gap-1.5 rounded-lg"
-                    disabled={!composeText.trim()}
+                    disabled={selectedThread ? !threadComposeText.trim() : !composeText.trim()}
+                    onClick={() => selectedThread ? handleSendThreadMessage() : handleSendMessage()}
                   >
                     <Send className="h-3.5 w-3.5" />
                     Send
@@ -481,6 +1253,11 @@ const AgentCommunication = () => {
                     <span className="text-red-400 flex items-center gap-1">
                       <Shield className="h-3 w-3" />
                       Zone 1 restriction: Messages are internal platform only — no external transmission.
+                    </span>
+                  ) : selectedConv?.contactType === "external-partner" ? (
+                    <span className="text-emerald-400/80 flex items-center gap-1">
+                      <Shield className="h-3 w-3" />
+                      External partner conversation — PHI is automatically redacted from all outbound messages.
                     </span>
                   ) : (
                     "Messages sent here will override the agent and be sent directly to the contact."
@@ -493,7 +1270,7 @@ const AgentCommunication = () => {
               <div>
                 <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-30" />
                 <p className="text-sm font-medium">Select a conversation</p>
-                <p className="text-xs mt-1">Choose from the list to view messages</p>
+                <p className="text-xs mt-1">Choose from the list or start a new conversation</p>
               </div>
             </div>
           )}
@@ -504,12 +1281,28 @@ const AgentCommunication = () => {
               <div className="p-4 space-y-5">
                 {/* Contact Card */}
                 <div className="text-center">
-                  <div className="h-14 w-14 rounded-full bg-primary/15 flex items-center justify-center mx-auto mb-3">
-                    <User className="h-7 w-7 text-primary" />
+                  <div className={`h-14 w-14 rounded-full flex items-center justify-center mx-auto mb-3 ${
+                    selectedConv.contactType === "external-partner" ? "bg-emerald-500/15" : "bg-primary/15"
+                  }`}>
+                    {selectedConv.contactType === "external-partner"
+                      ? <Building2 className="h-7 w-7 text-emerald-400" />
+                      : <Heart className="h-7 w-7 text-primary" />
+                    }
                   </div>
                   <h3 className="font-display font-bold text-foreground text-sm">
                     {selectedConv.contactName}
                   </h3>
+                  <div className="flex items-center justify-center gap-1.5 mt-1">
+                    <Badge variant="outline" className={`text-[10px] ${CONTACT_TYPE_CONFIG[selectedConv.contactType].color}`}>
+                      {CONTACT_TYPE_CONFIG[selectedConv.contactType].label}
+                    </Badge>
+                  </div>
+                  {selectedConv.organization && (
+                    <p className="text-xs text-emerald-400/70 mt-1 flex items-center justify-center gap-1">
+                      <Building2 className="h-3 w-3" />
+                      {selectedConv.organization}
+                    </p>
+                  )}
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {selectedConv.contactEmail}
                   </p>
@@ -562,6 +1355,38 @@ const AgentCommunication = () => {
                   </div>
                 </div>
 
+                {/* Threads */}
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                    <GitBranch className="h-3 w-3" /> Threads
+                  </h4>
+                  {selectedConv.threads.length > 0 ? (
+                    <div className="space-y-1.5">
+                      {selectedConv.threads.map((thread) => (
+                        <button
+                          key={thread.id}
+                          onClick={() => setSelectedThread(thread)}
+                          className={`w-full text-left p-2 rounded-lg border transition-colors ${
+                            selectedThread?.id === thread.id
+                              ? "border-violet-500/40 bg-violet-500/10"
+                              : "border-border hover:bg-white/5"
+                          }`}
+                        >
+                          <p className="text-xs font-semibold text-foreground truncate">{thread.subject}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[10px] text-muted-foreground">{thread.messages.length} msgs</span>
+                            <Badge variant="outline" className={`text-[8px] px-1 py-0 ${thread.status === "open" ? "text-green-400 border-green-500/30" : "text-muted-foreground border-border"}`}>
+                              {thread.status}
+                            </Badge>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-muted-foreground">No threads yet</p>
+                  )}
+                </div>
+
                 {/* Conversation Stats */}
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
@@ -577,6 +1402,16 @@ const AgentCommunication = () => {
                         {selectedConv.messages.filter((m) => m.sender === "agent").length}
                       </p>
                       <p className="text-[10px] text-muted-foreground">Agent Msgs</p>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-card border border-border text-center">
+                      <p className="text-lg font-bold text-violet-400">{selectedConv.threads.length}</p>
+                      <p className="text-[10px] text-muted-foreground">Threads</p>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-card border border-border text-center">
+                      <p className="text-lg font-bold text-foreground">
+                        {selectedConv.threads.reduce((sum, t) => sum + t.messages.length, 0)}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">Thread Msgs</p>
                     </div>
                   </div>
                 </div>
