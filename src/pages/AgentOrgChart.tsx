@@ -289,6 +289,8 @@ const AgentOrgChart = () => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [addAgentOpen, setAddAgentOpen] = useState(false);
   const [moveAgentId, setMoveAgentId] = useState<string | null>(null);
+  const [dragAgentId, setDragAgentId] = useState<string | null>(null);
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
   const [expandedDepts, setExpandedDepts] = useState<Set<string>>(new Set([
     "Executive", "Clinical Operations", "Marketing & Growth",
     "Finance & Accounting", "Human Resources", "Research & Development", "IT & Security",
@@ -374,6 +376,73 @@ const AgentOrgChart = () => {
 
   const cancelMove = () => {
     setMoveAgentId(null);
+  };
+
+  // ── Drag & Drop Handlers ────────────────────────────────────────────────
+
+  const handleDragStart = (e: React.DragEvent, agentId: string) => {
+    const agent = agents.find((a) => a.id === agentId);
+    if (!agent || agent.level === "ceo") {
+      e.preventDefault();
+      return;
+    }
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", agentId);
+    setDragAgentId(agentId);
+  };
+
+  const handleDragEnd = () => {
+    setDragAgentId(null);
+    setDropTargetId(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, targetId: string) => {
+    if (!dragAgentId || dragAgentId === targetId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDropTargetId(targetId);
+  };
+
+  const handleDragLeave = () => {
+    setDropTargetId(null);
+  };
+
+  const handleDropOnAgent = (e: React.DragEvent, targetAgent: MyAgent) => {
+    e.preventDefault();
+    const dragId = e.dataTransfer.getData("text/plain");
+    if (!dragId || dragId === targetAgent.id) return;
+    const dragged = agents.find((a) => a.id === dragId);
+    if (!dragged) return;
+
+    if (targetAgent.level === "ceo") {
+      // Dropping onto CEO promotes to department-head of dragged agent's current department
+      updateAgent(dragId, { parentId: targetAgent.id, level: "department-head" });
+      toast({ title: "Agent Moved", description: `${dragged.name} promoted to department head under ${targetAgent.name}.` });
+    } else if (targetAgent.level === "department-head") {
+      // Dropping onto a department head reassigns to that department
+      updateAgent(dragId, { department: targetAgent.department, parentId: targetAgent.id, level: "worker" });
+      toast({ title: "Agent Moved", description: `${dragged.name} reassigned to ${targetAgent.department}.` });
+    }
+
+    setDragAgentId(null);
+    setDropTargetId(null);
+  };
+
+  const handleDropOnDepartment = (e: React.DragEvent, deptName: string) => {
+    e.preventDefault();
+    const dragId = e.dataTransfer.getData("text/plain");
+    if (!dragId) return;
+    const dragged = agents.find((a) => a.id === dragId);
+    if (!dragged || dragged.department === deptName) return;
+    const deptHead = getDeptHead(deptName);
+    const parentId = deptHead?.id ?? getCeo()?.id ?? null;
+    updateAgent(dragId, { department: deptName, parentId, level: "worker" });
+    toast({ title: "Agent Moved", description: `${dragged.name} reassigned to ${deptName}.` });
+    setDragAgentId(null);
+    setDropTargetId(null);
+
+    // Auto-expand the target department
+    setExpandedDepts((prev) => new Set([...prev, deptName]));
   };
 
   const handleAddAgent = () => {
@@ -519,19 +588,37 @@ const AgentOrgChart = () => {
     const zs = ZONE_STYLES[agent.zone];
     const isMoving = moveAgentId === agent.id;
     const isMoveTarget = moveAgentId !== null && moveAgentId !== agent.id && (agent.level === "department-head" || agent.level === "ceo");
+    const isDragging = dragAgentId === agent.id;
+    const isDropTarget = dropTargetId === agent.id && dragAgentId !== agent.id && (agent.level === "department-head" || agent.level === "ceo");
+    const isDraggable = agent.level !== "ceo";
 
     return (
       <div
+        draggable={isDraggable}
+        onDragStart={(e) => handleDragStart(e, agent.id)}
+        onDragEnd={handleDragEnd}
+        onDragOver={(e) => {
+          if (agent.level === "department-head" || agent.level === "ceo") {
+            handleDragOver(e, agent.id);
+          }
+        }}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => {
+          if (agent.level === "department-head" || agent.level === "ceo") {
+            handleDropOnAgent(e, agent);
+          }
+        }}
         className={`relative flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 cursor-pointer group
-          ${isMoving ? "ring-2 ring-violet-500 opacity-60" : ""}
-          ${isMoveTarget ? "ring-2 ring-emerald-500/50 hover:ring-emerald-400" : ""}
+          ${isMoving || isDragging ? "ring-2 ring-violet-500 opacity-60" : ""}
+          ${isMoveTarget || isDropTarget ? "ring-2 ring-emerald-500 bg-emerald-500/10 scale-[1.02]" : ""}
+          ${isDraggable ? "cursor-grab active:cursor-grabbing" : ""}
           bg-gradient-to-r ${zs.gradient} ${zs.border} hover:border-opacity-70
           hover:shadow-lg hover:shadow-black/20`}
         style={{ marginLeft: `${indentLevel * 28}px` }}
         onClick={() => {
           if (isMoveTarget && moveAgentId) {
             completeMove(agent.department, agent.id);
-          } else if (!moveAgentId) {
+          } else if (!moveAgentId && !dragAgentId) {
             openAgentDetail(agent);
           }
         }}
@@ -613,11 +700,28 @@ const AgentOrgChart = () => {
     const iconKey = DEPARTMENT_ICONS[deptName] ?? "building";
     const accessEntry = departmentAccess.find((d) => d.departmentName === deptName);
     const isRestricted = accessEntry?.accessLevel === "admin-only";
+    const isDeptDropTarget = dropTargetId === `dept-${deptName}` && dragAgentId !== null;
 
     if (deptName === "Executive") return null; // CEO rendered separately
 
     return (
-      <div className="relative">
+      <div
+        className={`relative transition-all duration-200 ${isDeptDropTarget ? "ring-2 ring-emerald-500/60 rounded-xl bg-emerald-500/5 p-2 -m-2" : ""}`}
+        onDragOver={(e) => {
+          if (dragAgentId) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            setDropTargetId(`dept-${deptName}`);
+          }
+        }}
+        onDragLeave={(e) => {
+          // Only clear if leaving the department container entirely
+          if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+            setDropTargetId(null);
+          }
+        }}
+        onDrop={(e) => handleDropOnDepartment(e, deptName)}
+      >
         {/* Vertical connecting line from top */}
         <div className="absolute -top-4 left-5 w-px h-4 border-l border-border/50" />
 
@@ -641,6 +745,11 @@ const AgentOrgChart = () => {
               {deptAgents.length}
             </Badge>
             {isRestricted && <Lock className="h-3.5 w-3.5 text-red-400/70" />}
+            {isDeptDropTarget && (
+              <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/40 text-[10px] animate-pulse">
+                Drop here
+              </Badge>
+            )}
           </div>
         </button>
 
@@ -680,10 +789,32 @@ const AgentOrgChart = () => {
 
   const ListRow = ({ agent }: { agent: MyAgent }) => {
     const zs = ZONE_STYLES[agent.zone];
+    const isDraggable = agent.level !== "ceo";
+    const isDragging = dragAgentId === agent.id;
+    const isDropTarget = dropTargetId === agent.id && dragAgentId !== agent.id && (agent.level === "department-head" || agent.level === "ceo");
     return (
       <div
-        className={`flex items-center gap-4 p-3 rounded-lg border ${zs.border} bg-card/30 hover:bg-card/50 cursor-pointer transition-all`}
-        onClick={() => openAgentDetail(agent)}
+        draggable={isDraggable}
+        onDragStart={(e) => handleDragStart(e, agent.id)}
+        onDragEnd={handleDragEnd}
+        onDragOver={(e) => {
+          if (agent.level === "department-head" || agent.level === "ceo") {
+            handleDragOver(e, agent.id);
+          }
+        }}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => {
+          if (agent.level === "department-head" || agent.level === "ceo") {
+            handleDropOnAgent(e, agent);
+          }
+        }}
+        className={`flex items-center gap-4 p-3 rounded-lg border ${zs.border} bg-card/30 hover:bg-card/50 transition-all
+          ${isDraggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"}
+          ${isDragging ? "opacity-50 ring-2 ring-violet-500" : ""}
+          ${isDropTarget ? "ring-2 ring-emerald-500 bg-emerald-500/10 scale-[1.01]" : ""}`}
+        onClick={() => {
+          if (!dragAgentId) openAgentDetail(agent);
+        }}
       >
         <div className="relative flex-shrink-0">
           <div className={`w-8 h-8 rounded-lg ${zs.bg} flex items-center justify-center`}>
@@ -869,6 +1000,23 @@ const AgentOrgChart = () => {
                 </div>
               )}
 
+              {/* Drag hint banner */}
+              {dragAgentId && (
+                <div className="mb-4 p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 flex items-center gap-3 animate-pulse">
+                  <ArrowRight className="h-5 w-5 text-emerald-400" />
+                  <div>
+                    <span className="text-sm font-medium text-emerald-300">Dragging Agent</span>
+                    <span className="text-xs text-muted-foreground ml-2">
+                      Drop onto a department head, CEO, or department section to reassign{" "}
+                      <strong className="text-foreground">
+                        {agents.find((a) => a.id === dragAgentId)?.name}
+                      </strong>
+                      .
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {/* Chart Area */}
               <div
                 className="glass-card rounded-2xl border border-border p-6 overflow-auto"
@@ -961,6 +1109,8 @@ const AgentOrgChart = () => {
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-gray-500" />
                   <span>Inactive</span>
                 </div>
+                <span className="mx-2">|</span>
+                <span className="text-muted-foreground/60 italic">Drag agents to reorganize</span>
               </div>
             </div>
           )}
