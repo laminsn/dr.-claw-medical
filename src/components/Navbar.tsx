@@ -1,17 +1,21 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X, Zap } from "lucide-react";
-
-const navLinks = [
-  { label: "Features", href: "#features" },
-  { label: "How It Works", href: "#how-it-works" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "FAQ", href: "#faq" },
-];
+import { useTranslation } from "react-i18next";
+import LanguageSelector from "@/components/LanguageSelector";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { t } = useTranslation();
+
+  const navLinks = [
+    { label: t("nav.features"), href: "#features" },
+    { label: t("nav.howItWorks"), href: "#how-it-works" },
+    { label: t("nav.pricing"), href: "#pricing" },
+    { label: t("nav.faq"), href: "#faq" },
+  ];
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -41,9 +45,9 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
               <a
-                key={link.label}
+                key={link.href}
                 href={link.href}
-                className="text-sm text-slate-300 hover:text-white transition-colors"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 {link.label}
               </a>
@@ -51,24 +55,26 @@ export default function Navbar() {
           </div>
 
           {/* Desktop CTAs */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2">
+            <ThemeToggle />
+            <LanguageSelector />
             <Link
               to="/auth"
-              className="text-sm text-slate-300 hover:text-white transition-colors px-4 py-2"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors px-4 py-2"
             >
-              Sign In
+              {t("nav.signIn")}
             </Link>
             <Link
               to="/auth"
               className="gradient-primary text-white text-sm font-semibold px-5 py-2.5 rounded-lg shadow-glow-sm hover:opacity-90 transition-opacity"
             >
-              Get Started
+              {t("nav.getStarted")}
             </Link>
           </div>
 
           {/* Mobile Menu Toggle */}
           <button
-            className="md:hidden text-slate-300 hover:text-white"
+            className="md:hidden text-muted-foreground hover:text-foreground"
             onClick={() => setOpen(!open)}
             aria-label="Toggle menu"
           >
@@ -78,32 +84,36 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         {open && (
-          <div className="md:hidden mt-4 pb-4 border-t border-white/10 pt-4 animate-fade-in">
+          <div className="md:hidden mt-4 pb-4 border-t border-border pt-4 animate-fade-in">
             <div className="flex flex-col gap-4">
               {navLinks.map((link) => (
                 <a
-                  key={link.label}
+                  key={link.href}
                   href={link.href}
-                  className="text-sm text-slate-300 hover:text-white transition-colors"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   onClick={() => setOpen(false)}
                 >
                   {link.label}
                 </a>
               ))}
-              <div className="flex flex-col gap-3 pt-4 border-t border-white/10">
+              <div className="flex items-center gap-2 py-2">
+                <ThemeToggle />
+                <LanguageSelector />
+              </div>
+              <div className="flex flex-col gap-3 pt-4 border-t border-border">
                 <Link
                   to="/auth"
-                  className="text-sm text-slate-300 hover:text-white transition-colors text-center py-2"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors text-center py-2"
                   onClick={() => setOpen(false)}
                 >
-                  Sign In
+                  {t("nav.signIn")}
                 </Link>
                 <Link
                   to="/auth"
                   className="gradient-primary text-white text-sm font-semibold px-5 py-2.5 rounded-lg shadow-glow-sm hover:opacity-90 transition-opacity text-center"
                   onClick={() => setOpen(false)}
                 >
-                  Get Started
+                  {t("nav.getStarted")}
                 </Link>
               </div>
             </div>

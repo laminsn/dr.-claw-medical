@@ -28,6 +28,7 @@ import {
   ArrowRightLeft,
   Eraser,
   Lock,
+  Languages,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,13 @@ import { Label } from "@/components/ui/label";
 import { skills, skillCategories } from "@/data/skills";
 import { agentTemplates } from "@/data/agentTemplates";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
+
+const AGENT_LANGUAGE_OPTIONS = [
+  { code: "en", label: "English", flag: "EN" },
+  { code: "es", label: "Español", flag: "ES" },
+  { code: "pt", label: "Português", flag: "PT" },
+];
 
 interface AgentCapabilities {
   phiProtection: boolean;
@@ -74,6 +82,7 @@ interface MyAgent {
   archived?: boolean;
   taskCount: number;
   zone: AgentZone;
+  language: string;
 }
 
 interface ActivityEntry {
@@ -152,6 +161,7 @@ function getSkillFullName(skillId: string): string {
 
 const Agents = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [myAgents, setMyAgents] = useState<MyAgent[]>([
     {
       id: "1",
@@ -163,6 +173,7 @@ const Agents = () => {
       archived: false,
       taskCount: 12,
       zone: "clinical",
+      language: "en",
     },
     {
       id: "2",
@@ -174,6 +185,7 @@ const Agents = () => {
       archived: false,
       taskCount: 8,
       zone: "external",
+      language: "en",
     },
     {
       id: "3",
@@ -185,6 +197,7 @@ const Agents = () => {
       archived: false,
       taskCount: 3,
       zone: "operations",
+      language: "en",
     },
   ]);
 
@@ -194,6 +207,7 @@ const Agents = () => {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [searchSkills, setSearchSkills] = useState("");
   const [newAgentZone, setNewAgentZone] = useState<AgentZone>("operations");
+  const [newAgentLanguage, setNewAgentLanguage] = useState("en");
   const [activeTab, setActiveTab] = useState<"my-agents" | "templates" | "monitor">("my-agents");
 
   // Deploy template dialog state
@@ -211,6 +225,7 @@ const Agents = () => {
   const [configCapabilities, setConfigCapabilities] = useState<AgentCapabilities>({ ...DEFAULT_CAPABILITIES });
   const [configSearchSkills, setConfigSearchSkills] = useState("");
   const [configZone, setConfigZone] = useState<AgentZone>("operations");
+  const [configLanguage, setConfigLanguage] = useState("en");
 
   // Activity monitor state
   const [activityFilter, setActivityFilter] = useState<"all" | "success" | "warning" | "error">("all");
@@ -250,6 +265,7 @@ const Agents = () => {
     setSelectedSkills([]);
     setSearchSkills("");
     setNewAgentZone("operations");
+    setNewAgentLanguage("en");
   };
 
   const handleCreate = () => {
@@ -264,6 +280,7 @@ const Agents = () => {
       archived: false,
       taskCount: 0,
       zone: newAgentZone,
+      language: newAgentLanguage,
     };
     setMyAgents((prev) => [...prev, newAgent]);
     setCreateOpen(false);
@@ -291,6 +308,7 @@ const Agents = () => {
       archived: false,
       taskCount: 0,
       zone: "operations",
+      language: "en",
     };
     setMyAgents((prev) => [...prev, newAgent]);
     setDeployOpen(false);
@@ -308,6 +326,7 @@ const Agents = () => {
     setConfigCapabilities({ ...agent.capabilities });
     setConfigSearchSkills("");
     setConfigZone(agent.zone);
+    setConfigLanguage(agent.language);
     setConfigOpen(true);
   };
 
@@ -326,7 +345,7 @@ const Agents = () => {
     setMyAgents((prev) =>
       prev.map((a) =>
         a.id === configAgent.id
-          ? { ...a, name: configName.trim(), model: configModel, skills: [...configSkills], capabilities: { ...configCapabilities }, zone: configZone }
+          ? { ...a, name: configName.trim(), model: configModel, skills: [...configSkills], capabilities: { ...configCapabilities }, zone: configZone, language: configLanguage }
           : a
       )
     );
@@ -438,10 +457,10 @@ const Agents = () => {
           {/* ── Header ─────────────────────────────── */}
           <div className="mb-8">
             <h1 className="font-display text-3xl font-bold text-foreground tracking-tight">
-              Healthcare AI Agents
+              {t("agents.title")}
             </h1>
             <p className="text-muted-foreground mt-1">
-              Create, customize, and deploy clinical AI agents for your practice
+              {t("agents.subtitle")}
             </p>
           </div>
 
@@ -899,9 +918,39 @@ const Agents = () => {
                   </div>
                 </div>
 
+                {/* Agent Language */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <Languages className="h-4 w-4 text-primary" />
+                    {t("agents.agentLanguage")}
+                  </Label>
+                  <p className="text-xs text-muted-foreground">{t("agents.agentLanguageDesc")}</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {AGENT_LANGUAGE_OPTIONS.map((lang) => (
+                      <button
+                        key={lang.code}
+                        onClick={() => setConfigLanguage(lang.code)}
+                        className={`relative flex items-center gap-2 justify-center rounded-lg border p-2.5 transition-all text-center ${
+                          configLanguage === lang.code
+                            ? "border-primary bg-primary/10 shadow-glow-sm"
+                            : "border-border bg-background hover:border-primary/30 hover:bg-primary/5"
+                        }`}
+                      >
+                        {configLanguage === lang.code && (
+                          <span className="absolute top-1 right-1"><Check className="h-3 w-3 text-primary" /></span>
+                        )}
+                        <span className="text-xs font-bold">{lang.flag}</span>
+                        <span className={`text-xs font-medium ${configLanguage === lang.code ? "text-foreground" : "text-muted-foreground"}`}>
+                          {lang.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Capabilities */}
                 <div className="space-y-3">
-                  <Label className="text-sm font-medium">Agent Capabilities</Label>
+                  <Label className="text-sm font-medium">{t("agents.agentCapabilities")}</Label>
                   <div className="space-y-2">
                     {CAPABILITY_OPTIONS.map((cap) => {
                       const enabled = configCapabilities[cap.key];
@@ -1270,8 +1319,38 @@ const Agents = () => {
                   ))}
                 </div>
               </div>
+              {/* Agent Language (Create) */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Languages className="h-4 w-4 text-primary" />
+                  {t("agents.agentLanguage")}
+                </Label>
+                <p className="text-xs text-muted-foreground">{t("agents.agentLanguageDesc")}</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {AGENT_LANGUAGE_OPTIONS.map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => setNewAgentLanguage(lang.code)}
+                      className={`relative flex items-center gap-2 justify-center rounded-lg border p-2.5 transition-all text-center ${
+                        newAgentLanguage === lang.code
+                          ? "border-primary bg-primary/10 shadow-glow-sm"
+                          : "border-border bg-background hover:border-primary/30 hover:bg-primary/5"
+                      }`}
+                    >
+                      {newAgentLanguage === lang.code && (
+                        <span className="absolute top-1 right-1"><Check className="h-3 w-3 text-primary" /></span>
+                      )}
+                      <span className="text-xs font-bold">{lang.flag}</span>
+                      <span className={`text-xs font-medium ${newAgentLanguage === lang.code ? "text-foreground" : "text-muted-foreground"}`}>
+                        {lang.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="space-y-3">
-                <Label className="text-sm font-medium">Skills <span className="text-muted-foreground font-normal">({selectedSkills.length} selected)</span></Label>
+                <Label className="text-sm font-medium">{t("agents.skills")} <span className="text-muted-foreground font-normal">({selectedSkills.length} {t("agents.selected")})</span></Label>
                 {selectedSkills.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 p-3 rounded-lg bg-primary/5 border border-primary/20">
                     {selectedSkills.map((skillId) => (

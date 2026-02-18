@@ -18,6 +18,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import {
   TaskVolumeChart,
@@ -140,6 +141,8 @@ const impactStats = [
 ];
 
 const Dashboard = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="flex min-h-screen bg-background">
       <DashboardSidebar />
@@ -150,10 +153,10 @@ const Dashboard = () => {
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-                Clinical Command Center
+                {t("dashboard.title")}
               </h1>
               <p className="text-muted-foreground mt-1">
-                Your healthcare AI team is active. Here's how they're improving patient care.
+                {t("dashboard.subtitle")}
               </p>
             </div>
 
@@ -162,29 +165,29 @@ const Dashboard = () => {
               <Link to="/dashboard/agents">
                 <button className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg gradient-primary text-white text-xs font-semibold shadow-glow-sm hover:opacity-90 transition-opacity">
                   <Plus className="h-3.5 w-3.5" />
-                  Create Agent
+                  {t("dashboard.createAgent")}
                 </button>
               </Link>
               <Link to="/dashboard/skills">
                 <button className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg gradient-primary text-white text-xs font-semibold shadow-glow-sm hover:opacity-90 transition-opacity">
                   <Zap className="h-3.5 w-3.5" />
-                  Browse Skills
+                  {t("dashboard.browseSkills")}
                 </button>
               </Link>
               <Link to="/dashboard/integrations">
                 <button className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg gradient-primary text-white text-xs font-semibold shadow-glow-sm hover:opacity-90 transition-opacity">
                   <Brain className="h-3.5 w-3.5" />
-                  Integrations
+                  {t("dashboard.integrations")}
                 </button>
               </Link>
             </div>
           </div>
 
           {/* ─── IMPACT SUMMARY ─── */}
-          <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-card via-card to-primary/[0.04] p-6">
+          <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card via-card to-primary/[0.04] p-6">
             <div className="absolute top-3 right-4 flex items-center gap-1.5 text-xs text-muted-foreground/60">
               <Sparkles className="h-3.5 w-3.5 text-amber-400/60" />
-              AI Impact Summary
+              {t("dashboard.aiImpactSummary")}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -296,38 +299,38 @@ const Dashboard = () => {
 
           {/* ─── IMPACT CHARTS ─── */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="bg-card rounded-xl border border-white/[0.06] p-5">
-              <h3 className="text-sm font-semibold text-foreground mb-1">Hours Saved Over Time</h3>
-              <p className="text-xs text-muted-foreground mb-4">AI automation vs. manual effort</p>
+            <div className="bg-card rounded-xl border border-border p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-1">{t("dashboard.hoursSavedOverTime")}</h3>
+              <p className="text-xs text-muted-foreground mb-4">{t("dashboard.hoursSavedOverTimeDesc")}</p>
               <HoursSavedChart />
             </div>
-            <div className="bg-card rounded-xl border border-white/[0.06] p-5">
-              <h3 className="text-sm font-semibold text-foreground mb-1">Hours Saved by Agent</h3>
-              <p className="text-xs text-muted-foreground mb-4">Top contributing agents this month</p>
+            <div className="bg-card rounded-xl border border-border p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-1">{t("dashboard.hoursSavedByAgent")}</h3>
+              <p className="text-xs text-muted-foreground mb-4">{t("dashboard.hoursSavedByAgentDesc")}</p>
               <AgentHoursSavedChart />
             </div>
-            <div className="bg-card rounded-xl border border-white/[0.06] p-5">
-              <h3 className="text-sm font-semibold text-foreground mb-1">Money Saved Breakdown</h3>
-              <p className="text-xs text-muted-foreground mb-4">Cost savings by category</p>
+            <div className="bg-card rounded-xl border border-border p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-1">{t("dashboard.moneySavedBreakdown")}</h3>
+              <p className="text-xs text-muted-foreground mb-4">{t("dashboard.moneySavedBreakdownDesc")}</p>
               <MoneySavedChart />
             </div>
           </div>
 
           {/* Analytics charts */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="bg-card rounded-xl border border-white/[0.06] p-5">
-              <h3 className="text-sm font-semibold text-foreground mb-1">Clinical Task Volume</h3>
-              <p className="text-xs text-muted-foreground mb-4">Weekly patient care task breakdown</p>
+            <div className="bg-card rounded-xl border border-border p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-1">{t("dashboard.clinicalTaskVolume")}</h3>
+              <p className="text-xs text-muted-foreground mb-4">{t("dashboard.clinicalTaskVolumeDesc")}</p>
               <TaskVolumeChart />
             </div>
-            <div className="bg-card rounded-xl border border-white/[0.06] p-5">
-              <h3 className="text-sm font-semibold text-foreground mb-1">Practice Growth</h3>
-              <p className="text-xs text-muted-foreground mb-4">Clinical operations over time</p>
+            <div className="bg-card rounded-xl border border-border p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-1">{t("dashboard.practiceGrowth")}</h3>
+              <p className="text-xs text-muted-foreground mb-4">{t("dashboard.practiceGrowthDesc")}</p>
               <TrendChart />
             </div>
-            <div className="bg-card rounded-xl border border-white/[0.06] p-5">
-              <h3 className="text-sm font-semibold text-foreground mb-1">Care Outcomes</h3>
-              <p className="text-xs text-muted-foreground mb-4">Patient task completion breakdown</p>
+            <div className="bg-card rounded-xl border border-border p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-1">{t("dashboard.careOutcomes")}</h3>
+              <p className="text-xs text-muted-foreground mb-4">{t("dashboard.careOutcomesDesc")}</p>
               <OutcomeChart />
             </div>
           </div>
@@ -335,14 +338,14 @@ const Dashboard = () => {
           {/* Bottom section: Agent tasks + Recent activity */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Agent tasks table - 2 cols */}
-            <div className="lg:col-span-2 bg-card rounded-xl border border-white/[0.06] p-5">
-              <h3 className="text-sm font-semibold text-foreground mb-4">Recent Clinical Tasks</h3>
+            <div className="lg:col-span-2 bg-card rounded-xl border border-border p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-4">{t("dashboard.recentClinicalTasks")}</h3>
               <AgentTasksTable />
             </div>
 
             {/* Recent activity - 1 col */}
-            <div className="bg-card rounded-xl border border-white/[0.06] p-5">
-              <h3 className="text-sm font-semibold text-foreground mb-4">Practice Activity Feed</h3>
+            <div className="bg-card rounded-xl border border-border p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-4">{t("dashboard.practiceActivityFeed")}</h3>
               <div className="space-y-4">
                 {recentActivity.map((item, idx) => (
                   <div key={idx} className="flex gap-3">
