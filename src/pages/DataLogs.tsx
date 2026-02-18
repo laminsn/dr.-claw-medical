@@ -28,6 +28,7 @@ import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 
 type LogLevel = "info" | "success" | "warning" | "error";
 type LogCategory = "communication" | "task" | "api" | "system" | "auth" | "integration";
@@ -236,6 +237,7 @@ const mockLogs: LogEntry[] = [
 ];
 
 const DataLogs = () => {
+  const { toast } = useToast();
   const [logs] = useState<LogEntry[]>(mockLogs);
   const [searchQuery, setSearchQuery] = useState("");
   const [levelFilter, setLevelFilter] = useState<LogLevel | "all">("all");
@@ -259,6 +261,37 @@ const DataLogs = () => {
     error: logs.filter((l) => l.level === "error").length,
   };
 
+  const handleExportLogs = () => {
+    const header = "Timestamp,Level,Category,Agent,Action,Details,Duration\n";
+    const rows = filteredLogs
+      .map((log) =>
+        [
+          log.timestamp,
+          log.level,
+          log.category,
+          log.agentName,
+          `"${log.action}"`,
+          `"${log.details.replace(/"/g, '""')}"`,
+          log.duration || "",
+        ].join(",")
+      )
+      .join("\n");
+    const csv = header + rows;
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast({
+      title: "Logs exported",
+      description: `${filteredLogs.length} log entries exported as CSV.`,
+    });
+  };
+
   return (
     <div className="flex min-h-screen bg-background">
       <DashboardSidebar />
@@ -276,7 +309,7 @@ const DataLogs = () => {
                 Complete HIPAA-compliant audit trail for all clinical agents, integrations, and system events
               </p>
             </div>
-            <Button variant="outline" size="sm" className="gap-2 text-xs border-border hover:bg-white/5">
+            <Button variant="outline" size="sm" className="gap-2 text-xs border-border hover:bg-white/5" onClick={handleExportLogs}>
               <Download className="h-3.5 w-3.5" />
               Export Logs
             </Button>
