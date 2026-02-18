@@ -32,6 +32,7 @@ import NotificationsCenter from "./pages/NotificationsCenter";
 import AgentPlayground from "./pages/AgentPlayground";
 import CustomDashboards from "./pages/CustomDashboards";
 import ApiPortal from "./pages/ApiPortal";
+import AgentCommandStation from "./pages/AgentCommandStation";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -74,6 +75,7 @@ const App = () => (
             <Route path="/dashboard/playground" element={<ProtectedRoute><AgentPlayground /></ProtectedRoute>} />
             <Route path="/dashboard/custom-dashboards" element={<ProtectedRoute><CustomDashboards /></ProtectedRoute>} />
             <Route path="/dashboard/api" element={<ProtectedRoute><ApiPortal /></ProtectedRoute>} />
+            <Route path="/dashboard/command" element={<ProtectedRoute><AgentCommandStation /></ProtectedRoute>} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Terms />} />
             <Route path="/security" element={<Terms />} />

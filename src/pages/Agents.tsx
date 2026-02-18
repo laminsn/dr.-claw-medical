@@ -29,6 +29,10 @@ import {
   Eraser,
   Lock,
   Languages,
+  DollarSign,
+  TrendingUp,
+  CheckCircle2,
+  Terminal,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
@@ -83,6 +87,13 @@ interface MyAgent {
   taskCount: number;
   zone: AgentZone;
   language: string;
+  // Usage stats
+  tasksToday: number;
+  successRate: number;
+  costToday: number;
+  costMonth: number;
+  tokensUsed: number;
+  avgResponseTime: string;
 }
 
 interface ActivityEntry {
@@ -174,6 +185,12 @@ const Agents = () => {
       taskCount: 12,
       zone: "clinical",
       language: "en",
+      tasksToday: 47,
+      successRate: 94,
+      costToday: 4.13,
+      costMonth: 87.40,
+      tokensUsed: 412500,
+      avgResponseTime: "1.4s",
     },
     {
       id: "2",
@@ -186,6 +203,12 @@ const Agents = () => {
       taskCount: 8,
       zone: "external",
       language: "en",
+      tasksToday: 23,
+      successRate: 98,
+      costToday: 2.21,
+      costMonth: 43.60,
+      tokensUsed: 198000,
+      avgResponseTime: "2.1s",
     },
     {
       id: "3",
@@ -198,6 +221,12 @@ const Agents = () => {
       taskCount: 3,
       zone: "operations",
       language: "en",
+      tasksToday: 0,
+      successRate: 88,
+      costToday: 0.00,
+      costMonth: 21.30,
+      tokensUsed: 89200,
+      avgResponseTime: "3.4s",
     },
   ]);
 
@@ -281,6 +310,12 @@ const Agents = () => {
       taskCount: 0,
       zone: newAgentZone,
       language: newAgentLanguage,
+      tasksToday: 0,
+      successRate: 100,
+      costToday: 0,
+      costMonth: 0,
+      tokensUsed: 0,
+      avgResponseTime: "—",
     };
     setMyAgents((prev) => [...prev, newAgent]);
     setCreateOpen(false);
@@ -309,6 +344,12 @@ const Agents = () => {
       taskCount: 0,
       zone: "operations",
       language: "en",
+      tasksToday: 0,
+      successRate: 100,
+      costToday: 0,
+      costMonth: 0,
+      tokensUsed: 0,
+      avgResponseTime: "—",
     };
     setMyAgents((prev) => [...prev, newAgent]);
     setDeployOpen(false);
@@ -582,7 +623,7 @@ const Agents = () => {
                       </div>
 
                       {/* Capability indicators */}
-                      <div className="flex items-center gap-1.5 mb-4">
+                      <div className="flex items-center gap-1.5 mb-3">
                         {agent.capabilities.phiProtection && (
                           <span title="PHI Protected" className="h-5 w-5 rounded bg-red-500/15 flex items-center justify-center">
                             <Shield className="h-3 w-3 text-red-400" />
@@ -616,7 +657,37 @@ const Agents = () => {
                         <span className="text-[10px] text-muted-foreground ml-1">{capCount} capabilities</span>
                       </div>
 
-                      <div className="flex items-center justify-between pt-3 border-t border-border">
+                      {/* ── Hover Stats Panel ──────────────────────────── */}
+                      <div className="overflow-hidden max-h-0 group-hover:max-h-40 transition-all duration-300 ease-in-out">
+                        <div className="border-t border-border pt-3 pb-1 space-y-2">
+                          <div className="grid grid-cols-3 gap-1.5">
+                            {[
+                              { label: "Tasks Today", value: agent.tasksToday, icon: CheckCircle2, color: "text-primary" },
+                              { label: "Success", value: `${agent.successRate}%`, icon: TrendingUp, color: "text-emerald-400" },
+                              { label: "Avg Speed", value: agent.avgResponseTime, icon: Clock, color: "text-cyan-400" },
+                            ].map((s) => (
+                              <div key={s.label} className="rounded-lg bg-muted/40 p-2 text-center">
+                                <s.icon className={`h-3 w-3 mx-auto mb-0.5 ${s.color}`} />
+                                <p className="text-xs font-bold text-foreground">{s.value}</p>
+                                <p className="text-[10px] text-muted-foreground leading-tight">{s.label}</p>
+                              </div>
+                            ))}
+                          </div>
+                          {/* Usage/cost meter */}
+                          <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <DollarSign className="h-3 w-3 text-amber-400" />
+                              <span className="text-[10px] text-amber-400 font-semibold">Usage Cost</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="text-[10px] text-muted-foreground">Today: <span className="text-foreground font-semibold">${agent.costToday.toFixed(2)}</span></span>
+                              <span className="text-[10px] text-muted-foreground">Month: <span className="text-foreground font-semibold">${agent.costMonth.toFixed(2)}</span></span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-3 border-t border-border mt-1">
                         <button
                           onClick={() => toggleAgent(agent.id)}
                           className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${
@@ -626,14 +697,25 @@ const Agents = () => {
                           <Power className="h-3.5 w-3.5" />
                           {agent.active ? "Active" : "Inactive"}
                         </button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                          onClick={() => openConfigDialog(agent)}
-                        >
-                          <Settings className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                            onClick={() => window.location.href = "/dashboard/command"}
+                            title="Command Station"
+                          >
+                            <Terminal className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                            onClick={() => openConfigDialog(agent)}
+                          >
+                            <Settings className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   );
