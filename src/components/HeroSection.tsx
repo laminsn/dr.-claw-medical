@@ -1,9 +1,12 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Play, Shield, FileCheck, Lock, Bot, Zap, Brain, Sparkles } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const poweredBy = ["OpenAI", "Claude", "Gemini", "MiniMax", "Kimi", "ElevenLabs"];
 
 export default function HeroSection() {
+  const { t } = useTranslation();
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-16">
       {/* Ambient Glow Effects */}
@@ -36,37 +39,34 @@ export default function HeroSection() {
         {/* Badge */}
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-300 text-sm font-medium mb-8 animate-fade-in">
           <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-          Zone-Isolated Healthcare AI Platform
+          {t("hero.badge")}
         </div>
 
         {/* Headline */}
         <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold font-heading leading-[1.1] mb-6 animate-fade-up">
-          <span className="gradient-hero-text">Healthcare AI Agents</span>{" "}
+          <span className="gradient-hero-text">{t("hero.title1")}</span>{" "}
           <br className="hidden sm:block" />
-          That Run Your Practice
+          {t("hero.title2")}
         </h1>
 
         {/* Subheadline */}
-        <p className="text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto mb-8 animate-fade-up leading-relaxed">
-          Purpose-built AI agents for medical practices, clinics, and health
-          systems. Automate patient scheduling, clinical documentation,
-          insurance verification, care coordination, and more — with zone-isolated
-          security that keeps PHI locked down and HIPAA compliance built in.
+        <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto mb-8 animate-fade-up leading-relaxed">
+          {t("hero.subtitle")}
         </p>
 
         {/* Trust Badges */}
         <div className="flex items-center justify-center gap-6 sm:gap-8 mb-10 animate-fade-up">
-          <div className="flex items-center gap-1.5 text-sm text-slate-400">
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Shield className="w-4 h-4 text-emerald-400" />
-            HIPAA Compliant
+            {t("hero.hipaa")}
           </div>
-          <div className="flex items-center gap-1.5 text-sm text-slate-400">
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <FileCheck className="w-4 h-4 text-emerald-400" />
-            BAA Available
+            {t("hero.baa")}
           </div>
-          <div className="flex items-center gap-1.5 text-sm text-slate-400">
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Lock className="w-4 h-4 text-emerald-400" />
-            SOC 2
+            {t("hero.soc2")}
           </div>
         </div>
 
@@ -76,31 +76,31 @@ export default function HeroSection() {
             to="/auth"
             className="gradient-primary text-white font-semibold px-8 py-3.5 rounded-xl shadow-glow hover:opacity-90 transition-all hover:shadow-glow-sm inline-flex items-center gap-2 text-lg"
           >
-            Start Free Trial
+            {t("hero.startFreeTrial")}
             <ArrowRight className="w-5 h-5" />
           </Link>
           <a
             href="#how-it-works"
-            className="glass-card text-white font-semibold px-8 py-3.5 rounded-xl hover:bg-white/10 transition-colors inline-flex items-center gap-2 text-lg border border-white/10"
+            className="glass-card text-foreground font-semibold px-8 py-3.5 rounded-xl hover:bg-secondary transition-colors inline-flex items-center gap-2 text-lg border border-border"
           >
             <Play className="w-5 h-5" />
-            See How It Works
+            {t("hero.seeHowItWorks")}
           </a>
         </div>
 
         {/* Powered By */}
         <div className="animate-fade-up">
-          <p className="text-xs text-slate-500 uppercase tracking-widest mb-5">
-            Powered By Leading AI Models
+          <p className="text-xs text-muted-foreground uppercase tracking-widest mb-5">
+            {t("hero.poweredBy")}
           </p>
           <div className="flex items-center justify-center gap-6 sm:gap-10 flex-wrap">
             {poweredBy.map((name) => (
               <div
                 key={name}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50 border border-border"
               >
-                <Brain className="h-4 w-4 text-slate-500" />
-                <span className="text-sm text-slate-400 font-medium">{name}</span>
+                <Brain className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground font-medium">{name}</span>
               </div>
             ))}
           </div>

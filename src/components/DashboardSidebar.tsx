@@ -33,39 +33,43 @@ import {
   Code2,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-
-const menuItems = [
-  { icon: LayoutDashboard, label: "Clinical Overview", path: "/dashboard" },
-  { icon: Bot, label: "Healthcare Agents", path: "/dashboard/agents" },
-  { icon: MessageCircle, label: "Agent Playground", path: "/dashboard/playground" },
-  { icon: Zap, label: "Medical Skills", path: "/dashboard/skills" },
-  { icon: GitBranch, label: "Care Workflows", path: "/dashboard/workflows" },
-  { icon: Plug, label: "EHR & Integrations", path: "/dashboard/integrations" },
-  { icon: Heart, label: "Patient Portal", path: "/dashboard/patients" },
-  { icon: Building2, label: "Practice Profile", path: "/dashboard/company" },
-  { icon: UserPlus, label: "Care Team", path: "/dashboard/team" },
-  { icon: Link2, label: "Agent Collaboration", path: "/dashboard/collaboration" },
-  { icon: MessageSquare, label: "Patient Comms", path: "/dashboard/communication" },
-  { icon: ListTodo, label: "Clinical Tasks", path: "/dashboard/tasks" },
-  { icon: BookOpen, label: "Medical Knowledge", path: "/dashboard/knowledge" },
-  { icon: BarChart3, label: "Clinical Reports", path: "/dashboard/reports" },
-  { icon: LayoutGrid, label: "Custom Dashboards", path: "/dashboard/custom-dashboards" },
-  { icon: ScrollText, label: "Audit Logs", path: "/dashboard/logs" },
-  { icon: Bell, label: "Alerts & Notifications", path: "/dashboard/notifications" },
-  { icon: Mail, label: "Patient Campaigns", path: "/dashboard/campaigns" },
-  { icon: GraduationCap, label: "Training Center", path: "/dashboard/training" },
-  { icon: ShieldAlert, label: "PHI Monitor", path: "/dashboard/phi-monitor" },
-  { icon: Code2, label: "API Portal", path: "/dashboard/api" },
-  { icon: CreditCard, label: "Billing & Plans", path: "/dashboard/billing" },
-  { icon: User, label: "Provider Profile", path: "/dashboard/profile" },
-  { icon: Shield, label: "Admin", path: "/dashboard/admin" },
-  { icon: Settings, label: "Settings", path: "/dashboard/settings" },
-];
+import { useTranslation } from "react-i18next";
+import ThemeToggle from "@/components/ThemeToggle";
+import LanguageSelector from "@/components/LanguageSelector";
 
 const DashboardSidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { signOut } = useAuth();
+  const { t } = useTranslation();
+
+  const menuItems = [
+    { icon: LayoutDashboard, label: t("sidebar.clinicalOverview"), path: "/dashboard" },
+    { icon: Bot, label: t("sidebar.healthcareAgents"), path: "/dashboard/agents" },
+    { icon: MessageCircle, label: t("sidebar.agentPlayground"), path: "/dashboard/playground" },
+    { icon: Zap, label: t("sidebar.medicalSkills"), path: "/dashboard/skills" },
+    { icon: GitBranch, label: t("sidebar.careWorkflows"), path: "/dashboard/workflows" },
+    { icon: Plug, label: t("sidebar.ehrIntegrations"), path: "/dashboard/integrations" },
+    { icon: Heart, label: t("sidebar.patientPortal"), path: "/dashboard/patients" },
+    { icon: Building2, label: t("sidebar.practiceProfile"), path: "/dashboard/company" },
+    { icon: UserPlus, label: t("sidebar.careTeam"), path: "/dashboard/team" },
+    { icon: Link2, label: t("sidebar.agentCollaboration"), path: "/dashboard/collaboration" },
+    { icon: MessageSquare, label: t("sidebar.patientComms"), path: "/dashboard/communication" },
+    { icon: ListTodo, label: t("sidebar.clinicalTasks"), path: "/dashboard/tasks" },
+    { icon: BookOpen, label: t("sidebar.medicalKnowledge"), path: "/dashboard/knowledge" },
+    { icon: BarChart3, label: t("sidebar.clinicalReports"), path: "/dashboard/reports" },
+    { icon: LayoutGrid, label: t("sidebar.customDashboards"), path: "/dashboard/custom-dashboards" },
+    { icon: ScrollText, label: t("sidebar.auditLogs"), path: "/dashboard/logs" },
+    { icon: Bell, label: t("sidebar.alertsNotifications"), path: "/dashboard/notifications" },
+    { icon: Mail, label: t("sidebar.patientCampaigns"), path: "/dashboard/campaigns" },
+    { icon: GraduationCap, label: t("sidebar.trainingCenter"), path: "/dashboard/training" },
+    { icon: ShieldAlert, label: t("sidebar.phiMonitor"), path: "/dashboard/phi-monitor" },
+    { icon: Code2, label: t("sidebar.apiPortal"), path: "/dashboard/api" },
+    { icon: CreditCard, label: t("sidebar.billingPlans"), path: "/dashboard/billing" },
+    { icon: User, label: t("sidebar.providerProfile"), path: "/dashboard/profile" },
+    { icon: Shield, label: t("sidebar.admin"), path: "/dashboard/admin" },
+    { icon: Settings, label: t("sidebar.settings"), path: "/dashboard/settings" },
+  ];
 
   return (
     <aside
@@ -103,19 +107,25 @@ const DashboardSidebar = () => {
       </nav>
 
       <div className="p-2 border-t border-sidebar-border space-y-1">
+        {!collapsed && (
+          <div className="flex items-center gap-1 px-1 py-1">
+            <ThemeToggle />
+            <LanguageSelector compact />
+          </div>
+        )}
         <button
           onClick={signOut}
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent transition-colors w-full"
         >
           <LogOut className="h-5 w-5 shrink-0" />
-          {!collapsed && <span>Sign Out</span>}
+          {!collapsed && <span>{t("nav.signOut")}</span>}
         </button>
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent transition-colors w-full"
         >
           {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-          {!collapsed && <span>Collapse</span>}
+          {!collapsed && <span>{t("nav.collapse")}</span>}
         </button>
       </div>
     </aside>
