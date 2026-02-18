@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Crown,
   BarChart3,
@@ -127,6 +128,7 @@ const categoryColors: Record<string, string> = {
 // Component
 // ---------------------------------------------------------------------------
 const SkillsCenter = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -142,7 +144,7 @@ const SkillsCenter = () => {
   });
 
   const categoryTabs = [
-    { id: "all", name: "All" },
+    { id: "all", name: t("skillsCenter.all") },
     ...skillCategories.map((c) => ({ id: c.id, name: c.name })),
   ];
 
@@ -155,10 +157,10 @@ const SkillsCenter = () => {
           {/* ── Header ─────────────────────────────────── */}
           <div>
             <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-              Medical Skills Library
+              {t("skillsCenter.title")}
             </h1>
             <p className="text-muted-foreground mt-1">
-              Browse 30+ healthcare AI skills — from patient intake to clinical documentation.
+              {t("skillsCenter.subtitle")}
             </p>
           </div>
 
@@ -185,7 +187,7 @@ const SkillsCenter = () => {
             <div className="relative sm:ml-auto sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search skills..."
+                placeholder={t("skillsCenter.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 bg-white/5 border-white/10 focus:border-primary"
@@ -197,7 +199,7 @@ const SkillsCenter = () => {
           {filteredSkills.length === 0 ? (
             <div className="text-center py-20 text-muted-foreground">
               <Search className="h-10 w-10 mx-auto mb-3 opacity-40" />
-              <p className="text-sm">No skills match your search.</p>
+              <p className="text-sm">{t("skillsCenter.noSkillsMatch")}</p>
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -311,14 +313,14 @@ const SkillsCenter = () => {
                 variant="outline"
                 className={`text-[10px] capitalize ${tierColors[selectedSkill.tier] ?? ""}`}
               >
-                {selectedSkill.tier} tier
+                {selectedSkill.tier} {t("skillsCenter.tier")}
               </Badge>
             </div>
 
             {/* Capabilities */}
             <div>
               <h4 className="text-sm font-semibold font-heading text-foreground mb-2">
-                Capabilities
+                {t("skillsCenter.capabilities")}
               </h4>
               <ul className="grid sm:grid-cols-2 gap-2">
                 {selectedSkill.capabilities.map((cap) => (
@@ -346,14 +348,14 @@ const SkillsCenter = () => {
                 className="gradient-primary text-white shadow-glow-sm hover:opacity-90 transition-opacity"
                 onClick={() => {
                   toast({
-                    title: "Skill added",
-                    description: `"${selectedSkill.name}" has been added to your agent's skill set. Configure it from the Agents page.`,
+                    title: t("skillsCenter.toastSkillAddedTitle"),
+                    description: t("skillsCenter.toastSkillAddedDesc", { name: selectedSkill.name }),
                   });
                   setSelectedSkill(null);
                 }}
               >
                 <Zap className="h-4 w-4 mr-1.5" />
-                Add to Agent
+                {t("skillsCenter.addToAgent")}
               </Button>
             </div>
           </DialogContent>

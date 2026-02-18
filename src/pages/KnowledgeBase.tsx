@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   FileText,
   FolderOpen,
@@ -304,6 +305,18 @@ const initialAgentLinks: AgentDocLink[] = [
 // ---------------------------------------------------------------------------
 const KnowledgeBase = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
+
+  // --- i18n label maps ---
+  const CATEGORY_LABELS: Record<DocumentCategory, string> = {
+    "Clinical Protocols": t("knowledgeBase.categoryClinicalProtocols"),
+    "Insurance Policies": t("knowledgeBase.categoryInsurancePolicies"),
+    "SOPs": t("knowledgeBase.categorySops"),
+    "Training Materials": t("knowledgeBase.categoryTrainingMaterials"),
+    "Compliance Docs": t("knowledgeBase.categoryComplianceDocs"),
+    "Templates": t("knowledgeBase.categoryTemplates"),
+    "Research Papers": t("knowledgeBase.categoryResearchPapers"),
+  };
 
   // Document state
   const [documents, setDocuments] = useState<KBDocument[]>(mockDocuments);
@@ -365,7 +378,7 @@ const KnowledgeBase = () => {
   // ---------------------------------------------------------------------------
   const handleUpload = () => {
     if (!uploadName.trim() || !uploadCategory) {
-      toast({ title: "Missing Fields", description: "Please fill in the document name and category." });
+      toast({ title: t("knowledgeBase.toastMissingFields"), description: t("knowledgeBase.toastMissingFieldsDesc") });
       return;
     }
 
@@ -392,15 +405,15 @@ const KnowledgeBase = () => {
     setUploadCategory("");
     setUploadDescription("");
     setUploadTags("");
-    toast({ title: "Document Uploaded", description: `"${newDoc.name}" has been added to the knowledge base.` });
+    toast({ title: t("knowledgeBase.toastDocumentUploaded"), description: t("knowledgeBase.toastDocumentUploadedDesc", { name: newDoc.name }) });
   };
 
   const handleView = (doc: KBDocument) => {
-    toast({ title: "Opening Document", description: `Viewing "${doc.name}"...` });
+    toast({ title: t("knowledgeBase.toastOpeningDocument"), description: t("knowledgeBase.toastViewingDoc", { name: doc.name }) });
   };
 
   const handleDownload = (doc: KBDocument) => {
-    toast({ title: "Download Started", description: `Downloading "${doc.name}" (${doc.fileSize})...` });
+    toast({ title: t("knowledgeBase.toastDownloadStarted"), description: t("knowledgeBase.toastDownloadingDoc", { name: doc.name, size: doc.fileSize }) });
   };
 
   const handleDelete = (doc: KBDocument) => {
@@ -411,7 +424,7 @@ const KnowledgeBase = () => {
         documentIds: link.documentIds.filter((id) => id !== doc.id),
       }))
     );
-    toast({ title: "Document Deleted", description: `"${doc.name}" has been removed from the knowledge base.` });
+    toast({ title: t("knowledgeBase.toastDocumentDeleted"), description: t("knowledgeBase.toastDocumentDeletedDesc", { name: doc.name }) });
   };
 
   const handleLinkDocument = (agentLinkId: string, docId: string) => {
@@ -425,8 +438,8 @@ const KnowledgeBase = () => {
     const doc = documents.find((d) => d.id === docId);
     const agent = agentLinks.find((a) => a.id === agentLinkId);
     toast({
-      title: "Document Linked",
-      description: `"${doc?.name}" linked to ${agent?.agentName}.`,
+      title: t("knowledgeBase.toastDocumentLinked"),
+      description: t("knowledgeBase.toastDocumentLinkedDesc", { docName: doc?.name, agentName: agent?.agentName }),
     });
   };
 
@@ -441,8 +454,8 @@ const KnowledgeBase = () => {
     const doc = documents.find((d) => d.id === docId);
     const agent = agentLinks.find((a) => a.id === agentLinkId);
     toast({
-      title: "Document Unlinked",
-      description: `"${doc?.name}" unlinked from ${agent?.agentName}.`,
+      title: t("knowledgeBase.toastDocumentUnlinked"),
+      description: t("knowledgeBase.toastDocumentUnlinkedDesc", { docName: doc?.name, agentName: agent?.agentName }),
     });
   };
 
@@ -459,10 +472,10 @@ const KnowledgeBase = () => {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-                Medical Knowledge Base
+                {t("knowledgeBase.title")}
               </h1>
               <p className="text-muted-foreground mt-1">
-                Manage clinical protocols, SOPs, insurance policies, and training materials for your AI agents.
+                {t("knowledgeBase.subtitle")}
               </p>
             </div>
             <Button
@@ -470,7 +483,7 @@ const KnowledgeBase = () => {
               className="gradient-primary text-white shadow-glow-sm hover:opacity-90 transition-opacity gap-2"
             >
               <Upload className="h-4 w-4" />
-              Upload Document
+              {t("knowledgeBase.uploadDocument")}
             </Button>
           </div>
 
@@ -478,40 +491,40 @@ const KnowledgeBase = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-card rounded-xl border border-white/[0.06] p-5 card-hover">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-muted-foreground font-medium">Total Documents</span>
+                <span className="text-xs text-muted-foreground font-medium">{t("knowledgeBase.totalDocuments")}</span>
                 <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-blue-600 shadow-glow-sm">
                   <FileText className="h-5 w-5 text-white" />
                 </div>
               </div>
               <p className="text-2xl font-bold text-foreground">{totalDocuments}</p>
-              <p className="text-xs text-muted-foreground mt-1">Across all categories</p>
+              <p className="text-xs text-muted-foreground mt-1">{t("knowledgeBase.acrossAllCategories")}</p>
             </div>
 
             <div className="bg-card rounded-xl border border-white/[0.06] p-5 card-hover">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-muted-foreground font-medium">Categories</span>
+                <span className="text-xs text-muted-foreground font-medium">{t("knowledgeBase.categories")}</span>
                 <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-blue-600 shadow-glow-sm">
                   <FolderOpen className="h-5 w-5 text-white" />
                 </div>
               </div>
               <p className="text-2xl font-bold text-foreground">{totalCategories}</p>
-              <p className="text-xs text-muted-foreground mt-1">Document categories</p>
+              <p className="text-xs text-muted-foreground mt-1">{t("knowledgeBase.documentCategories")}</p>
             </div>
 
             <div className="bg-card rounded-xl border border-white/[0.06] p-5 card-hover">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-muted-foreground font-medium">Agent References</span>
+                <span className="text-xs text-muted-foreground font-medium">{t("knowledgeBase.agentReferences")}</span>
                 <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-blue-600 shadow-glow-sm">
                   <Bot className="h-5 w-5 text-white" />
                 </div>
               </div>
               <p className="text-2xl font-bold text-foreground">{totalAgentReferences.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground mt-1">Total agent document accesses</p>
+              <p className="text-xs text-muted-foreground mt-1">{t("knowledgeBase.totalAgentAccesses")}</p>
             </div>
 
             <div className="bg-card rounded-xl border border-white/[0.06] p-5 card-hover">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-muted-foreground font-medium">Last Updated</span>
+                <span className="text-xs text-muted-foreground font-medium">{t("knowledgeBase.lastUpdated")}</span>
                 <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-blue-600 shadow-glow-sm">
                   <Clock className="h-5 w-5 text-white" />
                 </div>
@@ -519,7 +532,7 @@ const KnowledgeBase = () => {
               <p className="text-2xl font-bold text-foreground">
                 {new Date(lastUpdated).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">Most recent upload</p>
+              <p className="text-xs text-muted-foreground mt-1">{t("knowledgeBase.mostRecentUpload")}</p>
             </div>
           </div>
 
@@ -530,7 +543,7 @@ const KnowledgeBase = () => {
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search documents..."
+                placeholder={t("knowledgeBase.searchPlaceholder")}
                 className="pl-9 bg-white/[0.03] border-white/10 focus:border-primary/50"
               />
             </div>
@@ -543,10 +556,10 @@ const KnowledgeBase = () => {
                   onValueChange={(val) => setFileTypeFilter(val as FileType_ | "All")}
                 >
                   <SelectTrigger className="w-[120px] h-9 text-xs bg-white/[0.03] border-white/10">
-                    <SelectValue placeholder="File type" />
+                    <SelectValue placeholder={t("knowledgeBase.fileType")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="All">All Types</SelectItem>
+                    <SelectItem value="All">{t("knowledgeBase.allTypes")}</SelectItem>
                     <SelectItem value="PDF">PDF</SelectItem>
                     <SelectItem value="DOCX">DOCX</SelectItem>
                     <SelectItem value="XLSX">XLSX</SelectItem>
@@ -562,13 +575,13 @@ const KnowledgeBase = () => {
                   onValueChange={(val) => setSortBy(val as SortOption)}
                 >
                   <SelectTrigger className="w-[150px] h-9 text-xs bg-white/[0.03] border-white/10">
-                    <SelectValue placeholder="Sort by" />
+                    <SelectValue placeholder={t("knowledgeBase.sortBy")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="name">Name</SelectItem>
-                    <SelectItem value="date">Date</SelectItem>
-                    <SelectItem value="size">Size</SelectItem>
-                    <SelectItem value="references">Most Referenced</SelectItem>
+                    <SelectItem value="name">{t("knowledgeBase.sortName")}</SelectItem>
+                    <SelectItem value="date">{t("knowledgeBase.sortDate")}</SelectItem>
+                    <SelectItem value="size">{t("knowledgeBase.sortSize")}</SelectItem>
+                    <SelectItem value="references">{t("knowledgeBase.sortMostReferenced")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -581,7 +594,7 @@ const KnowledgeBase = () => {
             <div className="hidden lg:block w-56 shrink-0">
               <div className="bg-card rounded-xl border border-white/[0.06] p-4 sticky top-8">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                  Categories
+                  {t("knowledgeBase.categoriesLabel")}
                 </h3>
                 <div className="space-y-1">
                   <button
@@ -592,7 +605,7 @@ const KnowledgeBase = () => {
                         : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                     }`}
                   >
-                    <span>All Documents</span>
+                    <span>{t("knowledgeBase.allDocuments")}</span>
                     <span className={selectedCategory === "All" ? "text-white/70" : "text-muted-foreground/50"}>
                       {documents.length}
                     </span>
@@ -607,7 +620,7 @@ const KnowledgeBase = () => {
                           : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                       }`}
                     >
-                      <span className="truncate">{cat}</span>
+                      <span className="truncate">{CATEGORY_LABELS[cat]}</span>
                       <span className={selectedCategory === cat ? "text-white/70" : "text-muted-foreground/50"}>
                         {getCategoryCount(cat)}
                       </span>
@@ -627,7 +640,7 @@ const KnowledgeBase = () => {
                     : "bg-white/5 text-muted-foreground hover:text-foreground"
                 }`}
               >
-                All ({documents.length})
+                {t("knowledgeBase.allLabel")} ({documents.length})
               </button>
               {CATEGORIES.map((cat) => (
                 <button
@@ -639,7 +652,7 @@ const KnowledgeBase = () => {
                       : "bg-white/5 text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {cat} ({getCategoryCount(cat)})
+                  {CATEGORY_LABELS[cat]} ({getCategoryCount(cat)})
                 </button>
               ))}
             </div>
@@ -649,8 +662,8 @@ const KnowledgeBase = () => {
               {filteredDocuments.length === 0 ? (
                 <div className="text-center py-20 text-muted-foreground">
                   <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm font-medium">No documents found</p>
-                  <p className="text-xs mt-1">Try adjusting your search or filter criteria</p>
+                  <p className="text-sm font-medium">{t("knowledgeBase.noDocumentsFound")}</p>
+                  <p className="text-xs mt-1">{t("knowledgeBase.tryAdjustingFilters")}</p>
                 </div>
               ) : (
                 <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -672,7 +685,7 @@ const KnowledgeBase = () => {
                             variant="outline"
                             className={`text-[10px] ${CATEGORY_COLORS[doc.category]}`}
                           >
-                            {doc.category}
+                            {CATEGORY_LABELS[doc.category]}
                           </Badge>
                         </div>
 
@@ -709,7 +722,7 @@ const KnowledgeBase = () => {
 
                         <div className="flex items-center gap-1 mt-1.5 text-[11px] text-muted-foreground">
                           <Bot className="h-3 w-3" />
-                          <span>{doc.agentAccessCount} agent accesses</span>
+                          <span>{doc.agentAccessCount} {t("knowledgeBase.agentAccesses")}</span>
                         </div>
 
                         {/* Tags */}
@@ -737,7 +750,7 @@ const KnowledgeBase = () => {
                             onClick={() => handleView(doc)}
                           >
                             <Eye className="h-3.5 w-3.5 mr-1" />
-                            View
+                            {t("knowledgeBase.view")}
                           </Button>
                           <Button
                             variant="ghost"
@@ -746,7 +759,7 @@ const KnowledgeBase = () => {
                             onClick={() => handleDownload(doc)}
                           >
                             <Download className="h-3.5 w-3.5 mr-1" />
-                            Download
+                            {t("knowledgeBase.download")}
                           </Button>
                           <Button
                             variant="ghost"
@@ -769,10 +782,10 @@ const KnowledgeBase = () => {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Link2 className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-bold font-heading text-foreground">Agent Knowledge Links</h2>
+              <h2 className="text-xl font-bold font-heading text-foreground">{t("knowledgeBase.agentKnowledgeLinks")}</h2>
             </div>
             <p className="text-sm text-muted-foreground mb-6">
-              Manage which documents each agent can reference for context and decision-making.
+              {t("knowledgeBase.agentKnowledgeLinksDesc")}
             </p>
 
             <div className="grid sm:grid-cols-2 gap-4">
@@ -798,10 +811,10 @@ const KnowledgeBase = () => {
                   {/* Linked documents */}
                   <div className="space-y-2 mb-3">
                     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                      Linked Documents ({agentLink.documentIds.length})
+                      {t("knowledgeBase.linkedDocuments")} ({agentLink.documentIds.length})
                     </p>
                     {agentLink.documentIds.length === 0 ? (
-                      <p className="text-xs text-muted-foreground/60 italic">No documents linked</p>
+                      <p className="text-xs text-muted-foreground/60 italic">{t("knowledgeBase.noDocumentsLinked")}</p>
                     ) : (
                       agentLink.documentIds.map((docId) => {
                         const doc = documents.find((d) => d.id === docId);
@@ -834,7 +847,7 @@ const KnowledgeBase = () => {
                     onValueChange={(docId) => handleLinkDocument(agentLink.id, docId)}
                   >
                     <SelectTrigger className="h-8 text-xs bg-white/[0.03] border-white/10">
-                      <SelectValue placeholder="Link a document..." />
+                      <SelectValue placeholder={t("knowledgeBase.linkDocumentPlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
                       {documents
@@ -859,10 +872,10 @@ const KnowledgeBase = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-lg font-heading">
               <Upload className="h-5 w-5 text-primary" />
-              Upload Document
+              {t("knowledgeBase.uploadDocument")}
             </DialogTitle>
             <DialogDescription>
-              Add a new document to the knowledge base for your AI agents.
+              {t("knowledgeBase.uploadDialogDesc")}
             </DialogDescription>
           </DialogHeader>
 
@@ -870,12 +883,12 @@ const KnowledgeBase = () => {
             {/* File name */}
             <div>
               <label className="text-xs font-medium text-foreground mb-1.5 block">
-                Document Name
+                {t("knowledgeBase.documentName")}
               </label>
               <Input
                 value={uploadName}
                 onChange={(e) => setUploadName(e.target.value)}
-                placeholder="e.g., HIPAA Training Guide 2024"
+                placeholder={t("knowledgeBase.documentNamePlaceholder")}
                 className="bg-white/[0.03] border-white/10 focus:border-primary/50"
               />
             </div>
@@ -883,19 +896,19 @@ const KnowledgeBase = () => {
             {/* Category */}
             <div>
               <label className="text-xs font-medium text-foreground mb-1.5 block">
-                Category
+                {t("knowledgeBase.categoryLabel")}
               </label>
               <Select
                 value={uploadCategory}
                 onValueChange={(val) => setUploadCategory(val as DocumentCategory)}
               >
                 <SelectTrigger className="bg-white/[0.03] border-white/10">
-                  <SelectValue placeholder="Select a category" />
+                  <SelectValue placeholder={t("knowledgeBase.selectCategory")} />
                 </SelectTrigger>
                 <SelectContent>
                   {CATEGORIES.map((cat) => (
                     <SelectItem key={cat} value={cat}>
-                      {cat}
+                      {CATEGORY_LABELS[cat]}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -905,12 +918,12 @@ const KnowledgeBase = () => {
             {/* Description */}
             <div>
               <label className="text-xs font-medium text-foreground mb-1.5 block">
-                Description
+                {t("knowledgeBase.description")}
               </label>
               <Textarea
                 value={uploadDescription}
                 onChange={(e) => setUploadDescription(e.target.value)}
-                placeholder="Brief description of the document contents..."
+                placeholder={t("knowledgeBase.descriptionPlaceholder")}
                 className="bg-white/[0.03] border-white/10 focus:border-primary/50 min-h-[80px]"
               />
             </div>
@@ -918,15 +931,15 @@ const KnowledgeBase = () => {
             {/* Tags */}
             <div>
               <label className="text-xs font-medium text-foreground mb-1.5 block">
-                Tags
+                {t("knowledgeBase.tags")}
               </label>
               <Input
                 value={uploadTags}
                 onChange={(e) => setUploadTags(e.target.value)}
-                placeholder="Comma-separated tags, e.g., HIPAA, compliance, training"
+                placeholder={t("knowledgeBase.tagsPlaceholder")}
                 className="bg-white/[0.03] border-white/10 focus:border-primary/50"
               />
-              <p className="text-[10px] text-muted-foreground mt-1">Separate tags with commas</p>
+              <p className="text-[10px] text-muted-foreground mt-1">{t("knowledgeBase.separateTagsWithCommas")}</p>
             </div>
           </div>
 
@@ -938,7 +951,7 @@ const KnowledgeBase = () => {
               onClick={() => setUploadOpen(false)}
               className="border-white/10 text-muted-foreground hover:bg-white/5"
             >
-              Cancel
+              {t("knowledgeBase.cancel")}
             </Button>
             <Button
               size="sm"
@@ -946,7 +959,7 @@ const KnowledgeBase = () => {
               className="gradient-primary text-white shadow-glow-sm hover:opacity-90 transition-opacity gap-2"
             >
               <Upload className="h-3.5 w-3.5" />
-              Upload Document
+              {t("knowledgeBase.uploadDocument")}
             </Button>
           </div>
         </DialogContent>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Users,
   Mail,
@@ -52,17 +53,6 @@ interface TeamMember {
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-const allPermissions = [
-  "View Dashboard",
-  "Create Agents",
-  "Edit Agents",
-  "Delete Agents",
-  "Manage Skills",
-  "Manage Integrations",
-  "View Reports",
-  "Manage Billing",
-];
-
 const roleColors: Record<Role, string> = {
   Owner: "bg-amber-500/15 text-amber-400 border-amber-500/30",
   Admin: "bg-blue-500/15 text-blue-400 border-blue-500/30",
@@ -77,16 +67,6 @@ const avatarColors: Record<Role, string> = {
   Editor: "bg-violet-500/20 text-violet-400",
   Viewer: "bg-emerald-500/20 text-emerald-400",
   Custom: "bg-rose-500/20 text-rose-400",
-};
-
-const roleDescriptions: Record<Exclude<Role, "Owner">, string> = {
-  Admin:
-    "Full access to all agents, settings, and team management",
-  Editor:
-    "Can create/edit agents and skills, but cannot manage team or billing",
-  Viewer:
-    "Read-only access to dashboards and agent outputs",
-  Custom: "Set specific permissions per agent",
 };
 
 const roleIcons: Record<Exclude<Role, "Owner">, React.ReactNode> = {
@@ -108,7 +88,7 @@ const initialMembers: TeamMember[] = [
     status: "Active",
     agentAccess: "All Agents",
     avatarColor: avatarColors.Owner,
-    customPermissions: [...allPermissions],
+    customPermissions: [],
     lastSeen: "Just now",
     department: "Administration",
   },
@@ -120,7 +100,7 @@ const initialMembers: TeamMember[] = [
     status: "Active",
     agentAccess: "All Agents",
     avatarColor: avatarColors.Admin,
-    customPermissions: [...allPermissions],
+    customPermissions: [],
     lastSeen: "5 min ago",
     department: "Operations",
   },
@@ -132,13 +112,7 @@ const initialMembers: TeamMember[] = [
     status: "Active",
     agentAccess: "8 Agents",
     avatarColor: avatarColors.Editor,
-    customPermissions: [
-      "View Dashboard",
-      "Create Agents",
-      "Edit Agents",
-      "Manage Skills",
-      "View Reports",
-    ],
+    customPermissions: [],
     lastSeen: "12 min ago",
     department: "Marketing",
   },
@@ -150,13 +124,7 @@ const initialMembers: TeamMember[] = [
     status: "Active",
     agentAccess: "5 Agents",
     avatarColor: avatarColors.Editor,
-    customPermissions: [
-      "View Dashboard",
-      "Create Agents",
-      "Edit Agents",
-      "Manage Skills",
-      "View Reports",
-    ],
+    customPermissions: [],
     lastSeen: "1 hour ago",
     department: "Clinical",
   },
@@ -168,7 +136,7 @@ const initialMembers: TeamMember[] = [
     status: "Active",
     agentAccess: "3 Agents",
     avatarColor: avatarColors.Viewer,
-    customPermissions: ["View Dashboard", "View Reports"],
+    customPermissions: [],
     lastSeen: "3 hours ago",
     department: "Billing",
   },
@@ -180,7 +148,7 @@ const initialMembers: TeamMember[] = [
     status: "Pending",
     agentAccess: "All Agents",
     avatarColor: avatarColors.Admin,
-    customPermissions: [...allPermissions],
+    customPermissions: [],
     department: "IT",
   },
   {
@@ -191,7 +159,7 @@ const initialMembers: TeamMember[] = [
     status: "Pending",
     agentAccess: "3 Agents",
     avatarColor: avatarColors.Viewer,
-    customPermissions: ["View Dashboard", "View Reports"],
+    customPermissions: [],
     department: "HR",
   },
   {
@@ -202,13 +170,7 @@ const initialMembers: TeamMember[] = [
     status: "Active",
     agentAccess: "6 Agents",
     avatarColor: avatarColors.Editor,
-    customPermissions: [
-      "View Dashboard",
-      "Create Agents",
-      "Edit Agents",
-      "Manage Skills",
-      "View Reports",
-    ],
+    customPermissions: [],
     lastSeen: "30 min ago",
     department: "Research",
   },
@@ -232,9 +194,11 @@ let nextId = 9;
 function RoleSelector({
   selected,
   onChange,
+  roleDescriptions,
 }: {
   selected: Exclude<Role, "Owner">;
   onChange: (role: Exclude<Role, "Owner">) => void;
+  roleDescriptions: Record<Exclude<Role, "Owner">, string>;
 }) {
   const roles: Exclude<Role, "Owner">[] = ["Admin", "Editor", "Viewer", "Custom"];
 
@@ -278,9 +242,11 @@ function RoleSelector({
 function PermissionsChecklist({
   permissions,
   onChange,
+  allPermissions,
 }: {
   permissions: string[];
   onChange: (permissions: string[]) => void;
+  allPermissions: string[];
 }) {
   const toggle = (perm: string) => {
     if (permissions.includes(perm)) {
@@ -312,7 +278,26 @@ function PermissionsChecklist({
 // Main Component
 // ---------------------------------------------------------------------------
 const TeamManagement = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
+
+  const allPermissions = [
+    t("team.permViewDashboard"),
+    t("team.permCreateAgents"),
+    t("team.permEditAgents"),
+    t("team.permDeleteAgents"),
+    t("team.permManageSkills"),
+    t("team.permManageIntegrations"),
+    t("team.permViewReports"),
+    t("team.permManageBilling"),
+  ];
+
+  const roleDescriptions: Record<Exclude<Role, "Owner">, string> = {
+    Admin: t("team.roleAdminDesc"),
+    Editor: t("team.roleEditorDesc"),
+    Viewer: t("team.roleViewerDesc"),
+    Custom: t("team.roleCustomDesc"),
+  };
 
   // Team members state
   const [teamMembers, setTeamMembers] =
@@ -325,8 +310,8 @@ const TeamManagement = () => {
   const [inviteRole, setInviteRole] =
     useState<Exclude<Role, "Owner">>("Editor");
   const [invitePermissions, setInvitePermissions] = useState<string[]>([
-    "View Dashboard",
-    "View Reports",
+    t("team.permViewDashboard"),
+    t("team.permViewReports"),
   ]);
 
   // Edit member dialog state
@@ -368,15 +353,15 @@ const TeamManagement = () => {
     setTeamMembers((prev) => [...prev, newMember]);
 
     toast({
-      title: "Invite Sent",
-      description: `An invitation has been sent to ${inviteEmail.trim()}.`,
+      title: t("team.toastInviteSentTitle"),
+      description: t("team.toastInviteSentDesc", { email: inviteEmail.trim() }),
     });
 
     // Reset form
     setInviteEmail("");
     setInviteName("");
     setInviteRole("Editor");
-    setInvitePermissions(["View Dashboard", "View Reports"]);
+    setInvitePermissions([t("team.permViewDashboard"), t("team.permViewReports")]);
     setInviteOpen(false);
   };
 
@@ -410,8 +395,8 @@ const TeamManagement = () => {
     );
 
     toast({
-      title: "Role Updated",
-      description: `${editMember.name}'s role has been updated to ${editRole}.`,
+      title: t("team.toastRoleUpdatedTitle"),
+      description: t("team.toastRoleUpdatedDesc", { name: editMember.name, role: editRole }),
     });
 
     setEditMember(null);
@@ -420,8 +405,8 @@ const TeamManagement = () => {
   const handleRemove = (member: TeamMember) => {
     setTeamMembers((prev) => prev.filter((m) => m.id !== member.id));
     toast({
-      title: "Member Removed",
-      description: `${member.name} has been removed from the team.`,
+      title: t("team.toastMemberRemovedTitle"),
+      description: t("team.toastMemberRemovedDesc", { name: member.name }),
     });
   };
 
@@ -438,10 +423,10 @@ const TeamManagement = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-                Care Team Management
+                {t("team.title")}
               </h1>
               <p className="text-muted-foreground mt-1">
-                Invite providers, staff, and administrators. Manage clinical roles and agent access.
+                {t("team.subtitle")}
               </p>
             </div>
             <Button
@@ -449,7 +434,7 @@ const TeamManagement = () => {
               onClick={() => setInviteOpen(true)}
             >
               <UserPlus className="h-4 w-4 mr-2" />
-              Invite Teammate
+              {t("team.inviteTeammate")}
             </Button>
           </div>
 
@@ -464,7 +449,7 @@ const TeamManagement = () => {
                 <p className="text-2xl font-bold text-foreground">
                   {totalMembers}
                 </p>
-                <p className="text-xs text-muted-foreground">Total Members</p>
+                <p className="text-xs text-muted-foreground">{t("team.totalMembers")}</p>
               </div>
             </div>
 
@@ -480,7 +465,7 @@ const TeamManagement = () => {
                 <p className="text-2xl font-bold text-foreground">
                   {activeNow}
                 </p>
-                <p className="text-xs text-muted-foreground">Active Now</p>
+                <p className="text-xs text-muted-foreground">{t("team.activeNow")}</p>
               </div>
             </div>
 
@@ -494,7 +479,7 @@ const TeamManagement = () => {
                   {pendingInvites}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Pending Invites
+                  {t("team.pendingInvites")}
                 </p>
               </div>
             </div>
@@ -508,7 +493,7 @@ const TeamManagement = () => {
                 <p className="text-2xl font-bold text-foreground">
                   {rolesUsed}
                 </p>
-                <p className="text-xs text-muted-foreground">Roles Defined</p>
+                <p className="text-xs text-muted-foreground">{t("team.rolesDefined")}</p>
               </div>
             </div>
           </div>
@@ -516,7 +501,7 @@ const TeamManagement = () => {
           {/* ── Team Members List ──────────────────────── */}
           <div>
             <h2 className="text-lg font-semibold font-heading text-foreground mb-4">
-              Team Members
+              {t("team.teamMembers")}
             </h2>
             <div className="space-y-3">
               {teamMembers.map((member) => (
@@ -547,7 +532,7 @@ const TeamManagement = () => {
                         ) : (
                           <span className="flex items-center gap-1 text-[11px] text-yellow-400">
                             <span className="h-2 w-2 rounded-full bg-yellow-500" />
-                            Pending Invite
+                            {t("team.pendingInvite")}
                           </span>
                         )}
                       </div>
@@ -628,17 +613,17 @@ const TeamManagement = () => {
             setInviteEmail("");
             setInviteName("");
             setInviteRole("Editor");
-            setInvitePermissions(["View Dashboard", "View Reports"]);
+            setInvitePermissions([t("team.permViewDashboard"), t("team.permViewReports")]);
           }
         }}
       >
         <DialogContent className="max-w-lg glass-card border-white/10 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-lg font-heading">
-              Invite Teammate
+              {t("team.inviteTeammate")}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Send an invitation to join your team and collaborate on AI agents.
+              {t("team.inviteDialogDesc")}
             </DialogDescription>
           </DialogHeader>
 
@@ -646,7 +631,7 @@ const TeamManagement = () => {
             {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="invite-email" className="text-sm font-medium">
-                Email Address
+                {t("team.emailAddress")}
               </Label>
               <Input
                 id="invite-email"
@@ -661,7 +646,7 @@ const TeamManagement = () => {
             {/* Full Name */}
             <div className="space-y-2">
               <Label htmlFor="invite-name" className="text-sm font-medium">
-                Full Name
+                {t("team.fullName")}
               </Label>
               <Input
                 id="invite-name"
@@ -677,21 +662,23 @@ const TeamManagement = () => {
 
             {/* Role Selector */}
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Role</Label>
+              <Label className="text-sm font-medium">{t("team.role")}</Label>
               <RoleSelector
                 selected={inviteRole}
                 onChange={setInviteRole}
+                roleDescriptions={roleDescriptions}
               />
             </div>
 
             {/* Custom Permissions */}
             {inviteRole === "Custom" && (
               <div className="space-y-3">
-                <Label className="text-sm font-medium">Permissions</Label>
+                <Label className="text-sm font-medium">{t("team.permissions")}</Label>
                 <div className="bg-card rounded-xl border border-white/[0.06] p-4">
                   <PermissionsChecklist
                     permissions={invitePermissions}
                     onChange={setInvitePermissions}
+                    allPermissions={allPermissions}
                   />
                 </div>
               </div>
@@ -705,7 +692,7 @@ const TeamManagement = () => {
               onClick={handleInvite}
             >
               <Mail className="h-4 w-4 mr-2" />
-              Send Invite
+              {t("team.sendInvite")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -722,10 +709,10 @@ const TeamManagement = () => {
           <DialogContent className="max-w-lg glass-card border-white/10 max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-lg font-heading">
-                Edit Member
+                {t("team.editMember")}
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                Update role and permissions for this team member.
+                {t("team.editMemberDesc")}
               </DialogDescription>
             </DialogHeader>
 
@@ -751,18 +738,19 @@ const TeamManagement = () => {
 
               {/* Role Selector */}
               <div className="space-y-3">
-                <Label className="text-sm font-medium">Role</Label>
-                <RoleSelector selected={editRole} onChange={setEditRole} />
+                <Label className="text-sm font-medium">{t("team.role")}</Label>
+                <RoleSelector selected={editRole} onChange={setEditRole} roleDescriptions={roleDescriptions} />
               </div>
 
               {/* Custom Permissions */}
               {editRole === "Custom" && (
                 <div className="space-y-3">
-                  <Label className="text-sm font-medium">Permissions</Label>
+                  <Label className="text-sm font-medium">{t("team.permissions")}</Label>
                   <div className="bg-card rounded-xl border border-white/[0.06] p-4">
                     <PermissionsChecklist
                       permissions={editPermissions}
                       onChange={setEditPermissions}
+                      allPermissions={allPermissions}
                     />
                   </div>
                 </div>
@@ -775,7 +763,7 @@ const TeamManagement = () => {
                 onClick={handleSaveEdit}
               >
                 <Settings className="h-4 w-4 mr-2" />
-                Save Changes
+                {t("team.saveChanges")}
               </Button>
             </DialogFooter>
           </DialogContent>

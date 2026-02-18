@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   BookOpen,
   Rocket,
@@ -40,214 +41,216 @@ const difficultyColor: Record<string, string> = {
   advanced: "bg-violet-500/15 text-violet-400 border-violet-500/30",
 };
 
-const tutorials: Tutorial[] = [
-  {
-    id: "getting-started",
-    title: "Getting Started with Dr. Claw",
-    description: "Learn the basics of the platform, navigate the dashboard, and understand the core concepts of AI agents.",
-    category: "Basics",
-    duration: "10 min",
-    difficulty: "beginner",
-    icon: Rocket,
-    steps: [
-      "Sign in and explore the dashboard overview",
-      "Understand the sidebar navigation and key sections",
-      "Review your account settings and company profile",
-      "Learn about the pricing tiers and what's included",
-    ],
-  },
-  {
-    id: "create-first-agent",
-    title: "Create Your First AI Agent",
-    description: "Step-by-step guide to creating, naming, and configuring your first AI agent with skills and capabilities.",
-    category: "Agents",
-    duration: "15 min",
-    difficulty: "beginner",
-    icon: Bot,
-    steps: [
-      "Navigate to AI Agents and click 'Create Agent'",
-      "Name your agent and select an AI model (OpenAI, Claude, etc.)",
-      "Browse and assign skills from the Skills Center",
-      "Configure capabilities: messaging, PHI protection, task creation",
-      "Activate your agent and monitor it in the dashboard",
-    ],
-  },
-  {
-    id: "deploy-templates",
-    title: "Deploy Quick-Start Templates",
-    description: "Use pre-built agent templates like C-Suite bots, healthcare agents, and marketing assistants for instant deployment.",
-    category: "Agents",
-    duration: "8 min",
-    difficulty: "beginner",
-    icon: Zap,
-    steps: [
-      "Go to AI Agents > Quick-Start Templates tab",
-      "Browse templates by category (healthcare, executive, marketing, etc.)",
-      "Click Deploy on your chosen template",
-      "Customize the agent name and AI model in the deploy dialog",
-      "Your agent is live — find it in My Agents",
-    ],
-  },
-  {
-    id: "connect-integrations",
-    title: "Connect Your Integrations",
-    description: "Link your CRM, EHR, Google Workspace, messaging platforms, and other tools to empower your agents.",
-    category: "Integrations",
-    duration: "12 min",
-    difficulty: "intermediate",
-    icon: Plug,
-    steps: [
-      "Navigate to Integrations from the sidebar",
-      "Browse categories: CRM, EHR, Google Workspace, Messaging, Voice",
-      "Click Connect on your desired integration (e.g., GoHighLevel, Epic EHR)",
-      "Enter your API key or OAuth credentials",
-      "Verify the connection and assign it to relevant agents",
-    ],
-  },
-  {
-    id: "agent-settings",
-    title: "Configure Agent Settings & Capabilities",
-    description: "Master the agent settings dialog: edit names, models, skills, PHI protection, messaging, voice recognition, and more.",
-    category: "Agents",
-    duration: "10 min",
-    difficulty: "intermediate",
-    icon: Settings,
-    steps: [
-      "Click the gear icon on any agent card to open settings",
-      "Edit the agent name and switch AI models",
-      "Toggle capabilities: PHI Protection, Messaging, Voice Recognition",
-      "Enable Distress Detection for patient-facing agents",
-      "Enable Task Creation to let agents create and assign tasks autonomously",
-      "Enable HR Assistant for payroll, clock-ins, and document handling",
-      "Save changes and verify the capability badges on the agent card",
-    ],
-  },
-  {
-    id: "communication-center",
-    title: "Monitor Agent Communications",
-    description: "Use the Communication Center to observe all agent conversations in real time across SMS, email, voice, chat, and web.",
-    category: "Communication",
-    duration: "12 min",
-    difficulty: "intermediate",
-    icon: MessageSquare,
-    steps: [
-      "Open Communication from the sidebar",
-      "Browse conversations in the left panel — filter by channel type",
-      "Click a conversation to view the full message thread",
-      "Review the right panel for contact details, tags, and agent info",
-      "Use the compose bar to override agent responses when needed",
-    ],
-  },
-  {
-    id: "task-tracker",
-    title: "Track & Manage Agent Tasks",
-    description: "Use the Task Tracker to monitor all agent tasks with Kanban board and list views, progress tracking, and subtasks.",
-    category: "Operations",
-    duration: "10 min",
-    difficulty: "intermediate",
-    icon: ListTodo,
-    steps: [
-      "Open Task Tracker from the sidebar",
-      "View summary stats: queued, in progress, completed, failed",
-      "Switch between List view and Kanban Board view",
-      "Expand any task to see subtasks, description, and timestamps",
-      "Filter by status or search by keyword",
-    ],
-  },
-  {
-    id: "data-logs",
-    title: "Review Data Logs & Audit Trail",
-    description: "Access complete activity logs for all agents, API calls, integrations, and system events with expandable metadata.",
-    category: "Security",
-    duration: "8 min",
-    difficulty: "intermediate",
-    icon: ScrollText,
-    steps: [
-      "Open Data Logs from the sidebar",
-      "Click level cards to filter by Info, Success, Warning, or Error",
-      "Filter by category: Communication, Task, API, System, Auth, Integration",
-      "Click any log entry to expand and view detailed metadata",
-      "Use Export Logs to download audit records",
-    ],
-  },
-  {
-    id: "team-management",
-    title: "Manage Your Team",
-    description: "Invite team members, assign roles, and control access permissions across your organization.",
-    category: "Admin",
-    duration: "10 min",
-    difficulty: "intermediate",
-    icon: Users,
-    steps: [
-      "Navigate to Team from the sidebar",
-      "Click Invite Member to add new team members by email",
-      "Assign roles: Admin, Manager, or Member",
-      "Configure which agents and integrations each member can access",
-      "Review team activity in the Data Logs",
-    ],
-  },
-  {
-    id: "phi-security",
-    title: "PHI Protection & HIPAA Compliance",
-    description: "Understand how Dr. Claw enforces PHI protection, handles distress detection, and maintains HIPAA compliance.",
-    category: "Security",
-    duration: "15 min",
-    difficulty: "advanced",
-    icon: Shield,
-    steps: [
-      "Understand that PHI Protection is a hard-coded safety parameter on ALL agents",
-      "Agents never discuss, transmit, or expose Protected Health Information",
-      "When PHI is requested, agents redirect to authorized clinical staff",
-      "Scheduling agents only confirm visit times — no clinical details disclosed",
-      "Enable Distress Detection for patient-facing agents to identify and escalate",
-      "Review PHI access logs in Data Logs > Auth category",
-      "Ensure BAA is signed for HIPAA-covered entities (contact support)",
-    ],
-  },
-  {
-    id: "voice-verification",
-    title: "Voice Recognition & Verification",
-    description: "Set up voice biometrics for identity verification and configure voice-based agent interactions.",
-    category: "Advanced",
-    duration: "12 min",
-    difficulty: "advanced",
-    icon: Mic,
-    steps: [
-      "Open Agent Settings and enable Voice Recognition & Verification",
-      "Connect a Voice AI integration (ElevenLabs, Deepgram, or VAPI)",
-      "Configure voice identity enrollment for authorized users",
-      "Test voice verification in a conversation",
-      "Review voice auth events in Data Logs",
-    ],
-  },
-  {
-    id: "hr-agent",
-    title: "Set Up an HR Assistant Agent",
-    description: "Configure an agent to help staff with payroll inquiries, clock-ins, document handling, and training reminders.",
-    category: "HR",
-    duration: "15 min",
-    difficulty: "advanced",
-    icon: BarChart,
-    steps: [
-      "Create a new agent or use the COO template",
-      "Assign HR-related skills: operations management, team coordination",
-      "Enable the HR Assistant capability in agent settings",
-      "Connect payroll and document integrations (Google Drive, Slack)",
-      "Test common HR queries: payroll info, clock-in/out, PTO balance",
-      "Enable Task Creation so the HR agent can assign training reminders",
-    ],
-  },
-];
-
 const TrainingCenter = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
-  const [activeCategory, setActiveCategory] = useState("All");
+
+  const tutorials: Tutorial[] = [
+    {
+      id: "getting-started",
+      title: t("training.tutorialGettingStartedTitle"),
+      description: t("training.tutorialGettingStartedDesc"),
+      category: t("training.categoryBasics"),
+      duration: t("training.duration10min"),
+      difficulty: "beginner",
+      icon: Rocket,
+      steps: [
+        t("training.tutorialGettingStartedStep1"),
+        t("training.tutorialGettingStartedStep2"),
+        t("training.tutorialGettingStartedStep3"),
+        t("training.tutorialGettingStartedStep4"),
+      ],
+    },
+    {
+      id: "create-first-agent",
+      title: t("training.tutorialCreateAgentTitle"),
+      description: t("training.tutorialCreateAgentDesc"),
+      category: t("training.categoryAgents"),
+      duration: t("training.duration15min"),
+      difficulty: "beginner",
+      icon: Bot,
+      steps: [
+        t("training.tutorialCreateAgentStep1"),
+        t("training.tutorialCreateAgentStep2"),
+        t("training.tutorialCreateAgentStep3"),
+        t("training.tutorialCreateAgentStep4"),
+        t("training.tutorialCreateAgentStep5"),
+      ],
+    },
+    {
+      id: "deploy-templates",
+      title: t("training.tutorialDeployTemplatesTitle"),
+      description: t("training.tutorialDeployTemplatesDesc"),
+      category: t("training.categoryAgents"),
+      duration: t("training.duration8min"),
+      difficulty: "beginner",
+      icon: Zap,
+      steps: [
+        t("training.tutorialDeployTemplatesStep1"),
+        t("training.tutorialDeployTemplatesStep2"),
+        t("training.tutorialDeployTemplatesStep3"),
+        t("training.tutorialDeployTemplatesStep4"),
+        t("training.tutorialDeployTemplatesStep5"),
+      ],
+    },
+    {
+      id: "connect-integrations",
+      title: t("training.tutorialIntegrationsTitle"),
+      description: t("training.tutorialIntegrationsDesc"),
+      category: t("training.categoryIntegrations"),
+      duration: t("training.duration12min"),
+      difficulty: "intermediate",
+      icon: Plug,
+      steps: [
+        t("training.tutorialIntegrationsStep1"),
+        t("training.tutorialIntegrationsStep2"),
+        t("training.tutorialIntegrationsStep3"),
+        t("training.tutorialIntegrationsStep4"),
+        t("training.tutorialIntegrationsStep5"),
+      ],
+    },
+    {
+      id: "agent-settings",
+      title: t("training.tutorialAgentSettingsTitle"),
+      description: t("training.tutorialAgentSettingsDesc"),
+      category: t("training.categoryAgents"),
+      duration: t("training.duration10min"),
+      difficulty: "intermediate",
+      icon: Settings,
+      steps: [
+        t("training.tutorialAgentSettingsStep1"),
+        t("training.tutorialAgentSettingsStep2"),
+        t("training.tutorialAgentSettingsStep3"),
+        t("training.tutorialAgentSettingsStep4"),
+        t("training.tutorialAgentSettingsStep5"),
+        t("training.tutorialAgentSettingsStep6"),
+        t("training.tutorialAgentSettingsStep7"),
+      ],
+    },
+    {
+      id: "communication-center",
+      title: t("training.tutorialCommunicationTitle"),
+      description: t("training.tutorialCommunicationDesc"),
+      category: t("training.categoryCommunication"),
+      duration: t("training.duration12min"),
+      difficulty: "intermediate",
+      icon: MessageSquare,
+      steps: [
+        t("training.tutorialCommunicationStep1"),
+        t("training.tutorialCommunicationStep2"),
+        t("training.tutorialCommunicationStep3"),
+        t("training.tutorialCommunicationStep4"),
+        t("training.tutorialCommunicationStep5"),
+      ],
+    },
+    {
+      id: "task-tracker",
+      title: t("training.tutorialTaskTrackerTitle"),
+      description: t("training.tutorialTaskTrackerDesc"),
+      category: t("training.categoryOperations"),
+      duration: t("training.duration10min"),
+      difficulty: "intermediate",
+      icon: ListTodo,
+      steps: [
+        t("training.tutorialTaskTrackerStep1"),
+        t("training.tutorialTaskTrackerStep2"),
+        t("training.tutorialTaskTrackerStep3"),
+        t("training.tutorialTaskTrackerStep4"),
+        t("training.tutorialTaskTrackerStep5"),
+      ],
+    },
+    {
+      id: "data-logs",
+      title: t("training.tutorialDataLogsTitle"),
+      description: t("training.tutorialDataLogsDesc"),
+      category: t("training.categorySecurity"),
+      duration: t("training.duration8min"),
+      difficulty: "intermediate",
+      icon: ScrollText,
+      steps: [
+        t("training.tutorialDataLogsStep1"),
+        t("training.tutorialDataLogsStep2"),
+        t("training.tutorialDataLogsStep3"),
+        t("training.tutorialDataLogsStep4"),
+        t("training.tutorialDataLogsStep5"),
+      ],
+    },
+    {
+      id: "team-management",
+      title: t("training.tutorialTeamTitle"),
+      description: t("training.tutorialTeamDesc"),
+      category: t("training.categoryAdmin"),
+      duration: t("training.duration10min"),
+      difficulty: "intermediate",
+      icon: Users,
+      steps: [
+        t("training.tutorialTeamStep1"),
+        t("training.tutorialTeamStep2"),
+        t("training.tutorialTeamStep3"),
+        t("training.tutorialTeamStep4"),
+        t("training.tutorialTeamStep5"),
+      ],
+    },
+    {
+      id: "phi-security",
+      title: t("training.tutorialPhiTitle"),
+      description: t("training.tutorialPhiDesc"),
+      category: t("training.categorySecurity"),
+      duration: t("training.duration15min"),
+      difficulty: "advanced",
+      icon: Shield,
+      steps: [
+        t("training.tutorialPhiStep1"),
+        t("training.tutorialPhiStep2"),
+        t("training.tutorialPhiStep3"),
+        t("training.tutorialPhiStep4"),
+        t("training.tutorialPhiStep5"),
+        t("training.tutorialPhiStep6"),
+        t("training.tutorialPhiStep7"),
+      ],
+    },
+    {
+      id: "voice-verification",
+      title: t("training.tutorialVoiceTitle"),
+      description: t("training.tutorialVoiceDesc"),
+      category: t("training.categoryAdvanced"),
+      duration: t("training.duration12min"),
+      difficulty: "advanced",
+      icon: Mic,
+      steps: [
+        t("training.tutorialVoiceStep1"),
+        t("training.tutorialVoiceStep2"),
+        t("training.tutorialVoiceStep3"),
+        t("training.tutorialVoiceStep4"),
+        t("training.tutorialVoiceStep5"),
+      ],
+    },
+    {
+      id: "hr-agent",
+      title: t("training.tutorialHrTitle"),
+      description: t("training.tutorialHrDesc"),
+      category: t("training.categoryHr"),
+      duration: t("training.duration15min"),
+      difficulty: "advanced",
+      icon: BarChart,
+      steps: [
+        t("training.tutorialHrStep1"),
+        t("training.tutorialHrStep2"),
+        t("training.tutorialHrStep3"),
+        t("training.tutorialHrStep4"),
+        t("training.tutorialHrStep5"),
+        t("training.tutorialHrStep6"),
+      ],
+    },
+  ];
+
+  const [activeCategory, setActiveCategory] = useState(t("training.categoryAll"));
   const [completedTutorials, setCompletedTutorials] = useState<Set<string>>(new Set());
   const [expandedTutorial, setExpandedTutorial] = useState<string | null>(null);
   const [completedSteps, setCompletedSteps] = useState<Record<string, Set<number>>>({});
 
-  const categories = ["All", ...new Set(tutorials.map((t) => t.category))];
-  const filtered = activeCategory === "All" ? tutorials : tutorials.filter((t) => t.category === activeCategory);
+  const categories = [t("training.categoryAll"), ...new Set(tutorials.map((tut) => tut.category))];
+  const filtered = activeCategory === t("training.categoryAll") ? tutorials : tutorials.filter((tut) => tut.category === activeCategory);
 
   const toggleStep = (tutorialId: string, stepIndex: number) => {
     setCompletedSteps((prev) => {
@@ -257,10 +260,10 @@ const TrainingCenter = () => {
       } else {
         steps.add(stepIndex);
       }
-      const tutorial = tutorials.find((t) => t.id === tutorialId);
+      const tutorial = tutorials.find((tut) => tut.id === tutorialId);
       if (tutorial && steps.size === tutorial.steps.length) {
         setCompletedTutorials((p) => new Set([...p, tutorialId]));
-        toast({ title: "Tutorial Complete!", description: `${tutorial.title} marked as done.` });
+        toast({ title: t("training.toastTutorialCompleteTitle"), description: t("training.toastTutorialCompleteDesc", { title: tutorial.title }) });
       } else {
         setCompletedTutorials((p) => {
           const next = new Set(p);
@@ -284,25 +287,25 @@ const TrainingCenter = () => {
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <h1 className="font-display text-3xl font-bold text-foreground flex items-center gap-3">
-              <GraduationCap className="h-7 w-7 text-primary" /> Clinical Training Center
+              <GraduationCap className="h-7 w-7 text-primary" /> {t("training.title")}
             </h1>
             <p className="text-muted-foreground mt-1">
-              Step-by-step tutorials to master healthcare AI agent deployment with Dr. Claw
+              {t("training.subtitle")}
             </p>
           </div>
 
           {/* Stats */}
           <div className="grid sm:grid-cols-3 gap-6 mb-8">
             <div className="bg-card rounded-xl border border-border p-5">
-              <p className="text-xs text-muted-foreground">Tutorials Completed</p>
+              <p className="text-xs text-muted-foreground">{t("training.tutorialsCompleted")}</p>
               <p className="font-display text-2xl font-bold text-foreground mt-1">{completedCount} / {tutorials.length}</p>
             </div>
             <div className="bg-card rounded-xl border border-border p-5">
-              <p className="text-xs text-muted-foreground">In Progress</p>
+              <p className="text-xs text-muted-foreground">{t("training.inProgress")}</p>
               <p className="font-display text-2xl font-bold text-foreground mt-1">{inProgressCount}</p>
             </div>
             <div className="bg-card rounded-xl border border-border p-5">
-              <p className="text-xs text-muted-foreground">Overall Progress</p>
+              <p className="text-xs text-muted-foreground">{t("training.overallProgress")}</p>
               <div className="mt-2">
                 <div className="h-2 bg-muted rounded-full">
                   <div
@@ -376,7 +379,7 @@ const TrainingCenter = () => {
                       </span>
                       {isCompleted ? (
                         <span className="flex items-center gap-1 text-xs font-medium text-green-400">
-                          <CheckCircle className="h-4 w-4" /> Done
+                          <CheckCircle className="h-4 w-4" /> {t("training.done")}
                         </span>
                       ) : isInProgress ? (
                         <span className="text-xs text-primary font-medium">{stepsCompleted}/{tutorial.steps.length}</span>

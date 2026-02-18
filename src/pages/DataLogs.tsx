@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ScrollText,
   Search,
@@ -46,20 +47,20 @@ interface LogEntry {
   duration?: string;
 }
 
-const LEVEL_CONFIG: Record<LogLevel, { icon: typeof Info; label: string; color: string; bg: string }> = {
-  info: { icon: Info, label: "Info", color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20" },
-  success: { icon: CheckCircle2, label: "Success", color: "text-green-400", bg: "bg-green-500/10 border-green-500/20" },
-  warning: { icon: AlertTriangle, label: "Warning", color: "text-amber-400", bg: "bg-amber-500/10 border-amber-500/20" },
-  error: { icon: XCircle, label: "Error", color: "text-red-400", bg: "bg-red-500/10 border-red-500/20" },
+const LEVEL_STYLE: Record<LogLevel, { icon: typeof Info; color: string; bg: string }> = {
+  info: { icon: Info, color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20" },
+  success: { icon: CheckCircle2, color: "text-green-400", bg: "bg-green-500/10 border-green-500/20" },
+  warning: { icon: AlertTriangle, color: "text-amber-400", bg: "bg-amber-500/10 border-amber-500/20" },
+  error: { icon: XCircle, color: "text-red-400", bg: "bg-red-500/10 border-red-500/20" },
 };
 
-const CATEGORY_CONFIG: Record<LogCategory, { icon: typeof MessageSquare; label: string; color: string }> = {
-  communication: { icon: MessageSquare, label: "Communication", color: "text-violet-400" },
-  task: { icon: Zap, label: "Task", color: "text-cyan-400" },
-  api: { icon: Globe, label: "API", color: "text-orange-400" },
-  system: { icon: Database, label: "System", color: "text-zinc-400" },
-  auth: { icon: Shield, label: "Auth", color: "text-emerald-400" },
-  integration: { icon: RefreshCw, label: "Integration", color: "text-pink-400" },
+const CATEGORY_STYLE: Record<LogCategory, { icon: typeof MessageSquare; color: string }> = {
+  communication: { icon: MessageSquare, color: "text-violet-400" },
+  task: { icon: Zap, color: "text-cyan-400" },
+  api: { icon: Globe, color: "text-orange-400" },
+  system: { icon: Database, color: "text-zinc-400" },
+  auth: { icon: Shield, color: "text-emerald-400" },
+  integration: { icon: RefreshCw, color: "text-pink-400" },
 };
 
 const mockLogs: LogEntry[] = [
@@ -238,6 +239,24 @@ const mockLogs: LogEntry[] = [
 
 const DataLogs = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
+
+  const LEVEL_LABELS: Record<LogLevel, string> = {
+    info: t("dataLogs.info"),
+    success: t("dataLogs.success"),
+    warning: t("dataLogs.warning"),
+    error: t("dataLogs.error"),
+  };
+
+  const CATEGORY_LABELS: Record<LogCategory, string> = {
+    communication: t("dataLogs.communication"),
+    task: t("dataLogs.task"),
+    api: t("dataLogs.api"),
+    system: t("dataLogs.system"),
+    auth: t("dataLogs.auth"),
+    integration: t("dataLogs.integration"),
+  };
+
   const [logs] = useState<LogEntry[]>(mockLogs);
   const [searchQuery, setSearchQuery] = useState("");
   const [levelFilter, setLevelFilter] = useState<LogLevel | "all">("all");
@@ -287,8 +306,8 @@ const DataLogs = () => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     toast({
-      title: "Logs exported",
-      description: `${filteredLogs.length} log entries exported as CSV.`,
+      title: t("dataLogs.logsExported"),
+      description: t("dataLogs.logsExportedDesc", { count: String(filteredLogs.length) }),
     });
   };
 
@@ -303,22 +322,22 @@ const DataLogs = () => {
             <div>
               <h1 className="font-display text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
                 <ScrollText className="h-7 w-7 text-primary" />
-                Clinical Audit Logs
+                {t("dataLogs.title")}
               </h1>
               <p className="text-muted-foreground mt-1">
-                Complete HIPAA-compliant audit trail for all clinical agents, integrations, and system events
+                {t("dataLogs.subtitle")}
               </p>
             </div>
             <Button variant="outline" size="sm" className="gap-2 text-xs border-border hover:bg-white/5" onClick={handleExportLogs}>
               <Download className="h-3.5 w-3.5" />
-              Export Logs
+              {t("dataLogs.exportLogs")}
             </Button>
           </div>
 
           {/* Level Summary */}
           <div className="grid grid-cols-4 gap-4 mb-6">
             {(["info", "success", "warning", "error"] as const).map((level) => {
-              const cfg = LEVEL_CONFIG[level];
+              const cfg = LEVEL_STYLE[level];
               const LevelIcon = cfg.icon;
               return (
                 <button
@@ -334,7 +353,7 @@ const DataLogs = () => {
                     <LevelIcon className={`h-5 w-5 ${cfg.color}`} />
                     <span className="text-2xl font-bold text-foreground">{levelCounts[level]}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground">{cfg.label} Events</p>
+                  <p className="text-xs text-muted-foreground">{t("dataLogs.levelEvents", { level: LEVEL_LABELS[level] })}</p>
                 </button>
               );
             })}
@@ -347,7 +366,7 @@ const DataLogs = () => {
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search logs..."
+                placeholder={t("dataLogs.searchLogs")}
                 className="pl-9 bg-white/[0.03] border-white/10 focus:border-primary/50"
               />
             </div>
@@ -362,7 +381,7 @@ const DataLogs = () => {
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {cat === "all" ? "All" : CATEGORY_CONFIG[cat].label}
+                  {cat === "all" ? t("dataLogs.all") : CATEGORY_LABELS[cat]}
                 </button>
               ))}
             </div>
@@ -372,17 +391,17 @@ const DataLogs = () => {
           <div className="space-y-1">
             {/* Table Header */}
             <div className="grid grid-cols-[90px_70px_100px_130px_1fr_80px] gap-3 px-4 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-              <span>Time</span>
-              <span>Level</span>
-              <span>Category</span>
-              <span>Agent</span>
-              <span>Action / Details</span>
-              <span className="text-right">Duration</span>
+              <span>{t("dataLogs.time")}</span>
+              <span>{t("dataLogs.level")}</span>
+              <span>{t("dataLogs.category")}</span>
+              <span>{t("dataLogs.agent")}</span>
+              <span>{t("dataLogs.actionDetails")}</span>
+              <span className="text-right">{t("dataLogs.duration")}</span>
             </div>
 
             {filteredLogs.map((log) => {
-              const levelCfg = LEVEL_CONFIG[log.level];
-              const catCfg = CATEGORY_CONFIG[log.category];
+              const levelCfg = LEVEL_STYLE[log.level];
+              const catCfg = CATEGORY_STYLE[log.category];
               const LevelIcon = levelCfg.icon;
               const CatIcon = catCfg.icon;
               const isExpanded = expandedLog === log.id;
@@ -411,7 +430,7 @@ const DataLogs = () => {
                     <span className="flex items-center">
                       <span className={`flex items-center gap-1 text-[10px] ${catCfg.color}`}>
                         <CatIcon className="h-3 w-3" />
-                        <span className="truncate">{catCfg.label}</span>
+                        <span className="truncate">{CATEGORY_LABELS[log.category]}</span>
                       </span>
                     </span>
 
@@ -437,7 +456,7 @@ const DataLogs = () => {
                   {isExpanded && log.metadata && (
                     <div className="ml-4 mr-4 mb-2 px-4 py-3 rounded-lg bg-card border border-border">
                       <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                        Metadata
+                        {t("dataLogs.metadata")}
                       </p>
                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                         {Object.entries(log.metadata).map(([key, value]) => (
@@ -461,17 +480,17 @@ const DataLogs = () => {
             {filteredLogs.length === 0 && (
               <div className="text-center py-16 text-muted-foreground">
                 <ScrollText className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                <p className="text-sm font-medium">No log entries match your filters</p>
-                <p className="text-xs mt-1">Try adjusting your search or filter criteria</p>
+                <p className="text-sm font-medium">{t("dataLogs.noMatchingEntries")}</p>
+                <p className="text-xs mt-1">{t("dataLogs.adjustFilters")}</p>
               </div>
             )}
           </div>
 
           {/* Footer info */}
           <div className="mt-6 flex items-center justify-between text-[10px] text-muted-foreground px-1">
-            <span>Showing {filteredLogs.length} of {logs.length} log entries</span>
+            <span>{t("dataLogs.showingEntries", { filtered: String(filteredLogs.length), total: String(logs.length) })}</span>
             <span className="flex items-center gap-1">
-              <Activity className="h-3 w-3" /> Live — auto-refreshing
+              <Activity className="h-3 w-3" /> {t("dataLogs.liveAutoRefreshing")}
             </span>
           </div>
         </div>

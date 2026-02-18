@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { User, Mail, Phone, Building2, Stethoscope, Globe, Save, Loader2 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ const timezones = [
 ];
 
 const Profile = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
@@ -40,6 +42,12 @@ const Profile = () => {
   const [notifSms, setNotifSms] = useState(false);
   const [notifSlack, setNotifSlack] = useState(false);
   const [role, setRole] = useState("user");
+
+  const notificationItems = [
+    { label: t("profile.emailNotifications"), desc: t("profile.emailNotificationsDesc"), value: notifEmail, setter: setNotifEmail },
+    { label: t("profile.smsNotifications"), desc: t("profile.smsNotificationsDesc"), value: notifSms, setter: setNotifSms },
+    { label: t("profile.slackNotifications"), desc: t("profile.slackNotificationsDesc"), value: notifSlack, setter: setNotifSlack },
+  ];
 
   useEffect(() => {
     if (!user) return;
@@ -103,9 +111,9 @@ const Profile = () => {
       .eq("user_id", user.id);
 
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: t("profile.toastErrorTitle"), description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Profile updated", description: "Your changes have been saved." });
+      toast({ title: t("profile.toastSuccessTitle"), description: t("profile.toastSuccessDesc") });
     }
     setSaving(false);
   };
@@ -123,8 +131,8 @@ const Profile = () => {
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="font-display text-2xl font-bold text-foreground">Provider Profile</h1>
-              <p className="text-sm text-muted-foreground mt-1">Manage your clinical account, practice details, and preferences</p>
+              <h1 className="font-display text-2xl font-bold text-foreground">{t("profile.title")}</h1>
+              <p className="text-sm text-muted-foreground mt-1">{t("profile.subtitle")}</p>
             </div>
             <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${roleBadgeColor}`}>
               {role.replace("_", " ")}
@@ -140,57 +148,57 @@ const Profile = () => {
               {/* Personal Info */}
               <section className="bg-card rounded-xl border border-border p-6 space-y-5">
                 <h2 className="font-display font-semibold text-foreground flex items-center gap-2">
-                  <User className="h-4 w-4 text-primary" /> Personal Information
+                  <User className="h-4 w-4 text-primary" /> {t("profile.personalInformation")}
                 </h2>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-foreground/80">Full Name</Label>
+                    <Label className="text-foreground/80">{t("profile.fullName")}</Label>
                     <Input value={fullName} onChange={(e) => setFullName(e.target.value)} className="bg-secondary border-border" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-foreground/80">Email</Label>
+                    <Label className="text-foreground/80">{t("profile.email")}</Label>
                     <div className="flex items-center gap-2">
                       <Mail className="h-4 w-4 text-muted-foreground" />
                       <Input value={email} disabled className="bg-secondary border-border opacity-60" />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-foreground/80">Phone</Label>
+                    <Label className="text-foreground/80">{t("profile.phone")}</Label>
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4 text-muted-foreground" />
                       <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 (555) 000-0000" className="bg-secondary border-border" />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-foreground/80">Specialty</Label>
+                    <Label className="text-foreground/80">{t("profile.specialty")}</Label>
                     <div className="flex items-center gap-2">
                       <Stethoscope className="h-4 w-4 text-muted-foreground" />
-                      <Input value={specialty} onChange={(e) => setSpecialty(e.target.value)} placeholder="e.g. Cardiology" className="bg-secondary border-border" />
+                      <Input value={specialty} onChange={(e) => setSpecialty(e.target.value)} placeholder={t("profile.specialtyPlaceholder")} className="bg-secondary border-border" />
                     </div>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-foreground/80">Bio</Label>
-                  <Textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell us about yourself..." rows={3} className="bg-secondary border-border resize-none" />
+                  <Label className="text-foreground/80">{t("profile.bio")}</Label>
+                  <Textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder={t("profile.bioPlaceholder")} rows={3} className="bg-secondary border-border resize-none" />
                 </div>
               </section>
 
               {/* Practice Info */}
               <section className="bg-card rounded-xl border border-border p-6 space-y-5">
                 <h2 className="font-display font-semibold text-foreground flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-primary" /> Practice Details
+                  <Building2 className="h-4 w-4 text-primary" /> {t("profile.practiceDetails")}
                 </h2>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-foreground/80">Practice Name</Label>
+                    <Label className="text-foreground/80">{t("profile.practiceName")}</Label>
                     <Input value={practiceName} onChange={(e) => setPracticeName(e.target.value)} className="bg-secondary border-border" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-foreground/80">Organization</Label>
+                    <Label className="text-foreground/80">{t("profile.organization")}</Label>
                     <Input value={organization} onChange={(e) => setOrganization(e.target.value)} className="bg-secondary border-border" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-foreground/80">Timezone</Label>
+                    <Label className="text-foreground/80">{t("profile.timezone")}</Label>
                     <div className="flex items-center gap-2">
                       <Globe className="h-4 w-4 text-muted-foreground" />
                       <select
@@ -209,13 +217,9 @@ const Profile = () => {
 
               {/* Notifications */}
               <section className="bg-card rounded-xl border border-border p-6 space-y-5">
-                <h2 className="font-display font-semibold text-foreground">Notification Preferences</h2>
+                <h2 className="font-display font-semibold text-foreground">{t("profile.notificationPreferences")}</h2>
                 <div className="space-y-4">
-                  {[
-                    { label: "Email Notifications", desc: "Receive reports and alerts via email", value: notifEmail, setter: setNotifEmail },
-                    { label: "SMS Notifications", desc: "Get text alerts for critical events", value: notifSms, setter: setNotifSms },
-                    { label: "Slack Notifications", desc: "Send agent updates to your Slack workspace", value: notifSlack, setter: setNotifSlack },
-                  ].map((item) => (
+                  {notificationItems.map((item) => (
                     <div key={item.label} className="flex items-center justify-between p-4 rounded-xl border border-border bg-secondary">
                       <div>
                         <p className="text-sm font-medium text-foreground">{item.label}</p>
@@ -234,7 +238,7 @@ const Profile = () => {
                   className="gradient-primary text-primary-foreground rounded-xl shadow-glow hover:opacity-90 gap-2"
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  Save Profile
+                  {t("profile.saveProfile")}
                 </Button>
               </div>
             </div>

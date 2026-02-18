@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Shield,
   ShieldAlert,
@@ -58,70 +59,6 @@ interface ViolationEntry {
   status: ViolationStatus;
   notifiedTo: string[];
 }
-
-// ── Config maps ────────────────────────────────────────────────────────────────
-
-const SEVERITY_CONFIG: Record<
-  Severity,
-  { label: string; color: string; bg: string; dotColor: string }
-> = {
-  critical: {
-    label: "Critical",
-    color: "text-red-400",
-    bg: "bg-red-500/10 border-red-500/30 text-red-400",
-    dotColor: "bg-red-500",
-  },
-  high: {
-    label: "High",
-    color: "text-orange-400",
-    bg: "bg-orange-500/10 border-orange-500/30 text-orange-400",
-    dotColor: "bg-orange-500",
-  },
-  medium: {
-    label: "Medium",
-    color: "text-amber-400",
-    bg: "bg-amber-500/10 border-amber-500/30 text-amber-400",
-    dotColor: "bg-amber-500",
-  },
-  low: {
-    label: "Low",
-    color: "text-blue-400",
-    bg: "bg-blue-500/10 border-blue-500/30 text-blue-400",
-    dotColor: "bg-blue-500",
-  },
-};
-
-const VIOLATION_TYPE_CONFIG: Record<
-  ViolationType,
-  { label: string; icon: typeof ShieldAlert }
-> = {
-  phi_request: { label: "PHI Request", icon: Eye },
-  data_leak_attempt: { label: "Data Leak Attempt", icon: FileWarning },
-  unauthorized_access: { label: "Unauthorized Access", icon: UserX },
-  hipaa_breach_risk: { label: "HIPAA Breach Risk", icon: ShieldAlert },
-  zone_boundary_violation: { label: "Zone Boundary Violation", icon: ShieldAlert },
-};
-
-const STATUS_CONFIG: Record<
-  ViolationStatus,
-  { label: string; color: string; bg: string }
-> = {
-  blocked: {
-    label: "Blocked",
-    color: "text-red-400",
-    bg: "bg-red-500/10 border-red-500/20 text-red-400",
-  },
-  flagged: {
-    label: "Flagged",
-    color: "text-amber-400",
-    bg: "bg-amber-500/10 border-amber-500/20 text-amber-400",
-  },
-  resolved: {
-    label: "Resolved",
-    color: "text-green-400",
-    bg: "bg-green-500/10 border-green-500/20 text-green-400",
-  },
-};
 
 // ── Mock data ──────────────────────────────────────────────────────────────────
 
@@ -246,48 +183,112 @@ interface MonitorChannel {
   detail: string;
 }
 
-const monitorChannels: MonitorChannel[] = [
-  {
-    id: "conversations",
-    label: "Agent Conversations",
-    icon: MessageSquare,
-    status: "ok",
-    detail: "All conversations scanned — no active threats",
-  },
-  {
-    id: "exports",
-    label: "Data Exports",
-    icon: Database,
-    status: "warning",
-    detail: "1 export flagged for review (Marketing Maven)",
-  },
-  {
-    id: "api",
-    label: "API Calls",
-    icon: Globe,
-    status: "ok",
-    detail: "All API payloads validated — PHI filters active",
-  },
-  {
-    id: "integrations",
-    label: "Integration Data Flows",
-    icon: RefreshCw,
-    status: "ok",
-    detail: "GoHighLevel, HubSpot flows clean",
-  },
-  {
-    id: "zone-firewall",
-    label: "Zone Isolation Firewall",
-    icon: Shield,
-    status: "ok",
-    detail: "All zone boundaries enforced — 2 cross-zone attempts blocked today",
-  },
-];
-
 // ── Component ──────────────────────────────────────────────────────────────────
 
 const PhiMonitor = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
+
+  // Config maps (inside component for t() access)
+  const SEVERITY_CONFIG: Record<
+    Severity,
+    { label: string; color: string; bg: string; dotColor: string }
+  > = {
+    critical: {
+      label: t("phiMonitor.severityCritical"),
+      color: "text-red-400",
+      bg: "bg-red-500/10 border-red-500/30 text-red-400",
+      dotColor: "bg-red-500",
+    },
+    high: {
+      label: t("phiMonitor.severityHigh"),
+      color: "text-orange-400",
+      bg: "bg-orange-500/10 border-orange-500/30 text-orange-400",
+      dotColor: "bg-orange-500",
+    },
+    medium: {
+      label: t("phiMonitor.severityMedium"),
+      color: "text-amber-400",
+      bg: "bg-amber-500/10 border-amber-500/30 text-amber-400",
+      dotColor: "bg-amber-500",
+    },
+    low: {
+      label: t("phiMonitor.severityLow"),
+      color: "text-blue-400",
+      bg: "bg-blue-500/10 border-blue-500/30 text-blue-400",
+      dotColor: "bg-blue-500",
+    },
+  };
+
+  const VIOLATION_TYPE_CONFIG: Record<
+    ViolationType,
+    { label: string; icon: typeof ShieldAlert }
+  > = {
+    phi_request: { label: t("phiMonitor.violationPhiRequest"), icon: Eye },
+    data_leak_attempt: { label: t("phiMonitor.violationDataLeak"), icon: FileWarning },
+    unauthorized_access: { label: t("phiMonitor.violationUnauthorizedAccess"), icon: UserX },
+    hipaa_breach_risk: { label: t("phiMonitor.violationHipaaBreach"), icon: ShieldAlert },
+    zone_boundary_violation: { label: t("phiMonitor.violationZoneBoundary"), icon: ShieldAlert },
+  };
+
+  const STATUS_CONFIG: Record<
+    ViolationStatus,
+    { label: string; color: string; bg: string }
+  > = {
+    blocked: {
+      label: t("phiMonitor.statusBlocked"),
+      color: "text-red-400",
+      bg: "bg-red-500/10 border-red-500/20 text-red-400",
+    },
+    flagged: {
+      label: t("phiMonitor.statusFlagged"),
+      color: "text-amber-400",
+      bg: "bg-amber-500/10 border-amber-500/20 text-amber-400",
+    },
+    resolved: {
+      label: t("phiMonitor.statusResolved"),
+      color: "text-green-400",
+      bg: "bg-green-500/10 border-green-500/20 text-green-400",
+    },
+  };
+
+  const monitorChannels: MonitorChannel[] = [
+    {
+      id: "conversations",
+      label: t("phiMonitor.channelConversations"),
+      icon: MessageSquare,
+      status: "ok",
+      detail: t("phiMonitor.channelConversationsDetail"),
+    },
+    {
+      id: "exports",
+      label: t("phiMonitor.channelDataExports"),
+      icon: Database,
+      status: "warning",
+      detail: t("phiMonitor.channelDataExportsDetail"),
+    },
+    {
+      id: "api",
+      label: t("phiMonitor.channelApiCalls"),
+      icon: Globe,
+      status: "ok",
+      detail: t("phiMonitor.channelApiCallsDetail"),
+    },
+    {
+      id: "integrations",
+      label: t("phiMonitor.channelIntegrations"),
+      icon: RefreshCw,
+      status: "ok",
+      detail: t("phiMonitor.channelIntegrationsDetail"),
+    },
+    {
+      id: "zone-firewall",
+      label: t("phiMonitor.channelZoneFirewall"),
+      icon: Shield,
+      status: "ok",
+      detail: t("phiMonitor.channelZoneFirewallDetail"),
+    },
+  ];
 
   // Filters
   const [severityFilter, setSeverityFilter] = useState<Severity | "all">("all");
@@ -335,16 +336,16 @@ const PhiMonitor = () => {
     if (!trimmed) return;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
       toast({
-        title: "Invalid email",
-        description: "Please enter a valid email address.",
+        title: t("phiMonitor.toastInvalidEmailTitle"),
+        description: t("phiMonitor.toastInvalidEmailDesc"),
         variant: "destructive",
       });
       return;
     }
     if (recipients.includes(trimmed)) {
       toast({
-        title: "Duplicate",
-        description: "This recipient is already in the list.",
+        title: t("phiMonitor.toastDuplicateTitle"),
+        description: t("phiMonitor.toastDuplicateDesc"),
         variant: "destructive",
       });
       return;
@@ -352,40 +353,39 @@ const PhiMonitor = () => {
     setRecipients((prev) => [...prev, trimmed]);
     setNewEmail("");
     toast({
-      title: "Recipient added",
-      description: `${trimmed} will now receive violation notifications.`,
+      title: t("phiMonitor.toastRecipientAddedTitle"),
+      description: t("phiMonitor.toastRecipientAddedDesc", { email: trimmed }),
     });
   };
 
   const handleRemoveRecipient = (email: string) => {
     setRecipients((prev) => prev.filter((r) => r !== email));
     toast({
-      title: "Recipient removed",
-      description: `${email} has been removed from notifications.`,
+      title: t("phiMonitor.toastRecipientRemovedTitle"),
+      description: t("phiMonitor.toastRecipientRemovedDesc", { email }),
     });
   };
 
   const handleRunFullScan = () => {
     setIsScanning(true);
     toast({
-      title: "Full scan initiated",
-      description: "Scanning all agent conversations, data exports, API calls, and integration flows...",
+      title: t("phiMonitor.toastFullScanTitle"),
+      description: t("phiMonitor.toastFullScanDesc"),
     });
     setTimeout(() => setIsScanning(false), 4000);
   };
 
   const handleExportReport = () => {
     toast({
-      title: "Compliance report exported",
-      description: "HIPAA compliance report has been generated and downloaded.",
+      title: t("phiMonitor.toastExportTitle"),
+      description: t("phiMonitor.toastExportDesc"),
     });
   };
 
   const handleLockDown = () => {
     toast({
-      title: "Emergency Lockdown Activated",
-      description:
-        "All agent operations have been suspended. Manual override required to resume.",
+      title: t("phiMonitor.toastLockdownTitle"),
+      description: t("phiMonitor.toastLockdownDesc"),
       variant: "destructive",
     });
   };
@@ -403,15 +403,15 @@ const PhiMonitor = () => {
             <div>
               <h1 className="font-display text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
                 <Shield className="h-7 w-7 text-primary" />
-                PHI Security Monitor
+                {t("phiMonitor.title")}
               </h1>
               <p className="text-muted-foreground mt-1">
-                Real-time HIPAA compliance monitoring, PHI violation detection, and risk assessment dashboard.
+                {t("phiMonitor.subtitle")}
               </p>
             </div>
             <Badge className="bg-green-500/10 border border-green-500/30 text-green-400 text-xs px-3 py-1">
               <Activity className="h-3 w-3 mr-1.5 animate-pulse" />
-              Monitoring Active
+              {t("phiMonitor.monitoringActive")}
             </Badge>
           </div>
 
@@ -420,16 +420,16 @@ const PhiMonitor = () => {
             <Shield className="h-5 w-5 text-green-400 mt-0.5 shrink-0" />
             <div className="flex-1">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-green-400">Agent Isolation Zones Active</p>
-                <Badge className="bg-green-500/10 border border-green-500/30 text-green-400 text-[10px]">3 Zones Enforced</Badge>
+                <p className="text-sm font-semibold text-green-400">{t("phiMonitor.zoneIsolationActive")}</p>
+                <Badge className="bg-green-500/10 border border-green-500/30 text-green-400 text-[10px]">{t("phiMonitor.zonesEnforced")}</Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Zone 1 (Clinical/PHI) agents are isolated from Zone 3 (External) agents. All cross-zone data transfers require sanitization through Zone 2 (Operations). Email, phone, and SMS are disabled for clinical zone agents.
+                {t("phiMonitor.zoneIsolationDesc")}
               </p>
               <div className="flex items-center gap-4 mt-2">
-                <span className="flex items-center gap-1.5 text-[10px]"><span className="h-2 w-2 rounded-full bg-red-400" /> Clinical: Internal Only</span>
-                <span className="flex items-center gap-1.5 text-[10px]"><span className="h-2 w-2 rounded-full bg-amber-400" /> Operations: De-identified</span>
-                <span className="flex items-center gap-1.5 text-[10px]"><span className="h-2 w-2 rounded-full bg-blue-400" /> External: No PHI</span>
+                <span className="flex items-center gap-1.5 text-[10px]"><span className="h-2 w-2 rounded-full bg-red-400" /> {t("phiMonitor.zoneClinical")}</span>
+                <span className="flex items-center gap-1.5 text-[10px]"><span className="h-2 w-2 rounded-full bg-amber-400" /> {t("phiMonitor.zoneOperations")}</span>
+                <span className="flex items-center gap-1.5 text-[10px]"><span className="h-2 w-2 rounded-full bg-blue-400" /> {t("phiMonitor.zoneExternal")}</span>
               </div>
             </div>
           </div>
@@ -442,8 +442,8 @@ const PhiMonitor = () => {
                 <ShieldCheck className="h-5 w-5 text-red-400" />
                 <span className="text-2xl font-bold text-foreground">247</span>
               </div>
-              <p className="text-xs text-muted-foreground">Total PHI Attempts Blocked</p>
-              <p className="text-[10px] text-muted-foreground/60 mt-1">+12 this week</p>
+              <p className="text-xs text-muted-foreground">{t("phiMonitor.totalPhiBlocked")}</p>
+              <p className="text-[10px] text-muted-foreground/60 mt-1">{t("phiMonitor.totalPhiBlockedChange")}</p>
             </div>
 
             {/* Active Violations */}
@@ -452,8 +452,8 @@ const PhiMonitor = () => {
                 <AlertTriangle className="h-5 w-5 text-amber-400" />
                 <span className="text-2xl font-bold text-foreground">{activeViolations}</span>
               </div>
-              <p className="text-xs text-muted-foreground">Active Violations</p>
-              <p className="text-[10px] text-muted-foreground/60 mt-1">Requires attention</p>
+              <p className="text-xs text-muted-foreground">{t("phiMonitor.activeViolations")}</p>
+              <p className="text-[10px] text-muted-foreground/60 mt-1">{t("phiMonitor.requiresAttention")}</p>
             </div>
 
             {/* Risk Score */}
@@ -462,12 +462,12 @@ const PhiMonitor = () => {
                 <ShieldAlert className="h-5 w-5 text-green-400" />
                 <div className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-2xl font-bold text-green-400">Low</span>
+                  <span className="text-2xl font-bold text-green-400">{t("phiMonitor.riskLow")}</span>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">Risk Score</p>
+              <p className="text-xs text-muted-foreground">{t("phiMonitor.riskScore")}</p>
               <p className="text-[10px] text-muted-foreground/60 mt-1">
-                All critical threats mitigated
+                {t("phiMonitor.allThreatsmitigated")}
               </p>
             </div>
 
@@ -475,11 +475,11 @@ const PhiMonitor = () => {
             <div className="bg-card rounded-xl border border-border p-5">
               <div className="flex items-center justify-between mb-3">
                 <Clock className="h-5 w-5 text-blue-400" />
-                <span className="text-2xl font-bold text-foreground">2 min</span>
+                <span className="text-2xl font-bold text-foreground">{t("phiMonitor.lastScanValue")}</span>
               </div>
-              <p className="text-xs text-muted-foreground">Last Scan</p>
+              <p className="text-xs text-muted-foreground">{t("phiMonitor.lastScan")}</p>
               <p className="text-[10px] text-muted-foreground/60 mt-1">
-                Auto-scan every 5 minutes
+                {t("phiMonitor.autoScanInterval")}
               </p>
             </div>
 
@@ -489,8 +489,8 @@ const PhiMonitor = () => {
                 <ShieldAlert className="h-5 w-5 text-violet-400" />
                 <span className="text-2xl font-bold text-foreground">2</span>
               </div>
-              <p className="text-xs text-muted-foreground">Zone Boundary Violations</p>
-              <p className="text-[10px] text-muted-foreground/60 mt-1">All blocked automatically</p>
+              <p className="text-xs text-muted-foreground">{t("phiMonitor.zoneBoundaryViolations")}</p>
+              <p className="text-[10px] text-muted-foreground/60 mt-1">{t("phiMonitor.allBlockedAutomatically")}</p>
             </div>
           </div>
 
@@ -499,10 +499,10 @@ const PhiMonitor = () => {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                 <FileWarning className="h-5 w-5 text-primary" />
-                PHI Violation Log
+                {t("phiMonitor.violationLog")}
               </h2>
               <span className="text-xs text-muted-foreground">
-                {filteredViolations.length} of {mockViolations.length} entries
+                {t("phiMonitor.entriesCount", { filtered: filteredViolations.length, total: mockViolations.length })}
               </span>
             </div>
 
@@ -513,7 +513,7 @@ const PhiMonitor = () => {
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search violations..."
+                  placeholder={t("phiMonitor.searchPlaceholder")}
                   className="pl-9 bg-white/[0.03] border-white/10 focus:border-primary/50"
                 />
               </div>
@@ -531,7 +531,7 @@ const PhiMonitor = () => {
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    {sev === "all" ? "All Severity" : SEVERITY_CONFIG[sev].label}
+                    {sev === "all" ? t("phiMonitor.allSeverity") : SEVERITY_CONFIG[sev].label}
                   </button>
                 ))}
               </div>
@@ -548,7 +548,7 @@ const PhiMonitor = () => {
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    {st === "all" ? "All Status" : STATUS_CONFIG[st].label}
+                    {st === "all" ? t("phiMonitor.allStatus") : STATUS_CONFIG[st].label}
                   </button>
                 ))}
               </div>
@@ -617,7 +617,7 @@ const PhiMonitor = () => {
                             </span>
                             <span className="flex items-center gap-1">
                               <Bell className="h-3 w-3" />
-                              Notified: {v.notifiedTo.join(", ")}
+                              {t("phiMonitor.notified")}: {v.notifiedTo.join(", ")}
                             </span>
                           </div>
                         </div>
@@ -630,9 +630,9 @@ const PhiMonitor = () => {
               {filteredViolations.length === 0 && (
                 <div className="text-center py-16 text-muted-foreground">
                   <ShieldCheck className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm font-medium">No violations match your filters</p>
+                  <p className="text-sm font-medium">{t("phiMonitor.noViolationsMatch")}</p>
                   <p className="text-xs mt-1">
-                    Try adjusting your search or filter criteria
+                    {t("phiMonitor.tryAdjustingFilters")}
                   </p>
                 </div>
               )}
@@ -645,7 +645,7 @@ const PhiMonitor = () => {
             <div className="bg-card rounded-xl border border-border p-5">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-5">
                 <BellRing className="h-5 w-5 text-primary" />
-                Notification Settings
+                {t("phiMonitor.notificationSettings")}
               </h2>
 
               {/* Toggle switches */}
@@ -655,7 +655,7 @@ const PhiMonitor = () => {
                     htmlFor="notify-critical"
                     className="text-sm text-foreground cursor-pointer"
                   >
-                    Critical violations
+                    {t("phiMonitor.criticalViolations")}
                   </Label>
                   <Switch
                     id="notify-critical"
@@ -668,7 +668,7 @@ const PhiMonitor = () => {
                     htmlFor="notify-high"
                     className="text-sm text-foreground cursor-pointer"
                   >
-                    High violations
+                    {t("phiMonitor.highViolations")}
                   </Label>
                   <Switch
                     id="notify-high"
@@ -681,7 +681,7 @@ const PhiMonitor = () => {
                     htmlFor="notify-medium"
                     className="text-sm text-foreground cursor-pointer"
                   >
-                    Medium violations
+                    {t("phiMonitor.mediumViolations")}
                   </Label>
                   <Switch
                     id="notify-medium"
@@ -694,7 +694,7 @@ const PhiMonitor = () => {
                     htmlFor="notify-weekly"
                     className="text-sm text-foreground cursor-pointer"
                   >
-                    Weekly summary reports
+                    {t("phiMonitor.weeklySummaryReports")}
                   </Label>
                   <Switch
                     id="notify-weekly"
@@ -707,7 +707,7 @@ const PhiMonitor = () => {
               {/* Add recipient */}
               <div className="border-t border-border pt-4">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                  Notification Recipients
+                  {t("phiMonitor.notificationRecipients")}
                 </p>
                 <div className="flex gap-2 mb-3">
                   <Input
@@ -726,7 +726,7 @@ const PhiMonitor = () => {
                     className="gap-1.5 border-border hover:bg-white/5"
                   >
                     <Plus className="h-3.5 w-3.5" />
-                    Add
+                    {t("phiMonitor.add")}
                   </Button>
                 </div>
                 <div className="space-y-1.5">
@@ -755,7 +755,7 @@ const PhiMonitor = () => {
             <div className="bg-card rounded-xl border border-border p-5">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-5">
                 <ScanLine className="h-5 w-5 text-primary" />
-                Real-time Risk Scanner
+                {t("phiMonitor.riskScanner")}
               </h2>
 
               {/* Scanning status indicator */}
@@ -765,7 +765,7 @@ const PhiMonitor = () => {
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500" />
                 </span>
                 <span className="text-sm font-medium text-green-400">
-                  {isScanning ? "Full scan in progress..." : "Scanning Active"}
+                  {isScanning ? t("phiMonitor.fullScanInProgress") : t("phiMonitor.scanningActive")}
                 </span>
                 {isScanning && (
                   <Loader2 className="h-4 w-4 text-green-400 animate-spin ml-auto" />
@@ -818,7 +818,7 @@ const PhiMonitor = () => {
           <div className="bg-card rounded-xl border border-border p-5">
             <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-5">
               <ShieldCheck className="h-5 w-5 text-primary" />
-              Quick Actions
+              {t("phiMonitor.quickActions")}
             </h2>
             <div className="flex items-center gap-4">
               <Button
@@ -832,7 +832,7 @@ const PhiMonitor = () => {
                 ) : (
                   <ScanLine className="h-4 w-4" />
                 )}
-                {isScanning ? "Scanning..." : "Run Full Scan"}
+                {isScanning ? t("phiMonitor.scanning") : t("phiMonitor.runFullScan")}
               </Button>
               <Button
                 variant="outline"
@@ -840,7 +840,7 @@ const PhiMonitor = () => {
                 onClick={handleExportReport}
               >
                 <Download className="h-4 w-4" />
-                Export Compliance Report
+                {t("phiMonitor.exportComplianceReport")}
               </Button>
               <Button
                 variant="destructive"
@@ -848,7 +848,7 @@ const PhiMonitor = () => {
                 onClick={handleLockDown}
               >
                 <Lock className="h-4 w-4" />
-                Lock Down All Agents
+                {t("phiMonitor.lockDownAllAgents")}
               </Button>
             </div>
           </div>
@@ -856,10 +856,10 @@ const PhiMonitor = () => {
           {/* ── Footer ─────────────────────────────────────────────────── */}
           <div className="mt-6 flex items-center justify-between text-[10px] text-muted-foreground px-1">
             <span>
-              HIPAA Compliance Monitor v2.1 — {totalBlocked} threats blocked this period
+              {t("phiMonitor.footerVersion", { count: totalBlocked })}
             </span>
             <span className="flex items-center gap-1">
-              <Activity className="h-3 w-3" /> Live — continuous monitoring
+              <Activity className="h-3 w-3" /> {t("phiMonitor.liveContinuousMonitoring")}
             </span>
           </div>
         </div>

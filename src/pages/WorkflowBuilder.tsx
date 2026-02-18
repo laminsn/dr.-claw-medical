@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   GitBranch,
   Play,
@@ -119,104 +120,6 @@ const AGENT_ZONE_MAP: Record<string, AgentZone> = {
   "Distribution": "external",
 };
 
-const ZONE_BADGE: Record<AgentZone, { label: string; color: string }> = {
-  clinical: { label: "Z1 Clinical", color: "text-red-400 bg-red-500/10 border-red-500/30" },
-  operations: { label: "Z2 Ops", color: "text-amber-400 bg-amber-500/10 border-amber-500/30" },
-  external: { label: "Z3 External", color: "text-blue-400 bg-blue-500/10 border-blue-500/30" },
-};
-
-const hasZoneViolation = (steps: WorkflowStep[]): { hasViolation: boolean; details: string[] } => {
-  const details: string[] = [];
-  for (let i = 0; i < steps.length - 1; i++) {
-    const currentZone = AGENT_ZONE_MAP[steps[i].agent] || "operations";
-    const nextZone = AGENT_ZONE_MAP[steps[i + 1].agent] || "operations";
-    if (currentZone === "clinical" && nextZone === "external") {
-      details.push(`Step ${i + 1} (${steps[i].agent}, Clinical) → Step ${i + 2} (${steps[i + 1].agent}, External): BLOCKED — Clinical agents cannot pass data to external agents`);
-    }
-    if (currentZone === "external" && nextZone === "clinical") {
-      details.push(`Step ${i + 1} (${steps[i].agent}, External) → Step ${i + 2} (${steps[i + 1].agent}, Clinical): BLOCKED — External agents cannot access clinical zone`);
-    }
-  }
-  return { hasViolation: details.length > 0, details };
-};
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const STATUS_CONFIG: Record<
-  WorkflowStatus,
-  { label: string; color: string; bg: string }
-> = {
-  active: {
-    label: "Active",
-    color: "text-green-400",
-    bg: "bg-green-500/15 border-green-500/30",
-  },
-  paused: {
-    label: "Paused",
-    color: "text-amber-400",
-    bg: "bg-amber-500/15 border-amber-500/30",
-  },
-  draft: {
-    label: "Draft",
-    color: "text-zinc-400",
-    bg: "bg-zinc-500/15 border-zinc-500/30",
-  },
-};
-
-const EXECUTION_STATUS_CONFIG: Record<
-  ExecutionStatus,
-  { label: string; color: string; bg: string; icon: typeof CheckCircle2 }
-> = {
-  success: {
-    label: "Success",
-    color: "text-green-400",
-    bg: "bg-green-500/15 border-green-500/30",
-    icon: CheckCircle2,
-  },
-  failed: {
-    label: "Failed",
-    color: "text-red-400",
-    bg: "bg-red-500/15 border-red-500/30",
-    icon: XCircle,
-  },
-  running: {
-    label: "Running",
-    color: "text-blue-400",
-    bg: "bg-blue-500/15 border-blue-500/30",
-    icon: Loader2,
-  },
-};
-
-const TRIGGER_CONFIG: Record<TriggerType, { label: string; icon: typeof Zap }> =
-  {
-    manual: { label: "Manual", icon: Play },
-    scheduled: { label: "Scheduled", icon: Calendar },
-    event: { label: "Event-based", icon: Zap },
-  };
-
-const AGENT_OPTIONS = [
-  "Front Desk Agent",
-  "Insurance Verifier",
-  "Clinical Coordinator",
-  "Patient Outreach",
-  "Post-Op Care Agent",
-  "Patient Survey",
-  "Content Engine",
-  "Marketing Strategist",
-  "Financial Analyst",
-  "HR Coordinator",
-  "IT Strategist",
-  "SMS Notification",
-  "Report Generation",
-  "Data Collection",
-  "Training Assignment",
-  "Review",
-  "Publish",
-  "Distribution",
-];
-
 const STEP_ICON_MAP: Record<string, typeof Bot> = {
   "Front Desk Agent": Users,
   "Insurance Verifier": ShieldCheck,
@@ -240,168 +143,6 @@ const STEP_ICON_MAP: Record<string, typeof Bot> = {
 };
 
 // ---------------------------------------------------------------------------
-// Mock Data
-// ---------------------------------------------------------------------------
-
-const initialWorkflows: Workflow[] = [
-  {
-    id: "wf-1",
-    name: "Patient Intake Pipeline",
-    description:
-      "Automates the end-to-end patient intake process from front desk check-in through insurance verification to clinical coordination.",
-    steps: [
-      { id: "s1", name: "Front Desk Agent", agent: "Front Desk Agent", timeout: 30, onFailure: "retry" },
-      { id: "s2", name: "Insurance Verifier", agent: "Insurance Verifier", timeout: 60, onFailure: "stop" },
-      { id: "s3", name: "Clinical Coordinator", agent: "Clinical Coordinator", timeout: 45, onFailure: "skip" },
-    ],
-    status: "active",
-    trigger: "event",
-    runs: 156,
-    lastRun: "2 minutes ago",
-  },
-  {
-    id: "wf-2",
-    name: "Appointment Recovery",
-    description:
-      "Recovers missed and cancelled appointments by reaching out to patients and rescheduling through the front desk workflow.",
-    steps: [
-      { id: "s4", name: "Patient Outreach", agent: "Patient Outreach", timeout: 30, onFailure: "retry" },
-      { id: "s5", name: "Front Desk Agent", agent: "Front Desk Agent", timeout: 30, onFailure: "retry" },
-      { id: "s6", name: "SMS notification", agent: "SMS Notification", timeout: 10, onFailure: "skip" },
-    ],
-    status: "active",
-    trigger: "scheduled",
-    runs: 89,
-    lastRun: "15 minutes ago",
-  },
-  {
-    id: "wf-3",
-    name: "Post-Op Follow-up",
-    description:
-      "Manages post-operative patient care by coordinating follow-up surveys and clinical review for recovery monitoring.",
-    steps: [
-      { id: "s7", name: "Post-Op Care Agent", agent: "Post-Op Care Agent", timeout: 60, onFailure: "retry" },
-      { id: "s8", name: "Patient Survey", agent: "Patient Survey", timeout: 120, onFailure: "skip" },
-      { id: "s9", name: "Clinical Coordinator", agent: "Clinical Coordinator", timeout: 45, onFailure: "stop" },
-    ],
-    status: "active",
-    trigger: "event",
-    runs: 234,
-    lastRun: "5 minutes ago",
-  },
-  {
-    id: "wf-4",
-    name: "Content Publishing Pipeline",
-    description:
-      "Orchestrates the content lifecycle from creation through review and strategic alignment to final publication.",
-    steps: [
-      { id: "s10", name: "Content Engine", agent: "Content Engine", timeout: 90, onFailure: "retry" },
-      { id: "s11", name: "Review", agent: "Review", timeout: 60, onFailure: "stop" },
-      { id: "s12", name: "Marketing Strategist", agent: "Marketing Strategist", timeout: 45, onFailure: "retry" },
-      { id: "s13", name: "Publish", agent: "Publish", timeout: 15, onFailure: "stop" },
-    ],
-    status: "paused",
-    trigger: "manual",
-    runs: 67,
-    lastRun: "3 hours ago",
-  },
-  {
-    id: "wf-5",
-    name: "Financial Reporting Cycle",
-    description:
-      "Automates the financial reporting pipeline from data collection through analysis to report generation and distribution.",
-    steps: [
-      { id: "s14", name: "Financial Analyst", agent: "Financial Analyst", timeout: 120, onFailure: "stop" },
-      { id: "s15", name: "Data Collection", agent: "Data Collection", timeout: 90, onFailure: "retry" },
-      { id: "s16", name: "Report Generation", agent: "Report Generation", timeout: 60, onFailure: "retry" },
-      { id: "s17", name: "Distribution", agent: "Distribution", timeout: 15, onFailure: "skip" },
-    ],
-    status: "active",
-    trigger: "scheduled",
-    runs: 45,
-    lastRun: "1 hour ago",
-  },
-  {
-    id: "wf-6",
-    name: "Employee Onboarding",
-    description:
-      "Streamlines the employee onboarding process from HR coordination through IT setup to training assignment.",
-    steps: [
-      { id: "s18", name: "HR Coordinator", agent: "HR Coordinator", timeout: 60, onFailure: "stop" },
-      { id: "s19", name: "IT Strategist", agent: "IT Strategist", timeout: 45, onFailure: "retry" },
-      { id: "s20", name: "Training Assignment", agent: "Training Assignment", timeout: 30, onFailure: "skip" },
-    ],
-    status: "draft",
-    trigger: "manual",
-    runs: 0,
-    lastRun: "Never",
-  },
-];
-
-const initialExecutionLogs: ExecutionLog[] = [
-  {
-    id: "ex-1",
-    workflowName: "Patient Intake Pipeline",
-    trigger: "event",
-    startTime: "Today, 10:32 AM",
-    duration: "2m 14s",
-    status: "success",
-    stepsCompleted: 3,
-    totalSteps: 3,
-  },
-  {
-    id: "ex-2",
-    workflowName: "Post-Op Follow-up",
-    trigger: "event",
-    startTime: "Today, 10:28 AM",
-    duration: "4m 51s",
-    status: "success",
-    stepsCompleted: 3,
-    totalSteps: 3,
-  },
-  {
-    id: "ex-3",
-    workflowName: "Appointment Recovery",
-    trigger: "scheduled",
-    startTime: "Today, 10:15 AM",
-    duration: "1m 33s",
-    status: "running",
-    stepsCompleted: 2,
-    totalSteps: 3,
-  },
-  {
-    id: "ex-4",
-    workflowName: "Financial Reporting Cycle",
-    trigger: "scheduled",
-    startTime: "Today, 9:00 AM",
-    duration: "8m 22s",
-    status: "success",
-    stepsCompleted: 4,
-    totalSteps: 4,
-  },
-  {
-    id: "ex-5",
-    workflowName: "Content Publishing Pipeline",
-    trigger: "manual",
-    startTime: "Today, 8:45 AM",
-    duration: "3m 07s",
-    status: "failed",
-    stepsCompleted: 2,
-    totalSteps: 4,
-  },
-  {
-    id: "ex-6",
-    workflowName: "Patient Intake Pipeline",
-    trigger: "event",
-    startTime: "Today, 8:12 AM",
-    duration: "1m 58s",
-    status: "success",
-    stepsCompleted: 3,
-    totalSteps: 3,
-  },
-];
-
-// ---------------------------------------------------------------------------
 // ID helper
 // ---------------------------------------------------------------------------
 
@@ -414,6 +155,257 @@ const nextId = (prefix: string) => `${prefix}-${++idCounter}`;
 
 const WorkflowBuilder = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
+
+  // ---------------------------------------------------------------------------
+  // Constants (moved inside for i18n access)
+  // ---------------------------------------------------------------------------
+
+  const ZONE_BADGE: Record<AgentZone, { label: string; color: string }> = {
+    clinical: { label: t("workflow.z1Clinical"), color: "text-red-400 bg-red-500/10 border-red-500/30" },
+    operations: { label: t("workflow.z2Ops"), color: "text-amber-400 bg-amber-500/10 border-amber-500/30" },
+    external: { label: t("workflow.z3External"), color: "text-blue-400 bg-blue-500/10 border-blue-500/30" },
+  };
+
+  const hasZoneViolation = (steps: WorkflowStep[]): { hasViolation: boolean; details: string[] } => {
+    const details: string[] = [];
+    for (let i = 0; i < steps.length - 1; i++) {
+      const currentZone = AGENT_ZONE_MAP[steps[i].agent] || "operations";
+      const nextZone = AGENT_ZONE_MAP[steps[i + 1].agent] || "operations";
+      if (currentZone === "clinical" && nextZone === "external") {
+        details.push(t("workflow.zoneViolationClinicalToExternal", { stepA: i + 1, agentA: steps[i].agent, stepB: i + 2, agentB: steps[i + 1].agent }));
+      }
+      if (currentZone === "external" && nextZone === "clinical") {
+        details.push(t("workflow.zoneViolationExternalToClinical", { stepA: i + 1, agentA: steps[i].agent, stepB: i + 2, agentB: steps[i + 1].agent }));
+      }
+    }
+    return { hasViolation: details.length > 0, details };
+  };
+
+  const STATUS_CONFIG: Record<
+    WorkflowStatus,
+    { label: string; color: string; bg: string }
+  > = {
+    active: {
+      label: t("workflow.statusActive"),
+      color: "text-green-400",
+      bg: "bg-green-500/15 border-green-500/30",
+    },
+    paused: {
+      label: t("workflow.statusPaused"),
+      color: "text-amber-400",
+      bg: "bg-amber-500/15 border-amber-500/30",
+    },
+    draft: {
+      label: t("workflow.statusDraft"),
+      color: "text-zinc-400",
+      bg: "bg-zinc-500/15 border-zinc-500/30",
+    },
+  };
+
+  const EXECUTION_STATUS_CONFIG: Record<
+    ExecutionStatus,
+    { label: string; color: string; bg: string; icon: typeof CheckCircle2 }
+  > = {
+    success: {
+      label: t("workflow.execSuccess"),
+      color: "text-green-400",
+      bg: "bg-green-500/15 border-green-500/30",
+      icon: CheckCircle2,
+    },
+    failed: {
+      label: t("workflow.execFailed"),
+      color: "text-red-400",
+      bg: "bg-red-500/15 border-red-500/30",
+      icon: XCircle,
+    },
+    running: {
+      label: t("workflow.execRunning"),
+      color: "text-blue-400",
+      bg: "bg-blue-500/15 border-blue-500/30",
+      icon: Loader2,
+    },
+  };
+
+  const TRIGGER_CONFIG: Record<TriggerType, { label: string; icon: typeof Zap }> =
+    {
+      manual: { label: t("workflow.triggerManual"), icon: Play },
+      scheduled: { label: t("workflow.triggerScheduled"), icon: Calendar },
+      event: { label: t("workflow.triggerEvent"), icon: Zap },
+    };
+
+  const AGENT_OPTIONS = [
+    "Front Desk Agent",
+    "Insurance Verifier",
+    "Clinical Coordinator",
+    "Patient Outreach",
+    "Post-Op Care Agent",
+    "Patient Survey",
+    "Content Engine",
+    "Marketing Strategist",
+    "Financial Analyst",
+    "HR Coordinator",
+    "IT Strategist",
+    "SMS Notification",
+    "Report Generation",
+    "Data Collection",
+    "Training Assignment",
+    "Review",
+    "Publish",
+    "Distribution",
+  ];
+
+  const initialWorkflows: Workflow[] = [
+    {
+      id: "wf-1",
+      name: t("workflow.wfPatientIntakeName"),
+      description: t("workflow.wfPatientIntakeDesc"),
+      steps: [
+        { id: "s1", name: t("workflow.agentFrontDesk"), agent: "Front Desk Agent", timeout: 30, onFailure: "retry" },
+        { id: "s2", name: t("workflow.agentInsuranceVerifier"), agent: "Insurance Verifier", timeout: 60, onFailure: "stop" },
+        { id: "s3", name: t("workflow.agentClinicalCoordinator"), agent: "Clinical Coordinator", timeout: 45, onFailure: "skip" },
+      ],
+      status: "active",
+      trigger: "event",
+      runs: 156,
+      lastRun: t("workflow.twoMinutesAgo"),
+    },
+    {
+      id: "wf-2",
+      name: t("workflow.wfAppointmentRecoveryName"),
+      description: t("workflow.wfAppointmentRecoveryDesc"),
+      steps: [
+        { id: "s4", name: t("workflow.agentPatientOutreach"), agent: "Patient Outreach", timeout: 30, onFailure: "retry" },
+        { id: "s5", name: t("workflow.agentFrontDesk"), agent: "Front Desk Agent", timeout: 30, onFailure: "retry" },
+        { id: "s6", name: t("workflow.agentSmsNotification"), agent: "SMS Notification", timeout: 10, onFailure: "skip" },
+      ],
+      status: "active",
+      trigger: "scheduled",
+      runs: 89,
+      lastRun: t("workflow.fifteenMinutesAgo"),
+    },
+    {
+      id: "wf-3",
+      name: t("workflow.wfPostOpFollowUpName"),
+      description: t("workflow.wfPostOpFollowUpDesc"),
+      steps: [
+        { id: "s7", name: t("workflow.agentPostOpCare"), agent: "Post-Op Care Agent", timeout: 60, onFailure: "retry" },
+        { id: "s8", name: t("workflow.agentPatientSurvey"), agent: "Patient Survey", timeout: 120, onFailure: "skip" },
+        { id: "s9", name: t("workflow.agentClinicalCoordinator"), agent: "Clinical Coordinator", timeout: 45, onFailure: "stop" },
+      ],
+      status: "active",
+      trigger: "event",
+      runs: 234,
+      lastRun: t("workflow.fiveMinutesAgo"),
+    },
+    {
+      id: "wf-4",
+      name: t("workflow.wfContentPublishingName"),
+      description: t("workflow.wfContentPublishingDesc"),
+      steps: [
+        { id: "s10", name: t("workflow.agentContentEngine"), agent: "Content Engine", timeout: 90, onFailure: "retry" },
+        { id: "s11", name: t("workflow.agentReview"), agent: "Review", timeout: 60, onFailure: "stop" },
+        { id: "s12", name: t("workflow.agentMarketingStrategist"), agent: "Marketing Strategist", timeout: 45, onFailure: "retry" },
+        { id: "s13", name: t("workflow.agentPublish"), agent: "Publish", timeout: 15, onFailure: "stop" },
+      ],
+      status: "paused",
+      trigger: "manual",
+      runs: 67,
+      lastRun: t("workflow.threeHoursAgo"),
+    },
+    {
+      id: "wf-5",
+      name: t("workflow.wfFinancialReportingName"),
+      description: t("workflow.wfFinancialReportingDesc"),
+      steps: [
+        { id: "s14", name: t("workflow.agentFinancialAnalyst"), agent: "Financial Analyst", timeout: 120, onFailure: "stop" },
+        { id: "s15", name: t("workflow.agentDataCollection"), agent: "Data Collection", timeout: 90, onFailure: "retry" },
+        { id: "s16", name: t("workflow.agentReportGeneration"), agent: "Report Generation", timeout: 60, onFailure: "retry" },
+        { id: "s17", name: t("workflow.agentDistribution"), agent: "Distribution", timeout: 15, onFailure: "skip" },
+      ],
+      status: "active",
+      trigger: "scheduled",
+      runs: 45,
+      lastRun: t("workflow.oneHourAgo"),
+    },
+    {
+      id: "wf-6",
+      name: t("workflow.wfEmployeeOnboardingName"),
+      description: t("workflow.wfEmployeeOnboardingDesc"),
+      steps: [
+        { id: "s18", name: t("workflow.agentHrCoordinator"), agent: "HR Coordinator", timeout: 60, onFailure: "stop" },
+        { id: "s19", name: t("workflow.agentItStrategist"), agent: "IT Strategist", timeout: 45, onFailure: "retry" },
+        { id: "s20", name: t("workflow.agentTrainingAssignment"), agent: "Training Assignment", timeout: 30, onFailure: "skip" },
+      ],
+      status: "draft",
+      trigger: "manual",
+      runs: 0,
+      lastRun: t("workflow.never"),
+    },
+  ];
+
+  const initialExecutionLogs: ExecutionLog[] = [
+    {
+      id: "ex-1",
+      workflowName: t("workflow.wfPatientIntakeName"),
+      trigger: "event",
+      startTime: t("workflow.today1032"),
+      duration: "2m 14s",
+      status: "success",
+      stepsCompleted: 3,
+      totalSteps: 3,
+    },
+    {
+      id: "ex-2",
+      workflowName: t("workflow.wfPostOpFollowUpName"),
+      trigger: "event",
+      startTime: t("workflow.today1028"),
+      duration: "4m 51s",
+      status: "success",
+      stepsCompleted: 3,
+      totalSteps: 3,
+    },
+    {
+      id: "ex-3",
+      workflowName: t("workflow.wfAppointmentRecoveryName"),
+      trigger: "scheduled",
+      startTime: t("workflow.today1015"),
+      duration: "1m 33s",
+      status: "running",
+      stepsCompleted: 2,
+      totalSteps: 3,
+    },
+    {
+      id: "ex-4",
+      workflowName: t("workflow.wfFinancialReportingName"),
+      trigger: "scheduled",
+      startTime: t("workflow.today0900"),
+      duration: "8m 22s",
+      status: "success",
+      stepsCompleted: 4,
+      totalSteps: 4,
+    },
+    {
+      id: "ex-5",
+      workflowName: t("workflow.wfContentPublishingName"),
+      trigger: "manual",
+      startTime: t("workflow.today0845"),
+      duration: "3m 07s",
+      status: "failed",
+      stepsCompleted: 2,
+      totalSteps: 4,
+    },
+    {
+      id: "ex-6",
+      workflowName: t("workflow.wfPatientIntakeName"),
+      trigger: "event",
+      startTime: t("workflow.today0812"),
+      duration: "1m 58s",
+      status: "success",
+      stepsCompleted: 3,
+      totalSteps: 3,
+    },
+  ];
 
   // Core state
   const [workflows, setWorkflows] = useState<Workflow[]>(initialWorkflows);
@@ -479,10 +471,12 @@ const WorkflowBuilder = () => {
     );
     const wf = workflows.find((w) => w.id === workflowId);
     if (wf) {
-      const action = wf.status === "active" ? "paused" : "activated";
+      const isPausing = wf.status === "active";
       toast({
-        title: `Workflow ${action}`,
-        description: `"${wf.name}" has been ${action}.`,
+        title: isPausing ? t("workflow.toastWorkflowPausedTitle") : t("workflow.toastWorkflowActivatedTitle"),
+        description: isPausing
+          ? t("workflow.toastWorkflowPausedDesc", { name: wf.name })
+          : t("workflow.toastWorkflowActivatedDesc", { name: wf.name }),
       });
     }
   };
@@ -495,7 +489,7 @@ const WorkflowBuilder = () => {
       id: nextId("ex"),
       workflowName: wf.name,
       trigger: "manual",
-      startTime: "Just now",
+      startTime: t("workflow.justNow"),
       duration: "0m 00s",
       status: "running",
       stepsCompleted: 0,
@@ -506,22 +500,22 @@ const WorkflowBuilder = () => {
     setWorkflows((prev) =>
       prev.map((w) =>
         w.id === workflowId
-          ? { ...w, runs: w.runs + 1, lastRun: "Just now", status: w.status === "draft" ? "active" : w.status }
+          ? { ...w, runs: w.runs + 1, lastRun: t("workflow.justNow"), status: w.status === "draft" ? "active" : w.status }
           : w
       )
     );
 
     toast({
-      title: "Workflow executed",
-      description: `"${wf.name}" has started running.`,
+      title: t("workflow.toastWorkflowExecutedTitle"),
+      description: t("workflow.toastWorkflowExecutedDesc", { name: wf.name }),
     });
   };
 
   const createWorkflow = () => {
     if (!newWorkflowName.trim()) {
       toast({
-        title: "Validation error",
-        description: "Please enter a workflow name.",
+        title: t("workflow.toastValidationErrorTitle"),
+        description: t("workflow.toastEnterWorkflowName"),
       });
       return;
     }
@@ -531,8 +525,8 @@ const WorkflowBuilder = () => {
     );
     if (validSteps.length === 0) {
       toast({
-        title: "Validation error",
-        description: "Please add at least one step with a name and agent.",
+        title: t("workflow.toastValidationErrorTitle"),
+        description: t("workflow.toastAddAtLeastOneStep"),
       });
       return;
     }
@@ -540,16 +534,16 @@ const WorkflowBuilder = () => {
     const newWorkflow: Workflow = {
       id: nextId("wf"),
       name: newWorkflowName.trim(),
-      description: `Custom workflow: ${newWorkflowName.trim()}`,
+      description: t("workflow.customWorkflowDesc", { name: newWorkflowName.trim() }),
       steps: validSteps.map((s, i) => ({
         ...s,
         id: nextId("s"),
-        name: s.name || `Step ${i + 1}`,
+        name: s.name || t("workflow.stepNumber", { number: i + 1 }),
       })),
       status: "draft",
       trigger: newWorkflowTrigger,
       runs: 0,
-      lastRun: "Never",
+      lastRun: t("workflow.never"),
     };
 
     setWorkflows((prev) => [newWorkflow, ...prev]);
@@ -561,8 +555,8 @@ const WorkflowBuilder = () => {
     ]);
 
     toast({
-      title: "Workflow created",
-      description: `"${newWorkflow.name}" has been created as a draft.`,
+      title: t("workflow.toastWorkflowCreatedTitle"),
+      description: t("workflow.toastWorkflowCreatedDesc", { name: newWorkflow.name }),
     });
   };
 
@@ -576,8 +570,8 @@ const WorkflowBuilder = () => {
   const removeNewStep = (stepId: string) => {
     if (newWorkflowSteps.length <= 1) {
       toast({
-        title: "Cannot remove",
-        description: "A workflow must have at least one step.",
+        title: t("workflow.toastCannotRemoveTitle"),
+        description: t("workflow.toastCannotRemoveDesc"),
       });
       return;
     }
@@ -599,8 +593,8 @@ const WorkflowBuilder = () => {
     setWorkflows((prev) => prev.filter((w) => w.id !== workflowId));
     if (wf) {
       toast({
-        title: "Workflow deleted",
-        description: `"${wf.name}" has been removed.`,
+        title: t("workflow.toastWorkflowDeletedTitle"),
+        description: t("workflow.toastWorkflowDeletedDesc", { name: wf.name }),
       });
     }
   };
@@ -664,10 +658,10 @@ const WorkflowBuilder = () => {
             <div>
               <h1 className="text-3xl font-bold font-heading gradient-hero-text flex items-center gap-3">
                 <GitBranch className="h-7 w-7 text-primary" />
-                Care Workflow Builder
+                {t("workflow.title")}
               </h1>
               <p className="text-muted-foreground mt-1">
-                Design automated clinical pipelines — from patient intake to post-op follow-up.
+                {t("workflow.subtitle")}
               </p>
             </div>
             <Button
@@ -675,7 +669,7 @@ const WorkflowBuilder = () => {
               onClick={() => setCreateDialogOpen(true)}
             >
               <Plus className="h-4 w-4 mr-2" />
-              New Workflow
+              {t("workflow.newWorkflow")}
             </Button>
           </div>
 
@@ -683,9 +677,9 @@ const WorkflowBuilder = () => {
           <div className="flex items-start gap-3 p-4 rounded-xl bg-red-500/5 border border-red-500/20">
             <Shield className="h-5 w-5 text-red-400 mt-0.5 shrink-0" />
             <div>
-              <p className="text-sm font-semibold text-red-400">Zone Isolation Enforced</p>
+              <p className="text-sm font-semibold text-red-400">{t("workflow.zoneIsolationEnforced")}</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Workflows cannot chain Clinical (Zone 1) agents directly to External (Zone 3) agents. Data must pass through a sanitization gate via Operations (Zone 2) to strip all PHI identifiers before crossing zone boundaries.
+                {t("workflow.zoneIsolationDescription")}
               </p>
             </div>
           </div>
@@ -696,28 +690,28 @@ const WorkflowBuilder = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               {
-                label: "Active Workflows",
+                label: t("workflow.activeWorkflows"),
                 value: stats.activeWorkflows,
                 icon: Activity,
-                change: "+2 this week",
+                change: t("workflow.changePlusTwoThisWeek"),
               },
               {
-                label: "Executions Today",
+                label: t("workflow.executionsToday"),
                 value: stats.executionsToday,
                 icon: Play,
-                change: "+12 vs yesterday",
+                change: t("workflow.changePlusTwelveVsYesterday"),
               },
               {
-                label: "Success Rate",
+                label: t("workflow.successRate"),
                 value: `${stats.successRate}%`,
                 icon: CheckCircle2,
-                change: "+3% vs last week",
+                change: t("workflow.changePlusThreePercentVsLastWeek"),
               },
               {
-                label: "Avg Duration",
+                label: t("workflow.avgDuration"),
                 value: stats.avgDuration,
                 icon: Timer,
-                change: "-15s vs last week",
+                change: t("workflow.changeMinusFifteenSecsVsLastWeek"),
               },
             ].map((stat) => (
               <div
@@ -746,7 +740,7 @@ const WorkflowBuilder = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <h2 className="text-lg font-semibold text-foreground">
-                Workflows
+                {t("workflow.workflows")}
               </h2>
               <div className="flex items-center gap-3 flex-wrap">
                 {/* Search */}
@@ -755,7 +749,7 @@ const WorkflowBuilder = () => {
                   <Input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search workflows..."
+                    placeholder={t("workflow.searchPlaceholder")}
                     className="pl-9 bg-white/[0.03] border-white/10 focus:border-primary/50 w-64"
                   />
                 </div>
@@ -771,7 +765,7 @@ const WorkflowBuilder = () => {
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      {s === "all" ? "All" : STATUS_CONFIG[s].label}
+                      {s === "all" ? t("workflow.filterAll") : STATUS_CONFIG[s].label}
                     </button>
                   ))}
                 </div>
@@ -823,7 +817,7 @@ const WorkflowBuilder = () => {
                           onClick={() => runWorkflow(wf.id)}
                         >
                           <Play className="h-3.5 w-3.5 mr-1" />
-                          Run
+                          {t("workflow.run")}
                         </Button>
                         {wf.status !== "draft" && (
                           <Button
@@ -839,12 +833,12 @@ const WorkflowBuilder = () => {
                             {wf.status === "active" ? (
                               <>
                                 <Pause className="h-3.5 w-3.5 mr-1" />
-                                Pause
+                                {t("workflow.pause")}
                               </>
                             ) : (
                               <>
                                 <Play className="h-3.5 w-3.5 mr-1" />
-                                Activate
+                                {t("workflow.activate")}
                               </>
                             )}
                           </Button>
@@ -857,7 +851,7 @@ const WorkflowBuilder = () => {
                             onClick={() => toggleWorkflowStatus(wf.id)}
                           >
                             <Play className="h-3.5 w-3.5 mr-1" />
-                            Activate
+                            {t("workflow.activate")}
                           </Button>
                         )}
                         <Button
@@ -880,7 +874,7 @@ const WorkflowBuilder = () => {
                         <div className="flex items-start gap-2 p-2.5 rounded-lg bg-red-500/10 border border-red-500/20 mt-2">
                           <ShieldAlert className="h-4 w-4 text-red-400 mt-0.5 shrink-0" />
                           <div>
-                            <p className="text-[11px] font-semibold text-red-400">Zone Violation Detected</p>
+                            <p className="text-[11px] font-semibold text-red-400">{t("workflow.zoneViolationDetected")}</p>
                             {violation.details.map((d, i) => (
                               <p key={i} className="text-[10px] text-red-400/80 mt-0.5">{d}</p>
                             ))}
@@ -893,15 +887,15 @@ const WorkflowBuilder = () => {
                     <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground flex-wrap">
                       <span className="flex items-center gap-1">
                         <RefreshCw className="h-3 w-3" />
-                        {wf.runs} runs
+                        {t("workflow.runsCount", { count: wf.runs })}
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        Last run: {wf.lastRun}
+                        {t("workflow.lastRun", { time: wf.lastRun })}
                       </span>
                       <span className="flex items-center gap-1">
                         <GitBranch className="h-3 w-3" />
-                        {wf.steps.length} steps
+                        {t("workflow.stepsCount", { count: wf.steps.length })}
                       </span>
                     </div>
                   </div>
@@ -911,9 +905,9 @@ const WorkflowBuilder = () => {
               {filteredWorkflows.length === 0 && (
                 <div className="text-center py-16 text-muted-foreground">
                   <GitBranch className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm font-medium">No workflows found</p>
+                  <p className="text-sm font-medium">{t("workflow.noWorkflowsFound")}</p>
                   <p className="text-xs mt-1">
-                    Try adjusting your search or filter criteria
+                    {t("workflow.tryAdjustingSearch")}
                   </p>
                 </div>
               )}
@@ -925,17 +919,17 @@ const WorkflowBuilder = () => {
           {/* ---------------------------------------------------------------- */}
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-foreground">
-              Recent Executions
+              {t("workflow.recentExecutions")}
             </h2>
             <div className="bg-card rounded-xl border border-white/[0.06] overflow-hidden">
               {/* Table header */}
               <div className="grid grid-cols-7 gap-4 px-5 py-3 border-b border-white/[0.06] text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                <span className="col-span-2">Workflow</span>
-                <span>Trigger</span>
-                <span>Start Time</span>
-                <span>Duration</span>
-                <span>Steps</span>
-                <span>Status</span>
+                <span className="col-span-2">{t("workflow.columnWorkflow")}</span>
+                <span>{t("workflow.columnTrigger")}</span>
+                <span>{t("workflow.columnStartTime")}</span>
+                <span>{t("workflow.columnDuration")}</span>
+                <span>{t("workflow.columnSteps")}</span>
+                <span>{t("workflow.columnStatus")}</span>
               </div>
               {/* Rows */}
               {executionLogs.map((exec) => {
@@ -993,10 +987,10 @@ const WorkflowBuilder = () => {
               <DialogHeader>
                 <DialogTitle className="text-foreground flex items-center gap-2">
                   <GitBranch className="h-5 w-5 text-primary" />
-                  Create New Workflow
+                  {t("workflow.createNewWorkflow")}
                 </DialogTitle>
                 <DialogDescription>
-                  Design an automated workflow by defining steps and assigning agents.
+                  {t("workflow.createDialogDescription")}
                 </DialogDescription>
               </DialogHeader>
 
@@ -1004,12 +998,12 @@ const WorkflowBuilder = () => {
                 {/* Workflow name */}
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">
-                    Workflow Name
+                    {t("workflow.workflowNameLabel")}
                   </Label>
                   <Input
                     value={newWorkflowName}
                     onChange={(e) => setNewWorkflowName(e.target.value)}
-                    placeholder="e.g. Patient Intake Pipeline"
+                    placeholder={t("workflow.workflowNamePlaceholder")}
                     className="bg-white/[0.03] border-white/10 focus:border-primary/50"
                   />
                 </div>
@@ -1017,19 +1011,19 @@ const WorkflowBuilder = () => {
                 {/* Trigger type */}
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">
-                    Trigger Type
+                    {t("workflow.triggerTypeLabel")}
                   </Label>
                   <div className="flex gap-2">
                     {(["manual", "scheduled", "event"] as TriggerType[]).map(
-                      (t) => {
-                        const cfg = TRIGGER_CONFIG[t];
+                      (triggerType) => {
+                        const cfg = TRIGGER_CONFIG[triggerType];
                         const TIcon = cfg.icon;
                         return (
                           <button
-                            key={t}
-                            onClick={() => setNewWorkflowTrigger(t)}
+                            key={triggerType}
+                            onClick={() => setNewWorkflowTrigger(triggerType)}
                             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium border transition-all ${
-                              newWorkflowTrigger === t
+                              newWorkflowTrigger === triggerType
                                 ? "text-primary bg-primary/10 border-primary/30"
                                 : "text-muted-foreground border-white/10 hover:text-foreground hover:border-white/20"
                             }`}
@@ -1049,7 +1043,7 @@ const WorkflowBuilder = () => {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs text-muted-foreground">
-                      Workflow Steps
+                      {t("workflow.workflowStepsLabel")}
                     </Label>
                     <Button
                       size="sm"
@@ -1058,7 +1052,7 @@ const WorkflowBuilder = () => {
                       onClick={addNewStep}
                     >
                       <Plus className="h-3 w-3 mr-1" />
-                      Add Step
+                      {t("workflow.addStep")}
                     </Button>
                   </div>
 
@@ -1069,7 +1063,7 @@ const WorkflowBuilder = () => {
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                          Step {index + 1}
+                          {t("workflow.stepNumber", { number: index + 1 })}
                         </span>
                         <button
                           onClick={() => removeNewStep(step.id)}
@@ -1083,14 +1077,14 @@ const WorkflowBuilder = () => {
                         {/* Step name */}
                         <div className="space-y-1">
                           <Label className="text-[10px] text-muted-foreground">
-                            Step Name
+                            {t("workflow.stepNameLabel")}
                           </Label>
                           <Input
                             value={step.name}
                             onChange={(e) =>
                               updateNewStep(step.id, "name", e.target.value)
                             }
-                            placeholder="e.g. Verify Insurance"
+                            placeholder={t("workflow.stepNamePlaceholder")}
                             className="bg-white/[0.03] border-white/10 focus:border-primary/50 text-xs h-9"
                           />
                         </div>
@@ -1098,7 +1092,7 @@ const WorkflowBuilder = () => {
                         {/* Agent selection */}
                         <div className="space-y-1">
                           <Label className="text-[10px] text-muted-foreground">
-                            Assigned Agent
+                            {t("workflow.assignedAgentLabel")}
                           </Label>
                           <Select
                             value={step.agent}
@@ -1107,7 +1101,7 @@ const WorkflowBuilder = () => {
                             }
                           >
                             <SelectTrigger className="bg-white/[0.03] border-white/10 focus:border-primary/50 text-xs h-9">
-                              <SelectValue placeholder="Select agent..." />
+                              <SelectValue placeholder={t("workflow.selectAgentPlaceholder")} />
                             </SelectTrigger>
                             <SelectContent>
                               {AGENT_OPTIONS.map((agent) => {
@@ -1132,7 +1126,7 @@ const WorkflowBuilder = () => {
                         {/* Timeout */}
                         <div className="space-y-1">
                           <Label className="text-[10px] text-muted-foreground">
-                            Timeout (seconds)
+                            {t("workflow.timeoutLabel")}
                           </Label>
                           <Input
                             type="number"
@@ -1151,7 +1145,7 @@ const WorkflowBuilder = () => {
                         {/* On failure */}
                         <div className="space-y-1">
                           <Label className="text-[10px] text-muted-foreground">
-                            On Failure
+                            {t("workflow.onFailureLabel")}
                           </Label>
                           <Select
                             value={step.onFailure}
@@ -1167,9 +1161,9 @@ const WorkflowBuilder = () => {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="skip">Skip</SelectItem>
-                              <SelectItem value="retry">Retry</SelectItem>
-                              <SelectItem value="stop">Stop</SelectItem>
+                              <SelectItem value="skip">{t("workflow.failureSkip")}</SelectItem>
+                              <SelectItem value="retry">{t("workflow.failureRetry")}</SelectItem>
+                              <SelectItem value="stop">{t("workflow.failureStop")}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -1181,7 +1175,7 @@ const WorkflowBuilder = () => {
                   {newWorkflowSteps.some((s) => s.name.trim()) && (
                     <div className="space-y-1.5">
                       <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                        Pipeline Preview
+                        {t("workflow.pipelinePreview")}
                       </Label>
                       <div className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-3">
                         {renderPipeline(
@@ -1200,12 +1194,12 @@ const WorkflowBuilder = () => {
                       <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
                         <ShieldAlert className="h-4 w-4 text-red-400 mt-0.5 shrink-0" />
                         <div>
-                          <p className="text-xs font-semibold text-red-400">Zone Violation — Cannot Create</p>
+                          <p className="text-xs font-semibold text-red-400">{t("workflow.zoneViolationCannotCreate")}</p>
                           {violation.details.map((d, i) => (
                             <p key={i} className="text-[10px] text-red-400/80 mt-0.5">{d}</p>
                           ))}
                           <p className="text-[10px] text-muted-foreground mt-1">
-                            Add an Operations (Zone 2) agent between Clinical and External steps to act as a sanitization gate.
+                            {t("workflow.zoneViolationHint")}
                           </p>
                         </div>
                       </div>
@@ -1220,14 +1214,14 @@ const WorkflowBuilder = () => {
                   className="border-white/10 text-muted-foreground"
                   onClick={() => setCreateDialogOpen(false)}
                 >
-                  Cancel
+                  {t("workflow.cancel")}
                 </Button>
                 <Button
                   className="gradient-primary text-primary-foreground rounded-xl shadow-glow-sm hover:opacity-90"
                   onClick={createWorkflow}
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Create Workflow
+                  {t("workflow.createWorkflow")}
                 </Button>
               </DialogFooter>
             </DialogContent>

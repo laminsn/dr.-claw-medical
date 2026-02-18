@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   CreditCard,
   Download,
@@ -65,88 +66,6 @@ interface Plan {
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-const plans: Plan[] = [
-  {
-    name: "Starter",
-    price: "$49",
-    period: "/mo",
-    description: "For small practices getting started with AI agents.",
-    features: [
-      { text: "3 AI Agents", included: true },
-      { text: "5,000 API Calls/mo", included: true },
-      { text: "Basic Skills", included: true },
-      { text: "Email Support", included: true },
-      { text: "PHI Monitoring", included: false },
-      { text: "Custom Integrations", included: false },
-    ],
-    isCurrent: false,
-    isPopular: false,
-    ctaLabel: "Downgrade",
-  },
-  {
-    name: "Professional",
-    price: "$299",
-    period: "/mo",
-    description: "For growing practices that need powerful AI capabilities.",
-    features: [
-      { text: "15 AI Agents", included: true },
-      { text: "50,000 API Calls/mo", included: true },
-      { text: "All Skills", included: true },
-      { text: "Priority Support", included: true },
-      { text: "PHI Monitoring", included: true },
-      { text: "Custom Integrations", included: false },
-    ],
-    isCurrent: true,
-    isPopular: true,
-    ctaLabel: "Current Plan",
-  },
-  {
-    name: "Enterprise",
-    price: "$799",
-    period: "/mo",
-    description: "For large organizations with advanced compliance needs.",
-    features: [
-      { text: "Unlimited Agents", included: true },
-      { text: "500,000 API Calls/mo", included: true },
-      { text: "Custom Skills", included: true },
-      { text: "Dedicated Support", included: true },
-      { text: "HIPAA BAA", included: true },
-      { text: "Custom Integrations", included: true },
-    ],
-    isCurrent: false,
-    isPopular: false,
-    ctaLabel: "Upgrade",
-  },
-  {
-    name: "Custom",
-    price: "Contact",
-    period: " Sales",
-    description: "Everything in Enterprise plus on-premise, SLA, and custom development.",
-    features: [
-      { text: "Everything in Enterprise", included: true },
-      { text: "On-Premise Deployment", included: true },
-      { text: "Custom SLA", included: true },
-      { text: "Custom Development", included: true },
-      { text: "Dedicated Account Manager", included: true },
-      { text: "White-Label Options", included: true },
-    ],
-    isCurrent: false,
-    isPopular: false,
-    ctaLabel: "Contact Sales",
-  },
-];
-
-const invoices: Invoice[] = [
-  { id: "1", number: "INV-2026-002", date: "Feb 1, 2026", amount: "$299.00", status: "Pending" },
-  { id: "2", number: "INV-2026-001", date: "Jan 1, 2026", amount: "$299.00", status: "Paid" },
-  { id: "3", number: "INV-2025-012", date: "Dec 1, 2025", amount: "$299.00", status: "Paid" },
-  { id: "4", number: "INV-2025-011", date: "Nov 1, 2025", amount: "$299.00", status: "Paid" },
-  { id: "5", number: "INV-2025-010", date: "Oct 1, 2025", amount: "$299.00", status: "Failed" },
-  { id: "6", number: "INV-2025-009", date: "Sep 1, 2025", amount: "$299.00", status: "Paid" },
-  { id: "7", number: "INV-2025-008", date: "Aug 1, 2025", amount: "$49.00", status: "Paid" },
-  { id: "8", number: "INV-2025-007", date: "Jan 15, 2025", amount: "$49.00", status: "Paid" },
-];
-
 const statusColors: Record<InvoiceStatus, string> = {
   Paid: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
   Pending: "bg-amber-500/15 text-amber-400 border-amber-500/30",
@@ -158,6 +77,7 @@ const statusColors: Record<InvoiceStatus, string> = {
 // ---------------------------------------------------------------------------
 const BillingManagement = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   // Billing alert toggles
   const [alertUsage80, setAlertUsage80] = useState(true);
@@ -166,47 +86,129 @@ const BillingManagement = () => {
   const [alertPaymentReminders, setAlertPaymentReminders] = useState(true);
   const [alertPlanChanges, setAlertPlanChanges] = useState(false);
 
+  const plans: Plan[] = [
+    {
+      name: t("billing.starter"),
+      price: "$49",
+      period: t("billing.perMonth"),
+      description: t("billing.starterDesc"),
+      features: [
+        { text: t("billing.threeAiAgents"), included: true },
+        { text: t("billing.fiveThousandApiCalls"), included: true },
+        { text: t("billing.basicSkills"), included: true },
+        { text: t("billing.emailSupport"), included: true },
+        { text: t("billing.phiMonitoring"), included: false },
+        { text: t("billing.customIntegrations"), included: false },
+      ],
+      isCurrent: false,
+      isPopular: false,
+      ctaLabel: t("billing.downgrade"),
+    },
+    {
+      name: t("billing.professional"),
+      price: "$299",
+      period: t("billing.perMonth"),
+      description: t("billing.professionalDesc"),
+      features: [
+        { text: t("billing.fifteenAiAgents"), included: true },
+        { text: t("billing.fiftyThousandApiCalls"), included: true },
+        { text: t("billing.allSkills"), included: true },
+        { text: t("billing.prioritySupport"), included: true },
+        { text: t("billing.phiMonitoring"), included: true },
+        { text: t("billing.customIntegrations"), included: false },
+      ],
+      isCurrent: true,
+      isPopular: true,
+      ctaLabel: t("billing.currentPlan"),
+    },
+    {
+      name: t("billing.enterprise"),
+      price: "$799",
+      period: t("billing.perMonth"),
+      description: t("billing.enterpriseDesc"),
+      features: [
+        { text: t("billing.unlimitedAgents"), included: true },
+        { text: t("billing.fiveHundredThousandApiCalls"), included: true },
+        { text: t("billing.customSkills"), included: true },
+        { text: t("billing.dedicatedSupport"), included: true },
+        { text: t("billing.hipaaBaa"), included: true },
+        { text: t("billing.customIntegrations"), included: true },
+      ],
+      isCurrent: false,
+      isPopular: false,
+      ctaLabel: t("billing.upgrade"),
+    },
+    {
+      name: t("billing.custom"),
+      price: t("billing.contact"),
+      period: " " + t("billing.sales"),
+      description: t("billing.customDesc"),
+      features: [
+        { text: t("billing.everythingInEnterprise"), included: true },
+        { text: t("billing.onPremiseDeployment"), included: true },
+        { text: t("billing.customSla"), included: true },
+        { text: t("billing.customDevelopment"), included: true },
+        { text: t("billing.dedicatedAccountManager"), included: true },
+        { text: t("billing.whiteLabelOptions"), included: true },
+      ],
+      isCurrent: false,
+      isPopular: false,
+      ctaLabel: t("billing.contactSales"),
+    },
+  ];
+
+  const invoices: Invoice[] = [
+    { id: "1", number: "INV-2026-002", date: "Feb 1, 2026", amount: "$299.00", status: "Pending" },
+    { id: "2", number: "INV-2026-001", date: "Jan 1, 2026", amount: "$299.00", status: "Paid" },
+    { id: "3", number: "INV-2025-012", date: "Dec 1, 2025", amount: "$299.00", status: "Paid" },
+    { id: "4", number: "INV-2025-011", date: "Nov 1, 2025", amount: "$299.00", status: "Paid" },
+    { id: "5", number: "INV-2025-010", date: "Oct 1, 2025", amount: "$299.00", status: "Failed" },
+    { id: "6", number: "INV-2025-009", date: "Sep 1, 2025", amount: "$299.00", status: "Paid" },
+    { id: "7", number: "INV-2025-008", date: "Aug 1, 2025", amount: "$49.00", status: "Paid" },
+    { id: "8", number: "INV-2025-007", date: "Jan 15, 2025", amount: "$49.00", status: "Paid" },
+  ];
+
   // ---------------------------------------------------------------------------
   // Handlers
   // ---------------------------------------------------------------------------
   const handleUpgradePlan = () => {
     toast({
-      title: "Upgrade Initiated",
-      description: "Redirecting to plan selection. Your current billing cycle will be prorated.",
+      title: t("billing.upgradeInitiated"),
+      description: t("billing.upgradeInitiatedDesc"),
     });
   };
 
   const handleManageSubscription = () => {
     toast({
-      title: "Subscription Portal",
-      description: "Opening subscription management portal...",
+      title: t("billing.subscriptionPortal"),
+      description: t("billing.subscriptionPortalDesc"),
     });
   };
 
   const handlePlanAction = (plan: Plan) => {
     if (plan.isCurrent) return;
-    if (plan.name === "Custom") {
+    if (plan.name === t("billing.custom")) {
       toast({
-        title: "Contact Sales",
-        description: "Our team will reach out within 24 hours to discuss your custom requirements.",
+        title: t("billing.contactSales"),
+        description: t("billing.contactSalesDesc"),
       });
-    } else if (plan.name === "Starter") {
+    } else if (plan.name === t("billing.starter")) {
       toast({
-        title: "Downgrade Requested",
-        description: "Your plan will change to Starter at the end of the current billing cycle.",
+        title: t("billing.downgradeRequested"),
+        description: t("billing.downgradeRequestedDesc"),
       });
     } else {
       toast({
-        title: "Upgrade Requested",
-        description: `Your plan will be upgraded to ${plan.name}. Prorated charges will apply.`,
+        title: t("billing.upgradeRequested"),
+        description: t("billing.upgradeRequestedDesc", { plan: plan.name }),
       });
     }
   };
 
   const handleUpdatePayment = () => {
     toast({
-      title: "Update Payment Method",
-      description: "Opening secure payment form to update your card details.",
+      title: t("billing.updatePaymentMethod"),
+      description: t("billing.updatePaymentMethodDesc"),
     });
   };
 
@@ -246,8 +248,8 @@ const BillingManagement = () => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     toast({
-      title: "Invoice downloaded",
-      description: `${invoice.number} has been saved to your device.`,
+      title: t("billing.invoiceDownloaded"),
+      description: t("billing.invoiceDownloadedDesc", { number: invoice.number }),
     });
   };
 
@@ -258,9 +260,17 @@ const BillingManagement = () => {
   ) => {
     setter(value);
     toast({
-      title: value ? "Alert Enabled" : "Alert Disabled",
-      description: `${alertName} notifications have been ${value ? "enabled" : "disabled"}.`,
+      title: value ? t("billing.alertEnabled") : t("billing.alertDisabled"),
+      description: t("billing.alertToggleDesc", { name: alertName, status: value ? t("billing.enabled") : t("billing.disabled") }),
     });
+  };
+
+  const invoiceStatusLabel = (status: InvoiceStatus) => {
+    switch (status) {
+      case "Paid": return t("billing.paid");
+      case "Pending": return t("billing.pending");
+      case "Failed": return t("billing.failed");
+    }
   };
 
   // ---------------------------------------------------------------------------
@@ -275,10 +285,10 @@ const BillingManagement = () => {
           {/* ── Header ─────────────────────────────────── */}
           <div>
             <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-              Billing & Subscription
+              {t("billing.title")}
             </h1>
             <p className="text-muted-foreground mt-1">
-              Manage your practice plan, monitor usage, and track invoices.
+              {t("billing.subtitle")}
             </p>
           </div>
 
@@ -296,24 +306,24 @@ const BillingManagement = () => {
                   <div>
                     <div className="flex items-center gap-2">
                       <h2 className="text-xl font-bold font-heading text-foreground">
-                        Professional Plan
+                        {t("billing.professionalPlan")}
                       </h2>
                       <Badge className="bg-gradient-to-r from-primary to-blue-600 text-white border-0 text-[11px]">
-                        Current
+                        {t("billing.current")}
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
                       <span className="text-2xl font-bold text-foreground">$299</span>
-                      <span className="text-muted-foreground">/month</span>
+                      <span className="text-muted-foreground">/{t("billing.month")}</span>
                       <span className="text-muted-foreground ml-2">
-                        &middot; Billed annually
+                        &middot; {t("billing.billedAnnually")}
                       </span>
                     </p>
                   </div>
                 </div>
 
                 <p className="text-sm text-muted-foreground">
-                  Renewal date:{" "}
+                  {t("billing.renewalDate")}{" "}
                   <span className="text-foreground font-medium">March 15, 2026</span>
                 </p>
 
@@ -321,14 +331,14 @@ const BillingManagement = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Agents</span>
+                      <span className="text-muted-foreground">{t("billing.agents")}</span>
                       <span className="text-foreground font-medium">12 / 15</span>
                     </div>
                     <Progress value={80} className="h-2" />
                   </div>
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">API Calls</span>
+                      <span className="text-muted-foreground">{t("billing.apiCalls")}</span>
                       <span className="text-foreground font-medium">28,500 / 50,000</span>
                     </div>
                     <Progress value={57} className="h-2" />
@@ -343,14 +353,14 @@ const BillingManagement = () => {
                   onClick={handleUpgradePlan}
                 >
                   <ArrowUpRight className="h-4 w-4 mr-2" />
-                  Upgrade Plan
+                  {t("billing.upgradePlan")}
                 </Button>
                 <Button
                   variant="outline"
                   className="border-white/[0.06] hover:bg-white/5"
                   onClick={handleManageSubscription}
                 >
-                  Manage Subscription
+                  {t("billing.manageSubscription")}
                 </Button>
               </div>
             </div>
@@ -359,7 +369,7 @@ const BillingManagement = () => {
           {/* ── Plan Comparison ─────────────────────────── */}
           <div>
             <h2 className="text-lg font-semibold font-heading text-foreground mb-4">
-              Compare Plans
+              {t("billing.comparePlans")}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {plans.map((plan) => (
@@ -375,7 +385,7 @@ const BillingManagement = () => {
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                       <Badge className="bg-gradient-to-r from-primary to-blue-600 text-white border-0 text-[10px]">
                         <Star className="h-3 w-3 mr-1" />
-                        Most Popular
+                        {t("billing.mostPopular")}
                       </Badge>
                     </div>
                   )}
@@ -418,15 +428,15 @@ const BillingManagement = () => {
                     className={`w-full ${
                       plan.isCurrent
                         ? "bg-white/10 text-muted-foreground cursor-default hover:bg-white/10"
-                        : plan.name === "Custom"
+                        : plan.name === t("billing.custom")
                           ? "border-white/[0.06] hover:bg-white/5"
                           : "gradient-primary text-white shadow-glow-sm hover:opacity-90 transition-opacity"
                     }`}
-                    variant={plan.isCurrent ? "secondary" : plan.name === "Custom" ? "outline" : "default"}
+                    variant={plan.isCurrent ? "secondary" : plan.name === t("billing.custom") ? "outline" : "default"}
                     disabled={plan.isCurrent}
                     onClick={() => handlePlanAction(plan)}
                   >
-                    {plan.name === "Custom" && <Phone className="h-4 w-4 mr-2" />}
+                    {plan.name === t("billing.custom") && <Phone className="h-4 w-4 mr-2" />}
                     {plan.ctaLabel}
                   </Button>
                 </div>
@@ -437,7 +447,7 @@ const BillingManagement = () => {
           {/* ── Usage Metrics ──────────────────────────── */}
           <div>
             <h2 className="text-lg font-semibold font-heading text-foreground mb-4">
-              Usage This Month
+              {t("billing.usageThisMonth")}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* API Calls */}
@@ -447,13 +457,13 @@ const BillingManagement = () => {
                     <Zap className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">API Calls</p>
+                    <p className="text-xs text-muted-foreground">{t("billing.apiCalls")}</p>
                     <p className="text-lg font-bold text-foreground">28,500</p>
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Usage</span>
+                    <span>{t("billing.usage")}</span>
                     <span>28,500 / 50,000</span>
                   </div>
                   <Progress value={57} className="h-1.5" />
@@ -467,13 +477,13 @@ const BillingManagement = () => {
                     <Bot className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Active Agents</p>
+                    <p className="text-xs text-muted-foreground">{t("billing.activeAgents")}</p>
                     <p className="text-lg font-bold text-foreground">12</p>
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Usage</span>
+                    <span>{t("billing.usage")}</span>
                     <span>12 / 15</span>
                   </div>
                   <Progress value={80} className="h-1.5" />
@@ -487,13 +497,13 @@ const BillingManagement = () => {
                     <HardDrive className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Storage Used</p>
+                    <p className="text-xs text-muted-foreground">{t("billing.storageUsed")}</p>
                     <p className="text-lg font-bold text-foreground">4.2 GB</p>
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Usage</span>
+                    <span>{t("billing.usage")}</span>
                     <span>4.2 GB / 10 GB</span>
                   </div>
                   <Progress value={42} className="h-1.5" />
@@ -507,13 +517,13 @@ const BillingManagement = () => {
                     <Users className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Team Seats</p>
+                    <p className="text-xs text-muted-foreground">{t("billing.teamSeats")}</p>
                     <p className="text-lg font-bold text-foreground">8</p>
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Usage</span>
+                    <span>{t("billing.usage")}</span>
                     <span>8 / 20</span>
                   </div>
                   <Progress value={40} className="h-1.5" />
@@ -526,7 +536,7 @@ const BillingManagement = () => {
           <div className="bg-card rounded-xl border border-white/[0.06] p-5 card-hover">
             <h2 className="text-lg font-semibold font-heading text-foreground mb-4 flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-primary" />
-              Payment Method
+              {t("billing.paymentMethod")}
             </h2>
 
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -536,10 +546,10 @@ const BillingManagement = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-foreground">
-                    Visa ending in 4242
+                    {t("billing.visaEndingIn")}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Expires 08/2027
+                    {t("billing.expires")}
                   </p>
                 </div>
               </div>
@@ -550,7 +560,7 @@ const BillingManagement = () => {
                 onClick={handleUpdatePayment}
               >
                 <CreditCard className="h-4 w-4 mr-2" />
-                Update Payment Method
+                {t("billing.updatePaymentMethod")}
               </Button>
             </div>
 
@@ -558,7 +568,7 @@ const BillingManagement = () => {
 
             <div className="flex items-center gap-2 text-sm">
               <Mail className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Billing email:</span>
+              <span className="text-muted-foreground">{t("billing.billingEmail")}</span>
               <span className="text-foreground font-medium">billing@clinic.com</span>
             </div>
           </div>
@@ -567,7 +577,7 @@ const BillingManagement = () => {
           <div className="bg-card rounded-xl border border-white/[0.06] p-5 card-hover">
             <h2 className="text-lg font-semibold font-heading text-foreground mb-4 flex items-center gap-2">
               <Receipt className="h-5 w-5 text-primary" />
-              Invoice History
+              {t("billing.invoiceHistory")}
             </h2>
 
             <div className="rounded-lg border border-white/[0.06] overflow-hidden">
@@ -575,19 +585,19 @@ const BillingManagement = () => {
                 <TableHeader>
                   <TableRow className="border-white/[0.06] hover:bg-transparent">
                     <TableHead className="text-muted-foreground text-xs font-medium">
-                      Invoice #
+                      {t("billing.invoiceNumber")}
                     </TableHead>
                     <TableHead className="text-muted-foreground text-xs font-medium">
-                      Date
+                      {t("billing.date")}
                     </TableHead>
                     <TableHead className="text-muted-foreground text-xs font-medium">
-                      Amount
+                      {t("billing.amount")}
                     </TableHead>
                     <TableHead className="text-muted-foreground text-xs font-medium">
-                      Status
+                      {t("billing.status")}
                     </TableHead>
                     <TableHead className="text-muted-foreground text-xs font-medium text-right">
-                      Action
+                      {t("billing.action")}
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -611,7 +621,7 @@ const BillingManagement = () => {
                           variant="outline"
                           className={`text-[11px] ${statusColors[invoice.status]}`}
                         >
-                          {invoice.status}
+                          {invoiceStatusLabel(invoice.status)}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -622,7 +632,7 @@ const BillingManagement = () => {
                           onClick={() => handleDownloadInvoice(invoice)}
                         >
                           <Download className="h-3.5 w-3.5 mr-1.5" />
-                          Download
+                          {t("billing.download")}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -636,10 +646,10 @@ const BillingManagement = () => {
           <div className="bg-card rounded-xl border border-white/[0.06] p-5 card-hover">
             <h2 className="text-lg font-semibold font-heading text-foreground mb-4 flex items-center gap-2">
               <Bell className="h-5 w-5 text-primary" />
-              Billing Alerts
+              {t("billing.billingAlerts")}
             </h2>
             <p className="text-sm text-muted-foreground mb-5">
-              Configure when you want to receive billing and usage notifications.
+              {t("billing.billingAlertsDesc")}
             </p>
 
             <div className="space-y-5">
@@ -647,20 +657,20 @@ const BillingManagement = () => {
               <div>
                 <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-amber-400" />
-                  Usage Threshold Alerts
+                  {t("billing.usageThresholdAlerts")}
                 </h3>
                 <div className="space-y-3 pl-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-foreground">80% Usage Warning</p>
+                      <p className="text-sm text-foreground">{t("billing.usage80Warning")}</p>
                       <p className="text-xs text-muted-foreground">
-                        Get notified when usage reaches 80% of your plan limit
+                        {t("billing.usage80WarningDesc")}
                       </p>
                     </div>
                     <Switch
                       checked={alertUsage80}
                       onCheckedChange={(value) =>
-                        handleAlertToggle("80% usage warning", value, setAlertUsage80)
+                        handleAlertToggle(t("billing.usage80WarningAlert"), value, setAlertUsage80)
                       }
                     />
                   </div>
@@ -669,15 +679,15 @@ const BillingManagement = () => {
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-foreground">90% Usage Alert</p>
+                      <p className="text-sm text-foreground">{t("billing.usage90Alert")}</p>
                       <p className="text-xs text-muted-foreground">
-                        Get notified when usage reaches 90% of your plan limit
+                        {t("billing.usage90AlertDesc")}
                       </p>
                     </div>
                     <Switch
                       checked={alertUsage90}
                       onCheckedChange={(value) =>
-                        handleAlertToggle("90% usage alert", value, setAlertUsage90)
+                        handleAlertToggle(t("billing.usage90AlertName"), value, setAlertUsage90)
                       }
                     />
                   </div>
@@ -686,15 +696,15 @@ const BillingManagement = () => {
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-foreground">100% Usage Critical</p>
+                      <p className="text-sm text-foreground">{t("billing.usage100Critical")}</p>
                       <p className="text-xs text-muted-foreground">
-                        Get notified when usage reaches your plan limit
+                        {t("billing.usage100CriticalDesc")}
                       </p>
                     </div>
                     <Switch
                       checked={alertUsage100}
                       onCheckedChange={(value) =>
-                        handleAlertToggle("100% usage critical", value, setAlertUsage100)
+                        handleAlertToggle(t("billing.usage100CriticalAlert"), value, setAlertUsage100)
                       }
                     />
                   </div>
@@ -707,20 +717,20 @@ const BillingManagement = () => {
               <div>
                 <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
                   <Shield className="h-4 w-4 text-primary" />
-                  Payment & Plan Notifications
+                  {t("billing.paymentAndPlanNotifications")}
                 </h3>
                 <div className="space-y-3 pl-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-foreground">Payment Reminders</p>
+                      <p className="text-sm text-foreground">{t("billing.paymentReminders")}</p>
                       <p className="text-xs text-muted-foreground">
-                        Receive reminders before upcoming payments
+                        {t("billing.paymentRemindersDesc")}
                       </p>
                     </div>
                     <Switch
                       checked={alertPaymentReminders}
                       onCheckedChange={(value) =>
-                        handleAlertToggle("Payment reminders", value, setAlertPaymentReminders)
+                        handleAlertToggle(t("billing.paymentRemindersAlert"), value, setAlertPaymentReminders)
                       }
                     />
                   </div>
@@ -729,15 +739,15 @@ const BillingManagement = () => {
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-foreground">Plan Change Confirmations</p>
+                      <p className="text-sm text-foreground">{t("billing.planChangeConfirmations")}</p>
                       <p className="text-xs text-muted-foreground">
-                        Get notified when your plan is upgraded or downgraded
+                        {t("billing.planChangeConfirmationsDesc")}
                       </p>
                     </div>
                     <Switch
                       checked={alertPlanChanges}
                       onCheckedChange={(value) =>
-                        handleAlertToggle("Plan change confirmations", value, setAlertPlanChanges)
+                        handleAlertToggle(t("billing.planChangeConfirmationsAlert"), value, setAlertPlanChanges)
                       }
                     />
                   </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Building2,
   MapPin,
@@ -79,6 +80,7 @@ function loadCompanyData() {
 
 const CompanyProfile = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [showTaxId, setShowTaxId] = useState(false);
   const [companyData, setCompanyData] = useState(loadCompanyData);
 
@@ -90,14 +92,13 @@ const CompanyProfile = () => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(companyData));
       toast({
-        title: "Company profile saved",
-        description:
-          "Your company data has been saved and will be used to enhance agent performance.",
+        title: t("companyProfile.profileSaved"),
+        description: t("companyProfile.profileSavedDesc"),
       });
     } catch {
       toast({
-        title: "Save failed",
-        description: "Unable to save company profile. Please try again.",
+        title: t("companyProfile.saveFailed"),
+        description: t("companyProfile.saveFailedDesc"),
       });
     }
   };
@@ -112,11 +113,10 @@ const CompanyProfile = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-                Practice Profile
+                {t("companyProfile.title")}
               </h1>
               <p className="text-muted-foreground mt-1">
-                Provide your practice details to enhance clinical AI agent effectiveness
-                across all departments.
+                {t("companyProfile.subtitle")}
               </p>
             </div>
             <Button
@@ -124,7 +124,7 @@ const CompanyProfile = () => {
               className="gradient-primary text-primary-foreground rounded-xl shadow-glow-sm hover:opacity-90 gap-2"
             >
               <Save className="h-4 w-4" />
-              Save Changes
+              {t("companyProfile.saveChanges")}
             </Button>
           </div>
 
@@ -135,14 +135,10 @@ const CompanyProfile = () => {
             </div>
             <div>
               <h3 className="text-sm font-semibold text-blue-300">
-                Context Impact
+                {t("companyProfile.contextImpact")}
               </h3>
               <p className="text-xs text-blue-300/70 mt-0.5 leading-relaxed">
-                The information you provide here is used as contextual knowledge
-                for all AI agents. Accurate company details help agents generate
-                more relevant responses, tailor communications to your brand
-                voice, understand your compliance requirements, and produce
-                outputs aligned with your business goals and industry standards.
+                {t("companyProfile.contextImpactDesc")}
               </p>
             </div>
           </div>
@@ -151,50 +147,50 @@ const CompanyProfile = () => {
           <section className="bg-card rounded-xl border border-white/[0.06] p-5 space-y-5">
             <h2 className="font-display font-semibold text-foreground flex items-center gap-2">
               <Building2 className="h-4 w-4 text-primary" />
-              Basic Information
+              {t("companyProfile.basicInformation")}
             </h2>
             <Separator className="bg-white/[0.06]" />
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-foreground/80">Company Name</Label>
+                <Label className="text-foreground/80">{t("companyProfile.companyName")}</Label>
                 <Input
                   value={companyData.companyName}
                   onChange={(e) => updateField("companyName", e.target.value)}
-                  placeholder="Acme Healthcare Inc."
+                  placeholder={t("companyProfile.companyNamePlaceholder")}
                   className="bg-white/[0.03] border-white/10 focus:border-primary/50"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-foreground/80">Legal Entity Name</Label>
+                <Label className="text-foreground/80">{t("companyProfile.legalEntityName")}</Label>
                 <Input
                   value={companyData.legalEntityName}
                   onChange={(e) =>
                     updateField("legalEntityName", e.target.value)
                   }
-                  placeholder="Acme Healthcare Inc."
+                  placeholder={t("companyProfile.companyNamePlaceholder")}
                   className="bg-white/[0.03] border-white/10 focus:border-primary/50"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-foreground/80">Industry</Label>
+                <Label className="text-foreground/80">{t("companyProfile.industry")}</Label>
                 <Input
                   value={companyData.industry}
                   onChange={(e) => updateField("industry", e.target.value)}
-                  placeholder="Healthcare, Technology, Finance"
+                  placeholder={t("companyProfile.industryPlaceholder")}
                   className="bg-white/[0.03] border-white/10 focus:border-primary/50"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-foreground/80">Company Size</Label>
+                <Label className="text-foreground/80">{t("companyProfile.companySize")}</Label>
                 <Input
                   value={companyData.companySize}
                   onChange={(e) => updateField("companySize", e.target.value)}
-                  placeholder="50-100 employees"
+                  placeholder={t("companyProfile.companySizePlaceholder")}
                   className="bg-white/[0.03] border-white/10 focus:border-primary/50"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-foreground/80">Founded Year</Label>
+                <Label className="text-foreground/80">{t("companyProfile.foundedYear")}</Label>
                 <Input
                   value={companyData.foundedYear}
                   onChange={(e) => updateField("foundedYear", e.target.value)}
@@ -203,7 +199,7 @@ const CompanyProfile = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-foreground/80">Website</Label>
+                <Label className="text-foreground/80">{t("companyProfile.website")}</Label>
                 <Input
                   value={companyData.website}
                   onChange={(e) => updateField("website", e.target.value)}
@@ -212,7 +208,7 @@ const CompanyProfile = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-foreground/80">Company Email</Label>
+                <Label className="text-foreground/80">{t("companyProfile.companyEmail")}</Label>
                 <Input
                   value={companyData.companyEmail}
                   onChange={(e) => updateField("companyEmail", e.target.value)}
@@ -221,7 +217,7 @@ const CompanyProfile = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-foreground/80">Phone Number</Label>
+                <Label className="text-foreground/80">{t("companyProfile.phoneNumber")}</Label>
                 <Input
                   value={companyData.phoneNumber}
                   onChange={(e) => updateField("phoneNumber", e.target.value)}
@@ -236,48 +232,48 @@ const CompanyProfile = () => {
           <section className="bg-card rounded-xl border border-white/[0.06] p-5 space-y-5">
             <h2 className="font-display font-semibold text-foreground flex items-center gap-2">
               <MapPin className="h-4 w-4 text-primary" />
-              Address
+              {t("companyProfile.address")}
             </h2>
             <Separator className="bg-white/[0.06]" />
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-foreground/80">Street Address</Label>
+                <Label className="text-foreground/80">{t("companyProfile.streetAddress")}</Label>
                 <Input
                   value={companyData.streetAddress}
                   onChange={(e) => updateField("streetAddress", e.target.value)}
-                  placeholder="123 Main Street"
+                  placeholder={t("companyProfile.streetAddressPlaceholder")}
                   className="bg-white/[0.03] border-white/10 focus:border-primary/50"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-foreground/80">Suite/Unit</Label>
+                <Label className="text-foreground/80">{t("companyProfile.suiteUnit")}</Label>
                 <Input
                   value={companyData.suiteUnit}
                   onChange={(e) => updateField("suiteUnit", e.target.value)}
-                  placeholder="Suite 200"
+                  placeholder={t("companyProfile.suiteUnitPlaceholder")}
                   className="bg-white/[0.03] border-white/10 focus:border-primary/50"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-foreground/80">City</Label>
+                <Label className="text-foreground/80">{t("companyProfile.city")}</Label>
                 <Input
                   value={companyData.city}
                   onChange={(e) => updateField("city", e.target.value)}
-                  placeholder="San Francisco"
+                  placeholder={t("companyProfile.cityPlaceholder")}
                   className="bg-white/[0.03] border-white/10 focus:border-primary/50"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-foreground/80">State/Province</Label>
+                <Label className="text-foreground/80">{t("companyProfile.stateProvince")}</Label>
                 <Input
                   value={companyData.stateProvince}
                   onChange={(e) => updateField("stateProvince", e.target.value)}
-                  placeholder="California"
+                  placeholder={t("companyProfile.stateProvincePlaceholder")}
                   className="bg-white/[0.03] border-white/10 focus:border-primary/50"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-foreground/80">Postal Code</Label>
+                <Label className="text-foreground/80">{t("companyProfile.postalCode")}</Label>
                 <Input
                   value={companyData.postalCode}
                   onChange={(e) => updateField("postalCode", e.target.value)}
@@ -286,11 +282,11 @@ const CompanyProfile = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-foreground/80">Country</Label>
+                <Label className="text-foreground/80">{t("companyProfile.country")}</Label>
                 <Input
                   value={companyData.country}
                   onChange={(e) => updateField("country", e.target.value)}
-                  placeholder="United States"
+                  placeholder={t("companyProfile.countryPlaceholder")}
                   className="bg-white/[0.03] border-white/10 focus:border-primary/50"
                 />
               </div>
@@ -301,12 +297,12 @@ const CompanyProfile = () => {
           <section className="bg-card rounded-xl border border-white/[0.06] p-5 space-y-5">
             <h2 className="font-display font-semibold text-foreground flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-primary" />
-              Financial Information
+              {t("companyProfile.financialInformation")}
             </h2>
             <Separator className="bg-white/[0.06]" />
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-foreground/80">Annual Revenue</Label>
+                <Label className="text-foreground/80">{t("companyProfile.annualRevenue")}</Label>
                 <Input
                   value={companyData.annualRevenue}
                   onChange={(e) => updateField("annualRevenue", e.target.value)}
@@ -315,7 +311,7 @@ const CompanyProfile = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-foreground/80">Revenue Growth YoY</Label>
+                <Label className="text-foreground/80">{t("companyProfile.revenueGrowthYoY")}</Label>
                 <Input
                   value={companyData.revenueGrowthYoY}
                   onChange={(e) =>
@@ -326,17 +322,17 @@ const CompanyProfile = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-foreground/80">Funding Stage</Label>
+                <Label className="text-foreground/80">{t("companyProfile.fundingStage")}</Label>
                 <Input
                   value={companyData.fundingStage}
                   onChange={(e) => updateField("fundingStage", e.target.value)}
-                  placeholder="Series B, Bootstrapped, Public"
+                  placeholder={t("companyProfile.fundingStagePlaceholder")}
                   className="bg-white/[0.03] border-white/10 focus:border-primary/50"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-foreground/80">
-                  Total Funding Raised
+                  {t("companyProfile.totalFundingRaised")}
                 </Label>
                 <Input
                   value={companyData.totalFundingRaised}
@@ -348,16 +344,16 @@ const CompanyProfile = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-foreground/80">Fiscal Year End</Label>
+                <Label className="text-foreground/80">{t("companyProfile.fiscalYearEnd")}</Label>
                 <Input
                   value={companyData.fiscalYearEnd}
                   onChange={(e) => updateField("fiscalYearEnd", e.target.value)}
-                  placeholder="December"
+                  placeholder={t("companyProfile.fiscalYearEndPlaceholder")}
                   className="bg-white/[0.03] border-white/10 focus:border-primary/50"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-foreground/80">Tax ID / EIN</Label>
+                <Label className="text-foreground/80">{t("companyProfile.taxIdEin")}</Label>
                 <div className="relative">
                   <Input
                     type={showTaxId ? "text" : "password"}
@@ -386,32 +382,32 @@ const CompanyProfile = () => {
           <section className="bg-card rounded-xl border border-white/[0.06] p-5 space-y-5">
             <h2 className="font-display font-semibold text-foreground flex items-center gap-2">
               <FileText className="h-4 w-4 text-primary" />
-              Company Description
+              {t("companyProfile.companyDescription")}
             </h2>
             <Separator className="bg-white/[0.06]" />
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-foreground/80">Mission Statement</Label>
+                <Label className="text-foreground/80">{t("companyProfile.missionStatement")}</Label>
                 <Textarea
                   value={companyData.missionStatement}
                   onChange={(e) =>
                     updateField("missionStatement", e.target.value)
                   }
-                  placeholder="Our mission is to..."
+                  placeholder={t("companyProfile.missionStatementPlaceholder")}
                   rows={3}
                   className="bg-white/[0.03] border-white/10 focus:border-primary/50 resize-none"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-foreground/80">
-                  Company Description
+                  {t("companyProfile.companyDescription")}
                 </Label>
                 <Textarea
                   value={companyData.companyDescription}
                   onChange={(e) =>
                     updateField("companyDescription", e.target.value)
                   }
-                  placeholder="Describe your company, what you do, and your key offerings..."
+                  placeholder={t("companyProfile.companyDescriptionPlaceholder")}
                   rows={5}
                   className="bg-white/[0.03] border-white/10 focus:border-primary/50 resize-none"
                 />
@@ -419,26 +415,26 @@ const CompanyProfile = () => {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-foreground/80">
-                    Products & Services
+                    {t("companyProfile.productsAndServices")}
                   </Label>
                   <Textarea
                     value={companyData.productsAndServices}
                     onChange={(e) =>
                       updateField("productsAndServices", e.target.value)
                     }
-                    placeholder="List your main products and services..."
+                    placeholder={t("companyProfile.productsAndServicesPlaceholder")}
                     rows={3}
                     className="bg-white/[0.03] border-white/10 focus:border-primary/50 resize-none"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-foreground/80">Target Market</Label>
+                  <Label className="text-foreground/80">{t("companyProfile.targetMarket")}</Label>
                   <Textarea
                     value={companyData.targetMarket}
                     onChange={(e) =>
                       updateField("targetMarket", e.target.value)
                     }
-                    placeholder="Describe your target customers and markets..."
+                    placeholder={t("companyProfile.targetMarketPlaceholder")}
                     rows={3}
                     className="bg-white/[0.03] border-white/10 focus:border-primary/50 resize-none"
                   />
@@ -446,14 +442,14 @@ const CompanyProfile = () => {
               </div>
               <div className="space-y-2">
                 <Label className="text-foreground/80">
-                  Competitive Advantages
+                  {t("companyProfile.competitiveAdvantages")}
                 </Label>
                 <Textarea
                   value={companyData.competitiveAdvantages}
                   onChange={(e) =>
                     updateField("competitiveAdvantages", e.target.value)
                   }
-                  placeholder="What sets your company apart from competitors..."
+                  placeholder={t("companyProfile.competitiveAdvantagesPlaceholder")}
                   rows={3}
                   className="bg-white/[0.03] border-white/10 focus:border-primary/50 resize-none"
                 />
@@ -465,13 +461,13 @@ const CompanyProfile = () => {
           <section className="bg-card rounded-xl border border-white/[0.06] p-5 space-y-5">
             <h2 className="font-display font-semibold text-foreground flex items-center gap-2">
               <Settings className="h-4 w-4 text-primary" />
-              Operational Details
+              {t("companyProfile.operationalDetails")}
             </h2>
             <Separator className="bg-white/[0.06]" />
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-foreground/80">
-                  Number of Locations
+                  {t("companyProfile.numberOfLocations")}
                 </Label>
                 <Input
                   value={companyData.numberOfLocations}
@@ -484,54 +480,54 @@ const CompanyProfile = () => {
               </div>
               <div className="space-y-2">
                 <Label className="text-foreground/80">
-                  Primary EHR/EMR System
+                  {t("companyProfile.primaryEhrEmrSystem")}
                 </Label>
                 <Input
                   value={companyData.primaryEhrEmrSystem}
                   onChange={(e) =>
                     updateField("primaryEhrEmrSystem", e.target.value)
                   }
-                  placeholder="Epic, Cerner, Athenahealth"
+                  placeholder={t("companyProfile.primaryEhrEmrSystemPlaceholder")}
                   className="bg-white/[0.03] border-white/10 focus:border-primary/50"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-foreground/80">
-                  Key Technologies Used
+                  {t("companyProfile.keyTechnologiesUsed")}
                 </Label>
                 <Input
                   value={companyData.keyTechnologiesUsed}
                   onChange={(e) =>
                     updateField("keyTechnologiesUsed", e.target.value)
                   }
-                  placeholder="React, AWS, Salesforce"
+                  placeholder={t("companyProfile.keyTechnologiesUsedPlaceholder")}
                   className="bg-white/[0.03] border-white/10 focus:border-primary/50"
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-foreground/80">
-                  Compliance Requirements
+                  {t("companyProfile.complianceRequirements")}
                 </Label>
                 <Input
                   value={companyData.complianceRequirements}
                   onChange={(e) =>
                     updateField("complianceRequirements", e.target.value)
                   }
-                  placeholder="HIPAA, SOC 2, GDPR"
+                  placeholder={t("companyProfile.complianceRequirementsPlaceholder")}
                   className="bg-white/[0.03] border-white/10 focus:border-primary/50"
                 />
               </div>
             </div>
             <div className="space-y-2">
               <Label className="text-foreground/80">
-                Insurance/Payer Mix
+                {t("companyProfile.insurancePayerMix")}
               </Label>
               <Textarea
                 value={companyData.insurancePayerMix}
                 onChange={(e) =>
                   updateField("insurancePayerMix", e.target.value)
                 }
-                placeholder="Describe your insurance and payer mix..."
+                placeholder={t("companyProfile.insurancePayerMixPlaceholder")}
                 rows={2}
                 className="bg-white/[0.03] border-white/10 focus:border-primary/50 resize-none"
               />
@@ -542,46 +538,46 @@ const CompanyProfile = () => {
           <section className="bg-card rounded-xl border border-white/[0.06] p-5 space-y-5">
             <h2 className="font-display font-semibold text-foreground flex items-center gap-2">
               <Palette className="h-4 w-4 text-primary" />
-              Brand & Culture
+              {t("companyProfile.brandAndCulture")}
             </h2>
             <Separator className="bg-white/[0.06]" />
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label className="text-foreground/80">
-                  Brand Voice / Tone
+                  {t("companyProfile.brandVoiceTone")}
                 </Label>
                 <Input
                   value={companyData.brandVoiceTone}
                   onChange={(e) =>
                     updateField("brandVoiceTone", e.target.value)
                   }
-                  placeholder="Professional, approachable, evidence-based"
+                  placeholder={t("companyProfile.brandVoiceTonePlaceholder")}
                   className="bg-white/[0.03] border-white/10 focus:border-primary/50"
                 />
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-foreground/80">Core Values</Label>
+                  <Label className="text-foreground/80">{t("companyProfile.coreValues")}</Label>
                   <Textarea
                     value={companyData.coreValues}
                     onChange={(e) =>
                       updateField("coreValues", e.target.value)
                     }
-                    placeholder="List your company's core values..."
+                    placeholder={t("companyProfile.coreValuesPlaceholder")}
                     rows={3}
                     className="bg-white/[0.03] border-white/10 focus:border-primary/50 resize-none"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-foreground/80">
-                    Key Differentiators
+                    {t("companyProfile.keyDifferentiators")}
                   </Label>
                   <Textarea
                     value={companyData.keyDifferentiators}
                     onChange={(e) =>
                       updateField("keyDifferentiators", e.target.value)
                     }
-                    placeholder="What makes your brand unique..."
+                    placeholder={t("companyProfile.keyDifferentiatorsPlaceholder")}
                     rows={3}
                     className="bg-white/[0.03] border-white/10 focus:border-primary/50 resize-none"
                   />

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Mail,
   Send,
@@ -89,72 +90,62 @@ interface Testimonial {
 }
 
 // ---------------------------------------------------------------------------
-// Config
+// Config (colors only — labels are moved inside component for i18n)
 // ---------------------------------------------------------------------------
 
-const STATUS_CONFIG: Record<
+const STATUS_COLORS: Record<
   CampaignStatus,
-  { label: string; color: string; bg: string }
+  { color: string; bg: string }
 > = {
   scheduled: {
-    label: "Scheduled",
     color: "text-blue-400",
     bg: "bg-blue-500/15 border-blue-500/30",
   },
   draft: {
-    label: "Draft",
     color: "text-zinc-400",
     bg: "bg-zinc-500/15 border-zinc-500/30",
   },
   active: {
-    label: "Active",
     color: "text-green-400",
     bg: "bg-green-500/15 border-green-500/30",
   },
   paused: {
-    label: "Paused",
     color: "text-amber-400",
     bg: "bg-amber-500/15 border-amber-500/30",
   },
 };
 
-const CHECKIN_STATUS_CONFIG: Record<
+const CHECKIN_STATUS_COLORS: Record<
   CheckInStatus,
-  { label: string; color: string; bg: string }
+  { color: string; bg: string }
 > = {
   pending: {
-    label: "Pending",
     color: "text-zinc-400",
     bg: "bg-zinc-500/15 border-zinc-500/30",
   },
   sent: {
-    label: "Sent",
     color: "text-blue-400",
     bg: "bg-blue-500/15 border-blue-500/30",
   },
   responded: {
-    label: "Responded",
     color: "text-green-400",
     bg: "bg-green-500/15 border-green-500/30",
   },
 };
 
-const TESTIMONIAL_STATUS_CONFIG: Record<
+const TESTIMONIAL_STATUS_COLORS: Record<
   TestimonialStatus,
-  { label: string; color: string; bg: string }
+  { color: string; bg: string }
 > = {
   "Pending Review": {
-    label: "Pending Review",
     color: "text-amber-400",
     bg: "bg-amber-500/15 border-amber-500/30",
   },
   Approved: {
-    label: "Approved",
     color: "text-blue-400",
     bg: "bg-blue-500/15 border-blue-500/30",
   },
   Featured: {
-    label: "Featured",
     color: "text-green-400",
     bg: "bg-green-500/15 border-green-500/30",
   },
@@ -411,6 +402,27 @@ const renderStars = (rating: number, size = "h-4 w-4") =>
 
 const EmailCampaigns = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
+
+  // --- i18n label maps (inside component so t() is accessible) ---
+  const STATUS_LABELS: Record<CampaignStatus, string> = {
+    scheduled: t("emailCampaigns.statusScheduled"),
+    draft: t("emailCampaigns.statusDraft"),
+    active: t("emailCampaigns.statusActive"),
+    paused: t("emailCampaigns.statusPaused"),
+  };
+
+  const CHECKIN_STATUS_LABELS: Record<CheckInStatus, string> = {
+    pending: t("emailCampaigns.checkInPending"),
+    sent: t("emailCampaigns.checkInSent"),
+    responded: t("emailCampaigns.checkInResponded"),
+  };
+
+  const TESTIMONIAL_STATUS_LABELS: Record<TestimonialStatus, string> = {
+    "Pending Review": t("emailCampaigns.testimonialPendingReview"),
+    Approved: t("emailCampaigns.testimonialApproved"),
+    Featured: t("emailCampaigns.testimonialFeatured"),
+  };
 
   // --- Tab state ---
   const [activeTab, setActiveTab] = useState<ActiveTab>("campaigns");
@@ -489,10 +501,10 @@ const EmailCampaigns = () => {
   // ---------------------------------------------------------------------------
 
   const recipientLabels: Record<RecipientGroup, string> = {
-    all: "All Users",
-    new: "New Users (< 30 days)",
-    active: "Active Users",
-    custom: "Custom Segment",
+    all: t("emailCampaigns.recipientAll"),
+    new: t("emailCampaigns.recipientNew"),
+    active: t("emailCampaigns.recipientActive"),
+    custom: t("emailCampaigns.recipientCustom"),
   };
 
   const recipientCounts: Record<RecipientGroup, number> = {
@@ -518,7 +530,7 @@ const EmailCampaigns = () => {
     const newCampaign: Campaign = {
       id: nextId("camp"),
       name: editorSubject.trim(),
-      description: editorBody.trim() || "No description provided.",
+      description: editorBody.trim() || t("emailCampaigns.noDescription"),
       frequency: editorScheduleMode === "now" ? "One-time" : "Scheduled",
       nextSendDate:
         editorScheduleMode === "later" && editorScheduleDate
@@ -532,11 +544,11 @@ const EmailCampaigns = () => {
     setEditorOpen(false);
     resetEditor();
     toast({
-      title: "Campaign created",
+      title: t("emailCampaigns.toastCampaignCreated"),
       description:
         editorScheduleMode === "now"
-          ? "Your campaign is being sent now."
-          : `Campaign scheduled for ${newCampaign.nextSendDate}.`,
+          ? t("emailCampaigns.toastCampaignSendingNow")
+          : t("emailCampaigns.toastCampaignScheduled", { date: newCampaign.nextSendDate }),
     });
   };
 
@@ -566,8 +578,8 @@ const EmailCampaigns = () => {
       )
     );
     toast({
-      title: "Check-in sent",
-      description: "Satisfaction survey email has been sent.",
+      title: t("emailCampaigns.toastCheckInSent"),
+      description: t("emailCampaigns.toastCheckInSentDesc"),
     });
   };
 
@@ -575,8 +587,8 @@ const EmailCampaigns = () => {
     const user = checkInUsers.find((u) => u.id === userId);
     if (!user) return;
     toast({
-      title: "Testimonial requested",
-      description: `Follow-up email sent to ${user.name}.`,
+      title: t("emailCampaigns.toastTestimonialRequested"),
+      description: t("emailCampaigns.toastTestimonialRequestedDesc", { name: user.name }),
     });
   };
 
@@ -585,8 +597,8 @@ const EmailCampaigns = () => {
       prev.map((t) => (t.id === id ? { ...t, status: "Approved" as TestimonialStatus } : t))
     );
     toast({
-      title: "Testimonial approved",
-      description: "The testimonial has been approved for display.",
+      title: t("emailCampaigns.toastTestimonialApproved"),
+      description: t("emailCampaigns.toastTestimonialApprovedDesc"),
     });
   };
 
@@ -595,8 +607,8 @@ const EmailCampaigns = () => {
       prev.map((t) => (t.id === id ? { ...t, status: "Featured" as TestimonialStatus } : t))
     );
     toast({
-      title: "Testimonial featured",
-      description: "The testimonial is now featured on the public page.",
+      title: t("emailCampaigns.toastTestimonialFeatured"),
+      description: t("emailCampaigns.toastTestimonialFeaturedDesc"),
     });
   };
 
@@ -610,28 +622,28 @@ const EmailCampaigns = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
           {
-            label: "Campaigns Sent",
+            label: t("emailCampaigns.campaignsSent"),
             value: campaignStats.totalSent,
             icon: Send,
             color: "text-primary",
             bg: "bg-primary/10",
           },
           {
-            label: "Open Rate",
+            label: t("emailCampaigns.openRate"),
             value: `${campaignStats.avgOpenRate}%`,
             icon: MailOpen,
             color: "text-emerald-400",
             bg: "bg-emerald-500/10",
           },
           {
-            label: "Click Rate",
+            label: t("emailCampaigns.clickRate"),
             value: `${campaignStats.avgClickRate}%`,
             icon: MousePointerClick,
             color: "text-blue-400",
             bg: "bg-blue-500/10",
           },
           {
-            label: "Active Subscribers",
+            label: t("emailCampaigns.activeSubscribers"),
             value: campaignStats.activeSubscribers.toLocaleString(),
             icon: Users,
             color: "text-violet-400",
@@ -662,7 +674,7 @@ const EmailCampaigns = () => {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
           <Calendar className="h-5 w-5 text-primary" />
-          Upcoming Campaigns
+          {t("emailCampaigns.upcomingCampaigns")}
         </h2>
         <Button
           className="gradient-primary text-primary-foreground rounded-xl shadow-glow-sm hover:opacity-90 text-sm"
@@ -672,14 +684,15 @@ const EmailCampaigns = () => {
           }}
         >
           <Plus className="h-4 w-4 mr-1.5" />
-          Create Campaign
+          {t("emailCampaigns.createCampaign")}
         </Button>
       </div>
 
       {/* Upcoming Campaigns List */}
       <div className="space-y-3 mb-8">
         {campaigns.map((campaign) => {
-          const statusCfg = STATUS_CONFIG[campaign.status];
+          const statusColors = STATUS_COLORS[campaign.status];
+          const statusLabel = STATUS_LABELS[campaign.status];
           return (
             <div
               key={campaign.id}
@@ -693,9 +706,9 @@ const EmailCampaigns = () => {
                     </h3>
                     <Badge
                       variant="outline"
-                      className={`text-[10px] border ${statusCfg.bg} ${statusCfg.color} px-1.5 py-0`}
+                      className={`text-[10px] border ${statusColors.bg} ${statusColors.color} px-1.5 py-0`}
                     >
-                      {statusCfg.label}
+                      {statusLabel}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
@@ -708,11 +721,11 @@ const EmailCampaigns = () => {
                     </span>
                     <span className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      Next: {campaign.nextSendDate}
+                      {t("emailCampaigns.next")}: {campaign.nextSendDate}
                     </span>
                     <span className="flex items-center gap-1">
                       <Users className="h-3 w-3" />
-                      {campaign.recipientCount.toLocaleString()} recipients
+                      {campaign.recipientCount.toLocaleString()} {t("emailCampaigns.recipients")}
                     </span>
                   </div>
                 </div>
@@ -725,7 +738,7 @@ const EmailCampaigns = () => {
                       className="border-border text-muted-foreground hover:text-foreground text-xs"
                       onClick={() => toggleCampaignStatus(campaign.id)}
                     >
-                      {campaign.status === "active" ? "Pause" : "Resume"}
+                      {campaign.status === "active" ? t("emailCampaigns.pause") : t("emailCampaigns.resume")}
                     </Button>
                   )}
                   <Button
@@ -746,15 +759,15 @@ const EmailCampaigns = () => {
       <div>
         <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-4">
           <BarChart3 className="h-5 w-5 text-primary" />
-          Campaign History
+          {t("emailCampaigns.campaignHistory")}
         </h2>
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <div className="grid grid-cols-5 gap-4 px-5 py-3 border-b border-border text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-            <span>Campaign</span>
-            <span>Sent Date</span>
-            <span className="text-right">Recipients</span>
-            <span className="text-right">Open Rate</span>
-            <span className="text-right">Click Rate</span>
+            <span>{t("emailCampaigns.columnCampaign")}</span>
+            <span>{t("emailCampaigns.columnSentDate")}</span>
+            <span className="text-right">{t("emailCampaigns.columnRecipients")}</span>
+            <span className="text-right">{t("emailCampaigns.columnOpenRate")}</span>
+            <span className="text-right">{t("emailCampaigns.columnClickRate")}</span>
           </div>
           {campaignHistory.map((entry) => (
             <div
@@ -809,28 +822,28 @@ const EmailCampaigns = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
           {
-            label: "Response Rate",
+            label: t("emailCampaigns.responseRate"),
             value: `${testimonialStats.responseRate}%`,
             icon: MessageSquare,
             color: "text-primary",
             bg: "bg-primary/10",
           },
           {
-            label: "Average Rating",
+            label: t("emailCampaigns.averageRating"),
             value: testimonialStats.avgRating,
             icon: Star,
             color: "text-amber-400",
             bg: "bg-amber-500/10",
           },
           {
-            label: "Total Testimonials",
+            label: t("emailCampaigns.totalTestimonials"),
             value: testimonialStats.totalTestimonials,
             icon: Quote,
             color: "text-blue-400",
             bg: "bg-blue-500/10",
           },
           {
-            label: "Featured",
+            label: t("emailCampaigns.featured"),
             value: testimonialStats.featuredCount,
             icon: Award,
             color: "text-emerald-400",
@@ -847,7 +860,7 @@ const EmailCampaigns = () => {
               >
                 <stat.icon className={`h-5 w-5 ${stat.color}`} />
               </div>
-              {stat.label === "Average Rating" && (
+              {stat.label === t("emailCampaigns.averageRating") && (
                 <div className="flex gap-0.5">{renderStars(Math.round(Number(stat.value)), "h-3 w-3")}</div>
               )}
             </div>
@@ -863,15 +876,15 @@ const EmailCampaigns = () => {
       <div className="mb-8">
         <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-4">
           <UserCheck className="h-5 w-5 text-primary" />
-          One Month Check-in System
+          {t("emailCampaigns.oneMonthCheckIn")}
         </h2>
         <p className="text-xs text-muted-foreground mb-4">
-          Users who signed up approximately 30 days ago. Auto-generated check-in
-          emails with satisfaction surveys.
+          {t("emailCampaigns.oneMonthCheckInDesc")}
         </p>
         <div className="space-y-3">
           {checkInUsers.map((user) => {
-            const statusCfg = CHECKIN_STATUS_CONFIG[user.checkInStatus];
+            const statusColors = CHECKIN_STATUS_COLORS[user.checkInStatus];
+            const statusLabel = CHECKIN_STATUS_LABELS[user.checkInStatus];
             return (
               <div
                 key={user.id}
@@ -892,16 +905,16 @@ const EmailCampaigns = () => {
                         </p>
                         <Badge
                           variant="outline"
-                          className={`text-[10px] border ${statusCfg.bg} ${statusCfg.color} px-1.5 py-0`}
+                          className={`text-[10px] border ${statusColors.bg} ${statusColors.color} px-1.5 py-0`}
                         >
-                          {statusCfg.label}
+                          {statusLabel}
                         </Badge>
                       </div>
                       <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
                         <span>{user.email}</span>
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          Signed up: {user.signupDate}
+                          {t("emailCampaigns.signedUp")}: {user.signupDate}
                         </span>
                       </div>
                     </div>
@@ -919,7 +932,7 @@ const EmailCampaigns = () => {
                         onClick={() => sendCheckIn(user.id)}
                       >
                         <Send className="h-3.5 w-3.5 mr-1" />
-                        Send Check-in
+                        {t("emailCampaigns.sendCheckIn")}
                       </Button>
                     )}
                     {user.checkInStatus === "sent" && (
@@ -930,7 +943,7 @@ const EmailCampaigns = () => {
                         onClick={() => requestTestimonial(user.id)}
                       >
                         <Mail className="h-3.5 w-3.5 mr-1" />
-                        Follow Up
+                        {t("emailCampaigns.followUp")}
                       </Button>
                     )}
                     {user.checkInStatus === "responded" && (
@@ -941,7 +954,7 @@ const EmailCampaigns = () => {
                         onClick={() => requestTestimonial(user.id)}
                       >
                         <MessageSquare className="h-3.5 w-3.5 mr-1" />
-                        Request Testimonial
+                        {t("emailCampaigns.requestTestimonial")}
                       </Button>
                     )}
                   </div>
@@ -965,12 +978,13 @@ const EmailCampaigns = () => {
       <div>
         <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-4">
           <Quote className="h-5 w-5 text-primary" />
-          Collected Testimonials
+          {t("emailCampaigns.collectedTestimonials")}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {testimonials.map((testimonial) => {
-            const statusCfg =
-              TESTIMONIAL_STATUS_CONFIG[testimonial.status];
+            const statusColors =
+              TESTIMONIAL_STATUS_COLORS[testimonial.status];
+            const statusLabel = TESTIMONIAL_STATUS_LABELS[testimonial.status];
             return (
               <div
                 key={testimonial.id}
@@ -987,9 +1001,9 @@ const EmailCampaigns = () => {
                   </div>
                   <Badge
                     variant="outline"
-                    className={`text-[10px] border ${statusCfg.bg} ${statusCfg.color} px-1.5 py-0`}
+                    className={`text-[10px] border ${statusColors.bg} ${statusColors.color} px-1.5 py-0`}
                   >
-                    {statusCfg.label}
+                    {statusLabel}
                   </Badge>
                 </div>
                 <div className="flex gap-0.5 mb-3">
@@ -1007,7 +1021,7 @@ const EmailCampaigns = () => {
                       onClick={() => approveTestimonial(testimonial.id)}
                     >
                       <ThumbsUp className="h-3.5 w-3.5 mr-1" />
-                      Approve
+                      {t("emailCampaigns.approve")}
                     </Button>
                   )}
                   {(testimonial.status === "Pending Review" ||
@@ -1018,13 +1032,13 @@ const EmailCampaigns = () => {
                       onClick={() => featureTestimonial(testimonial.id)}
                     >
                       <Award className="h-3.5 w-3.5 mr-1" />
-                      Feature
+                      {t("emailCampaigns.feature")}
                     </Button>
                   )}
                   {testimonial.status === "Featured" && (
                     <span className="text-[10px] text-emerald-400 flex items-center gap-1">
                       <CheckCircle2 className="h-3.5 w-3.5" />
-                      Displayed on public page
+                      {t("emailCampaigns.displayedOnPublicPage")}
                     </span>
                   )}
                 </div>
@@ -1054,7 +1068,7 @@ const EmailCampaigns = () => {
         <DialogHeader>
           <DialogTitle className="text-foreground flex items-center gap-2">
             <Mail className="h-5 w-5 text-primary" />
-            Create Campaign
+            {t("emailCampaigns.createCampaign")}
           </DialogTitle>
         </DialogHeader>
 
@@ -1062,12 +1076,12 @@ const EmailCampaigns = () => {
           {/* Subject line */}
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">
-              Subject Line
+              {t("emailCampaigns.subjectLine")}
             </Label>
             <Input
               value={editorSubject}
               onChange={(e) => setEditorSubject(e.target.value)}
-              placeholder="Enter email subject..."
+              placeholder={t("emailCampaigns.subjectPlaceholder")}
               className="bg-white/[0.03] border-white/10 focus:border-primary/50"
             />
           </div>
@@ -1076,7 +1090,7 @@ const EmailCampaigns = () => {
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <Label className="text-xs text-muted-foreground">
-                Email Body
+                {t("emailCampaigns.emailBody")}
               </Label>
               <button
                 onClick={() => setEditorPreview(!editorPreview)}
@@ -1087,7 +1101,7 @@ const EmailCampaigns = () => {
                 }`}
               >
                 <Eye className="h-3 w-3 inline mr-1" />
-                {editorPreview ? "Edit" : "Preview"}
+                {editorPreview ? t("emailCampaigns.edit") : t("emailCampaigns.preview")}
               </button>
             </div>
             {editorPreview ? (
@@ -1099,7 +1113,7 @@ const EmailCampaigns = () => {
                 )}
                 <div className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
                   {editorBody || (
-                    <span className="italic">No content yet...</span>
+                    <span className="italic">{t("emailCampaigns.noContentYet")}</span>
                   )}
                 </div>
                 {editorSkillsTips && (
@@ -1107,21 +1121,19 @@ const EmailCampaigns = () => {
                     <div className="flex items-center gap-2 mb-2">
                       <Sparkles className="h-4 w-4 text-primary" />
                       <span className="text-xs font-semibold text-foreground">
-                        Skills & Tips
+                        {t("emailCampaigns.skillsAndTips")}
                       </span>
                     </div>
                     <div className="space-y-2 text-xs text-muted-foreground">
                       <p>
-                        <strong className="text-foreground">Tip:</strong>{" "}
-                        Use natural language to instruct your agents for
-                        better results.
+                        <strong className="text-foreground">{t("emailCampaigns.tip")}:</strong>{" "}
+                        {t("emailCampaigns.tipContent")}
                       </p>
                       <p>
                         <strong className="text-foreground">
-                          New Skill:
+                          {t("emailCampaigns.newSkill")}:
                         </strong>{" "}
-                        Insurance Verification is now available for Dr. Front
-                        Desk.
+                        {t("emailCampaigns.newSkillContent")}
                       </p>
                     </div>
                   </div>
@@ -1131,7 +1143,7 @@ const EmailCampaigns = () => {
               <Textarea
                 value={editorBody}
                 onChange={(e) => setEditorBody(e.target.value)}
-                placeholder="Write your email content here..."
+                placeholder={t("emailCampaigns.bodyPlaceholder")}
                 className="bg-white/[0.03] border-white/10 focus:border-primary/50 min-h-[160px]"
               />
             )}
@@ -1143,10 +1155,10 @@ const EmailCampaigns = () => {
               <Sparkles className="h-4 w-4 text-primary" />
               <div>
                 <p className="text-sm font-medium text-foreground">
-                  Include Skills & Tips
+                  {t("emailCampaigns.includeSkillsTips")}
                 </p>
                 <p className="text-[10px] text-muted-foreground">
-                  Append pre-built skills tips section to the email
+                  {t("emailCampaigns.includeSkillsTipsDesc")}
                 </p>
               </div>
             </div>
@@ -1160,7 +1172,7 @@ const EmailCampaigns = () => {
 
           {/* Recipient selection */}
           <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">Recipients</Label>
+            <Label className="text-xs text-muted-foreground">{t("emailCampaigns.recipientsLabel")}</Label>
             <div className="grid grid-cols-2 gap-2">
               {(
                 ["all", "new", "active", "custom"] as RecipientGroup[]
@@ -1176,7 +1188,7 @@ const EmailCampaigns = () => {
                 >
                   <p>{recipientLabels[group]}</p>
                   <p className="text-[10px] mt-0.5 opacity-60">
-                    {recipientCounts[group].toLocaleString()} users
+                    {recipientCounts[group].toLocaleString()} {t("emailCampaigns.users")}
                   </p>
                 </button>
               ))}
@@ -1187,7 +1199,7 @@ const EmailCampaigns = () => {
 
           {/* Schedule options */}
           <div className="space-y-3">
-            <Label className="text-xs text-muted-foreground">Schedule</Label>
+            <Label className="text-xs text-muted-foreground">{t("emailCampaigns.schedule")}</Label>
             <div className="flex gap-2">
               <button
                 onClick={() => setEditorScheduleMode("now")}
@@ -1198,7 +1210,7 @@ const EmailCampaigns = () => {
                 }`}
               >
                 <Send className="h-3.5 w-3.5" />
-                Send Now
+                {t("emailCampaigns.sendNow")}
               </button>
               <button
                 onClick={() => setEditorScheduleMode("later")}
@@ -1209,7 +1221,7 @@ const EmailCampaigns = () => {
                 }`}
               >
                 <Clock className="h-3.5 w-3.5" />
-                Schedule for Later
+                {t("emailCampaigns.scheduleForLater")}
               </button>
             </div>
             {editorScheduleMode === "later" && (
@@ -1232,7 +1244,7 @@ const EmailCampaigns = () => {
               resetEditor();
             }}
           >
-            Cancel
+            {t("emailCampaigns.cancel")}
           </Button>
           <Button
             className="gradient-primary text-primary-foreground rounded-xl shadow-glow-sm hover:opacity-90"
@@ -1240,7 +1252,7 @@ const EmailCampaigns = () => {
             onClick={handleCreateCampaign}
           >
             <Send className="h-4 w-4 mr-1.5" />
-            {editorScheduleMode === "now" ? "Send Campaign" : "Schedule"}
+            {editorScheduleMode === "now" ? t("emailCampaigns.sendCampaign") : t("emailCampaigns.scheduleCampaign")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -1261,10 +1273,10 @@ const EmailCampaigns = () => {
           <div className="mb-8">
             <h1 className="font-display text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
               <Mail className="h-7 w-7 text-primary" />
-              Patient Engagement Campaigns
+              {t("emailCampaigns.title")}
             </h1>
             <p className="text-muted-foreground mt-1">
-              Manage patient outreach campaigns, satisfaction surveys, and testimonial collection.
+              {t("emailCampaigns.subtitle")}
             </p>
           </div>
 
@@ -1279,7 +1291,7 @@ const EmailCampaigns = () => {
               }`}
             >
               <Send className="h-3.5 w-3.5" />
-              Email Campaigns
+              {t("emailCampaigns.emailCampaignsTab")}
             </button>
             <button
               onClick={() => setActiveTab("testimonials")}
@@ -1290,7 +1302,7 @@ const EmailCampaigns = () => {
               }`}
             >
               <Star className="h-3.5 w-3.5" />
-              Testimonial Tracker
+              {t("emailCampaigns.testimonialTrackerTab")}
               <Badge
                 variant="outline"
                 className="text-[9px] border-border ml-1 px-1.5 py-0"

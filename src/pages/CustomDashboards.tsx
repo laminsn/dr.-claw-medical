@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Plus,
   Settings,
@@ -80,73 +81,6 @@ interface DashboardConfig {
   shareWithTeam: boolean;
   widgets: Widget[];
 }
-
-// ── Widget Gallery Definitions ─────────────────────────────────────────
-
-const widgetGallery: {
-  type: WidgetType;
-  name: string;
-  description: string;
-  color: string;
-  icon: typeof LayoutGrid;
-}[] = [
-  {
-    type: "kpi",
-    name: "KPI Card",
-    description: "Single metric with trend indicator",
-    color: "from-primary to-blue-600",
-    icon: LayoutGrid,
-  },
-  {
-    type: "line-chart",
-    name: "Line Chart",
-    description: "Time series data visualization",
-    color: "from-cyan-500 to-teal-500",
-    icon: LineChart,
-  },
-  {
-    type: "bar-chart",
-    name: "Bar Chart",
-    description: "Comparison across categories",
-    color: "from-violet-500 to-purple-600",
-    icon: BarChart3,
-  },
-  {
-    type: "pie-chart",
-    name: "Pie Chart",
-    description: "Distribution breakdown",
-    color: "from-amber-500 to-orange-600",
-    icon: PieChart,
-  },
-  {
-    type: "table",
-    name: "Table",
-    description: "Tabular data grid view",
-    color: "from-emerald-500 to-green-600",
-    icon: Table2,
-  },
-  {
-    type: "activity-feed",
-    name: "Activity Feed",
-    description: "Recent events timeline",
-    color: "from-rose-500 to-pink-600",
-    icon: Activity,
-  },
-  {
-    type: "progress-ring",
-    name: "Progress Ring",
-    description: "Circular progress indicator",
-    color: "from-sky-500 to-blue-500",
-    icon: CircleDot,
-  },
-  {
-    type: "leaderboard",
-    name: "Leaderboard",
-    description: "Ranked list comparison",
-    color: "from-yellow-500 to-amber-600",
-    icon: Trophy,
-  },
-];
 
 // ── Color Themes ───────────────────────────────────────────────────────
 
@@ -424,6 +358,7 @@ function KpiWidget({ widget }: { widget: Widget }) {
 }
 
 function LineChartWidget({ widget }: { widget: Widget }) {
+  const { t } = useTranslation();
   const { bars } = widget.data as { bars: { label: string; value: number }[] };
   const maxVal = Math.max(...bars.map((b) => b.value));
   const theme = colorThemes[widget.colorTheme] || colorThemes[0];
@@ -431,7 +366,7 @@ function LineChartWidget({ widget }: { widget: Widget }) {
   return (
     <div>
       <h4 className="text-sm font-semibold text-foreground mb-1">{widget.title}</h4>
-      <p className="text-xs text-muted-foreground mb-4">Weekly breakdown</p>
+      <p className="text-xs text-muted-foreground mb-4">{t("customDashboards.weeklyBreakdown")}</p>
       <div className="flex items-end gap-2 h-32">
         {bars.map((bar) => (
           <div key={bar.label} className="flex-1 flex flex-col items-center gap-1">
@@ -448,6 +383,7 @@ function LineChartWidget({ widget }: { widget: Widget }) {
 }
 
 function BarChartWidget({ widget }: { widget: Widget }) {
+  const { t } = useTranslation();
   const { bars } = widget.data as { bars: { label: string; value: number }[] };
   const maxVal = Math.max(...bars.map((b) => b.value));
   const theme = colorThemes[widget.colorTheme] || colorThemes[0];
@@ -455,7 +391,7 @@ function BarChartWidget({ widget }: { widget: Widget }) {
   return (
     <div>
       <h4 className="text-sm font-semibold text-foreground mb-1">{widget.title}</h4>
-      <p className="text-xs text-muted-foreground mb-4">Performance comparison</p>
+      <p className="text-xs text-muted-foreground mb-4">{t("customDashboards.performanceComparison")}</p>
       <div className="space-y-2.5">
         {bars.map((bar) => (
           <div key={bar.label} className="flex items-center gap-3">
@@ -578,6 +514,7 @@ function ProgressRingWidget({ widget }: { widget: Widget }) {
 }
 
 function TableWidget({ widget }: { widget: Widget }) {
+  const { t } = useTranslation();
   const { rows } = widget.data as {
     rows: { time: string; patient: string; type: string; status: string }[];
   };
@@ -602,10 +539,10 @@ function TableWidget({ widget }: { widget: Widget }) {
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-white/[0.06]">
-              <th className="text-left text-muted-foreground font-medium py-2 pr-3">Time</th>
-              <th className="text-left text-muted-foreground font-medium py-2 pr-3">Patient</th>
-              <th className="text-left text-muted-foreground font-medium py-2 pr-3">Type</th>
-              <th className="text-left text-muted-foreground font-medium py-2">Status</th>
+              <th className="text-left text-muted-foreground font-medium py-2 pr-3">{t("customDashboards.time")}</th>
+              <th className="text-left text-muted-foreground font-medium py-2 pr-3">{t("customDashboards.patient")}</th>
+              <th className="text-left text-muted-foreground font-medium py-2 pr-3">{t("customDashboards.type")}</th>
+              <th className="text-left text-muted-foreground font-medium py-2">{t("customDashboards.status")}</th>
             </tr>
           </thead>
           <tbody>
@@ -674,6 +611,73 @@ function widgetColSpan(type: WidgetType): string {
 
 const CustomDashboards = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
+
+  // Widget Gallery Definitions (inside component for t() access)
+  const widgetGallery: {
+    type: WidgetType;
+    name: string;
+    description: string;
+    color: string;
+    icon: typeof LayoutGrid;
+  }[] = [
+    {
+      type: "kpi",
+      name: t("customDashboards.kpiCard"),
+      description: t("customDashboards.kpiCardDesc"),
+      color: "from-primary to-blue-600",
+      icon: LayoutGrid,
+    },
+    {
+      type: "line-chart",
+      name: t("customDashboards.lineChart"),
+      description: t("customDashboards.lineChartDesc"),
+      color: "from-cyan-500 to-teal-500",
+      icon: LineChart,
+    },
+    {
+      type: "bar-chart",
+      name: t("customDashboards.barChart"),
+      description: t("customDashboards.barChartDesc"),
+      color: "from-violet-500 to-purple-600",
+      icon: BarChart3,
+    },
+    {
+      type: "pie-chart",
+      name: t("customDashboards.pieChart"),
+      description: t("customDashboards.pieChartDesc"),
+      color: "from-amber-500 to-orange-600",
+      icon: PieChart,
+    },
+    {
+      type: "table",
+      name: t("customDashboards.table"),
+      description: t("customDashboards.tableDesc"),
+      color: "from-emerald-500 to-green-600",
+      icon: Table2,
+    },
+    {
+      type: "activity-feed",
+      name: t("customDashboards.activityFeed"),
+      description: t("customDashboards.activityFeedDesc"),
+      color: "from-rose-500 to-pink-600",
+      icon: Activity,
+    },
+    {
+      type: "progress-ring",
+      name: t("customDashboards.progressRing"),
+      description: t("customDashboards.progressRingDesc"),
+      color: "from-sky-500 to-blue-500",
+      icon: CircleDot,
+    },
+    {
+      type: "leaderboard",
+      name: t("customDashboards.leaderboard"),
+      description: t("customDashboards.leaderboardDesc"),
+      color: "from-yellow-500 to-amber-600",
+      icon: Trophy,
+    },
+  ];
 
   // Dashboard state
   const [dashboards, setDashboards] = useState<DashboardConfig[]>(defaultDashboards);
@@ -698,7 +702,7 @@ const CustomDashboards = () => {
     const newId = `dash-${Date.now()}`;
     const newDash: DashboardConfig = {
       id: newId,
-      name: "New Dashboard",
+      name: t("customDashboards.newDashboard"),
       autoRefresh: false,
       shareWithTeam: false,
       widgets: [],
@@ -706,8 +710,8 @@ const CustomDashboards = () => {
     setDashboards((prev) => [...prev, newDash]);
     setActiveDashboardId(newId);
     toast({
-      title: "Dashboard Created",
-      description: "Your new dashboard is ready to customize.",
+      title: t("customDashboards.dashboardCreated"),
+      description: t("customDashboards.dashboardCreatedDesc"),
     });
   };
 
@@ -719,8 +723,8 @@ const CustomDashboards = () => {
       setActiveDashboardId(dashboards[0]?.id || "");
     }
     toast({
-      title: "Dashboard Deleted",
-      description: `"${dash.name}" has been removed.`,
+      title: t("customDashboards.dashboardDeleted"),
+      description: t("customDashboards.dashboardDeletedDesc", { name: dash.name }),
     });
   };
 
@@ -739,8 +743,8 @@ const CustomDashboards = () => {
       )
     );
     toast({
-      title: "Dashboard Renamed",
-      description: `Dashboard renamed to "${editingDashboardName}".`,
+      title: t("customDashboards.dashboardRenamed"),
+      description: t("customDashboards.dashboardRenamedDesc", { name: editingDashboardName }),
     });
     setEditingDashboardId(null);
     setEditingDashboardName("");
@@ -766,8 +770,8 @@ const CustomDashboards = () => {
     );
     setWidgetGalleryOpen(false);
     toast({
-      title: "Widget Added",
-      description: `${newWidget.title} has been added to your dashboard.`,
+      title: t("customDashboards.widgetAdded"),
+      description: t("customDashboards.widgetAddedDesc", { title: newWidget.title }),
     });
   };
 
@@ -784,8 +788,8 @@ const CustomDashboards = () => {
     );
 
     toast({
-      title: "Widget Removed",
-      description: `"${widget.title}" removed from dashboard.`,
+      title: t("customDashboards.widgetRemoved"),
+      description: t("customDashboards.widgetRemovedDesc", { title: widget.title }),
       action: (
         <Button
           variant="outline"
@@ -800,12 +804,12 @@ const CustomDashboards = () => {
               )
             );
             toast({
-              title: "Widget Restored",
-              description: `"${widget.title}" has been restored.`,
+              title: t("customDashboards.widgetRestored"),
+              description: t("customDashboards.widgetRestoredDesc", { title: widget.title }),
             });
           }}
         >
-          Undo
+          {t("customDashboards.undo")}
         </Button>
       ),
     });
@@ -834,8 +838,8 @@ const CustomDashboards = () => {
 
   const handleExportPdf = () => {
     toast({
-      title: "Exporting PDF",
-      description: `"${activeDashboard.name}" is being exported. You'll be notified when ready.`,
+      title: t("customDashboards.exportingPdf"),
+      description: t("customDashboards.exportingPdfDesc", { name: activeDashboard.name }),
     });
   };
 
@@ -859,15 +863,15 @@ const CustomDashboards = () => {
       case "table":
         return {
           rows: [
-            { time: "--", patient: "No data", type: "--", status: "Scheduled" },
+            { time: "--", patient: t("customDashboards.noData"), type: "--", status: "Scheduled" },
           ],
         };
       case "activity-feed":
-        return { items: [{ text: "No recent activity", time: "just now" }] };
+        return { items: [{ text: t("customDashboards.noRecentActivity"), time: t("customDashboards.justNow") }] };
       case "progress-ring":
-        return { percentage: 0, label: "no data" };
+        return { percentage: 0, label: t("customDashboards.noDataLabel") };
       case "leaderboard":
-        return { items: [{ name: "No data", score: 0 }] };
+        return { items: [{ name: t("customDashboards.noData"), score: 0 }] };
       default:
         return {};
     }
@@ -885,10 +889,10 @@ const CustomDashboards = () => {
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-                Custom Clinical Dashboards
+                {t("customDashboards.title")}
               </h1>
               <p className="text-muted-foreground mt-1">
-                Build personalized KPI views for clinical operations, patient metrics, and practice performance.
+                {t("customDashboards.subtitle")}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -898,14 +902,14 @@ const CustomDashboards = () => {
                 onClick={() => setSettingsPanelOpen(true)}
               >
                 <Settings className="h-4 w-4 mr-1.5" />
-                Settings
+                {t("customDashboards.settings")}
               </Button>
               <Button
                 size="sm"
                 onClick={() => setWidgetGalleryOpen(true)}
               >
                 <Plus className="h-4 w-4 mr-1.5" />
-                Add Widget
+                {t("customDashboards.addWidget")}
               </Button>
             </div>
           </div>
@@ -956,7 +960,7 @@ const CustomDashboards = () => {
                       <button
                         onClick={() => startRenameDashboard(dash.id)}
                         className="p-1 rounded hover:bg-white/[0.06] text-muted-foreground hover:text-foreground transition-colors"
-                        title="Rename dashboard"
+                        title={t("customDashboards.renameDashboard")}
                       >
                         <Pencil className="h-3 w-3" />
                       </button>
@@ -964,7 +968,7 @@ const CustomDashboards = () => {
                         <button
                           onClick={() => deleteDashboard(dash.id)}
                           className="p-1 rounded hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition-colors"
-                          title="Delete dashboard"
+                          title={t("customDashboards.deleteDashboard")}
                         >
                           <Trash2 className="h-3 w-3" />
                         </button>
@@ -978,7 +982,7 @@ const CustomDashboards = () => {
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-white/[0.04] transition-all border border-dashed border-white/[0.1]"
               >
                 <Plus className="h-3.5 w-3.5" />
-                New Dashboard
+                {t("customDashboards.newDashboard")}
               </button>
             </div>
           </div>
@@ -990,14 +994,14 @@ const CustomDashboards = () => {
                 <LayoutGrid className="h-7 w-7 text-muted-foreground" />
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-1">
-                No widgets yet
+                {t("customDashboards.noWidgetsYet")}
               </h3>
               <p className="text-sm text-muted-foreground mb-4 max-w-md">
-                Start building your dashboard by adding widgets from the gallery.
+                {t("customDashboards.noWidgetsDesc")}
               </p>
               <Button onClick={() => setWidgetGalleryOpen(true)}>
                 <Plus className="h-4 w-4 mr-1.5" />
-                Add Your First Widget
+                {t("customDashboards.addFirstWidget")}
               </Button>
             </div>
           ) : (
@@ -1016,14 +1020,14 @@ const CustomDashboards = () => {
                       <button
                         onClick={() => setConfigWidgetId(widget.id)}
                         className="p-1 rounded hover:bg-white/[0.06] text-muted-foreground hover:text-foreground transition-colors"
-                        title="Widget settings"
+                        title={t("customDashboards.widgetSettings")}
                       >
                         <Settings className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => removeWidget(widget.id)}
                         className="p-1 rounded hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition-colors"
-                        title="Remove widget"
+                        title={t("customDashboards.removeWidget")}
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>
@@ -1041,9 +1045,9 @@ const CustomDashboards = () => {
       <Dialog open={widgetGalleryOpen} onOpenChange={setWidgetGalleryOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Add Widget</DialogTitle>
+            <DialogTitle>{t("customDashboards.addWidget")}</DialogTitle>
             <DialogDescription>
-              Choose a widget type to add to your dashboard.
+              {t("customDashboards.addWidgetDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2">
@@ -1077,16 +1081,16 @@ const CustomDashboards = () => {
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Widget Configuration</DialogTitle>
+            <DialogTitle>{t("customDashboards.widgetConfiguration")}</DialogTitle>
             <DialogDescription>
-              Customize how this widget displays data.
+              {t("customDashboards.widgetConfigurationDesc")}
             </DialogDescription>
           </DialogHeader>
           {configWidget && (
             <div className="space-y-4 mt-2">
               {/* Title */}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Title</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("customDashboards.widgetTitle")}</label>
                 <Input
                   value={configWidget.title}
                   onChange={(e) =>
@@ -1098,7 +1102,7 @@ const CustomDashboards = () => {
 
               {/* Data Source */}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Data Source</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("customDashboards.dataSource")}</label>
                 <Select
                   value={configWidget.dataSource}
                   onValueChange={(value) =>
@@ -1109,18 +1113,18 @@ const CustomDashboards = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Agent Tasks">Agent Tasks</SelectItem>
-                    <SelectItem value="API Calls">API Calls</SelectItem>
-                    <SelectItem value="Patient Data">Patient Data</SelectItem>
-                    <SelectItem value="Financial">Financial</SelectItem>
-                    <SelectItem value="Communications">Communications</SelectItem>
+                    <SelectItem value="Agent Tasks">{t("customDashboards.agentTasks")}</SelectItem>
+                    <SelectItem value="API Calls">{t("customDashboards.apiCalls")}</SelectItem>
+                    <SelectItem value="Patient Data">{t("customDashboards.patientData")}</SelectItem>
+                    <SelectItem value="Financial">{t("customDashboards.financial")}</SelectItem>
+                    <SelectItem value="Communications">{t("customDashboards.communications")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {/* Time Range */}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Time Range</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("customDashboards.timeRange")}</label>
                 <Select
                   value={configWidget.timeRange}
                   onValueChange={(value) =>
@@ -1131,11 +1135,11 @@ const CustomDashboards = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Today">Today</SelectItem>
-                    <SelectItem value="This Week">This Week</SelectItem>
-                    <SelectItem value="This Month">This Month</SelectItem>
-                    <SelectItem value="This Quarter">This Quarter</SelectItem>
-                    <SelectItem value="Custom">Custom</SelectItem>
+                    <SelectItem value="Today">{t("customDashboards.today")}</SelectItem>
+                    <SelectItem value="This Week">{t("customDashboards.thisWeek")}</SelectItem>
+                    <SelectItem value="This Month">{t("customDashboards.thisMonth")}</SelectItem>
+                    <SelectItem value="This Quarter">{t("customDashboards.thisQuarter")}</SelectItem>
+                    <SelectItem value="Custom">{t("customDashboards.customRange")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1143,7 +1147,7 @@ const CustomDashboards = () => {
               {/* Refresh Interval */}
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">
-                  Refresh Interval
+                  {t("customDashboards.refreshInterval")}
                 </label>
                 <Select
                   value={configWidget.refreshInterval}
@@ -1155,18 +1159,18 @@ const CustomDashboards = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Real-time">Real-time</SelectItem>
-                    <SelectItem value="5min">5 minutes</SelectItem>
-                    <SelectItem value="15min">15 minutes</SelectItem>
-                    <SelectItem value="1hr">1 hour</SelectItem>
-                    <SelectItem value="Manual">Manual</SelectItem>
+                    <SelectItem value="Real-time">{t("customDashboards.realTime")}</SelectItem>
+                    <SelectItem value="5min">{t("customDashboards.fiveMinutes")}</SelectItem>
+                    <SelectItem value="15min">{t("customDashboards.fifteenMinutes")}</SelectItem>
+                    <SelectItem value="1hr">{t("customDashboards.oneHour")}</SelectItem>
+                    <SelectItem value="Manual">{t("customDashboards.manual")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {/* Color Theme */}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Color Theme</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("customDashboards.colorTheme")}</label>
                 <div className="flex items-center gap-2">
                   {colorThemes.map((theme) => (
                     <button
@@ -1193,12 +1197,12 @@ const CustomDashboards = () => {
                   onClick={() => {
                     setConfigWidgetId(null);
                     toast({
-                      title: "Widget Updated",
-                      description: `"${configWidget.title}" configuration saved.`,
+                      title: t("customDashboards.widgetUpdated"),
+                      description: t("customDashboards.widgetUpdatedDesc", { title: configWidget.title }),
                     });
                   }}
                 >
-                  Save Changes
+                  {t("customDashboards.saveChanges")}
                 </Button>
               </div>
             </div>
@@ -1210,15 +1214,15 @@ const CustomDashboards = () => {
       <Dialog open={settingsPanelOpen} onOpenChange={setSettingsPanelOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Dashboard Settings</DialogTitle>
+            <DialogTitle>{t("customDashboards.dashboardSettings")}</DialogTitle>
             <DialogDescription>
-              Configure settings for "{activeDashboard.name}".
+              {t("customDashboards.dashboardSettingsDesc", { name: activeDashboard.name })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-5 mt-2">
             {/* Dashboard name */}
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Dashboard Name</label>
+              <label className="text-xs font-medium text-muted-foreground">{t("customDashboards.dashboardName")}</label>
               <Input
                 value={activeDashboard.name}
                 onChange={(e) => updateDashboardSetting("name", e.target.value)}
@@ -1231,9 +1235,9 @@ const CustomDashboards = () => {
             {/* Auto-refresh */}
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-foreground">Auto-refresh</p>
+                <p className="text-sm font-medium text-foreground">{t("customDashboards.autoRefresh")}</p>
                 <p className="text-xs text-muted-foreground">
-                  Automatically update widget data
+                  {t("customDashboards.autoRefreshDesc")}
                 </p>
               </div>
               <Switch
@@ -1241,10 +1245,10 @@ const CustomDashboards = () => {
                 onCheckedChange={(checked) => {
                   updateDashboardSetting("autoRefresh", checked);
                   toast({
-                    title: checked ? "Auto-refresh Enabled" : "Auto-refresh Disabled",
+                    title: checked ? t("customDashboards.autoRefreshEnabled") : t("customDashboards.autoRefreshDisabled"),
                     description: checked
-                      ? "Dashboard will automatically refresh data."
-                      : "Dashboard will only update manually.",
+                      ? t("customDashboards.autoRefreshEnabledDesc")
+                      : t("customDashboards.autoRefreshDisabledDesc"),
                   });
                 }}
               />
@@ -1253,9 +1257,9 @@ const CustomDashboards = () => {
             {/* Share with team */}
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-foreground">Share with team</p>
+                <p className="text-sm font-medium text-foreground">{t("customDashboards.shareWithTeam")}</p>
                 <p className="text-xs text-muted-foreground">
-                  Make this dashboard visible to your team
+                  {t("customDashboards.shareWithTeamDesc")}
                 </p>
               </div>
               <Switch
@@ -1263,10 +1267,10 @@ const CustomDashboards = () => {
                 onCheckedChange={(checked) => {
                   updateDashboardSetting("shareWithTeam", checked);
                   toast({
-                    title: checked ? "Dashboard Shared" : "Dashboard Unshared",
+                    title: checked ? t("customDashboards.dashboardShared") : t("customDashboards.dashboardUnshared"),
                     description: checked
-                      ? "Team members can now view this dashboard."
-                      : "This dashboard is now private.",
+                      ? t("customDashboards.dashboardSharedDesc")
+                      : t("customDashboards.dashboardUnsharedDesc"),
                   });
                 }}
               />
@@ -1277,41 +1281,41 @@ const CustomDashboards = () => {
             {/* Export PDF */}
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-foreground">Export as PDF</p>
+                <p className="text-sm font-medium text-foreground">{t("customDashboards.exportAsPdf")}</p>
                 <p className="text-xs text-muted-foreground">
-                  Download a snapshot of the dashboard
+                  {t("customDashboards.exportAsPdfDesc")}
                 </p>
               </div>
               <Button variant="outline" size="sm" onClick={handleExportPdf}>
                 <FileDown className="h-4 w-4 mr-1.5" />
-                Export
+                {t("customDashboards.export")}
               </Button>
             </div>
 
             {/* Dashboard info */}
             <div className="bg-white/[0.02] rounded-lg p-3 space-y-2">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">Widgets</span>
+                <span className="text-muted-foreground">{t("customDashboards.widgets")}</span>
                 <span className="text-foreground font-medium">
                   {activeDashboard.widgets.length}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">Auto-refresh</span>
+                <span className="text-muted-foreground">{t("customDashboards.autoRefresh")}</span>
                 <Badge variant={activeDashboard.autoRefresh ? "default" : "secondary"} className="text-[10px]">
-                  {activeDashboard.autoRefresh ? "On" : "Off"}
+                  {activeDashboard.autoRefresh ? t("customDashboards.on") : t("customDashboards.off")}
                 </Badge>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">Visibility</span>
+                <span className="text-muted-foreground">{t("customDashboards.visibility")}</span>
                 <div className="flex items-center gap-1 text-xs text-foreground">
                   {activeDashboard.shareWithTeam ? (
                     <>
                       <Share2 className="h-3 w-3" />
-                      Shared
+                      {t("customDashboards.shared")}
                     </>
                   ) : (
-                    "Private"
+                    t("customDashboards.private")
                   )}
                 </div>
               </div>
