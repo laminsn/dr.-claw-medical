@@ -28,6 +28,11 @@ export interface MyAgent {
   costMonth: number;
   tokensUsed: number;
   avgResponseTime: string;
+  // Org chart fields
+  role: string;
+  department: string;
+  level: "ceo" | "department-head" | "worker";
+  parentId: string | null;
 }
 
 // ── Constants ──────────────────────────────────────────
@@ -45,6 +50,28 @@ const DEFAULT_CAPABILITIES: AgentCapabilities = {
 
 const DEFAULT_AGENTS: MyAgent[] = [
   {
+    id: "ceo-1",
+    name: "Dr. Claw Prime",
+    skills: ["Strategic Planning", "Cross-Department Coordination", "Decision Making"],
+    model: "claude",
+    active: true,
+    capabilities: { ...DEFAULT_CAPABILITIES, taskCreation: true },
+    archived: false,
+    taskCount: 0,
+    zone: "operations",
+    language: "en",
+    tasksToday: 0,
+    successRate: 100,
+    costToday: 0,
+    costMonth: 0,
+    tokensUsed: 0,
+    avgResponseTime: "—",
+    role: "Chief AI Officer (CEO)",
+    department: "Executive",
+    level: "ceo",
+    parentId: null,
+  },
+  {
     id: "1",
     name: "Dr. Front Desk",
     skills: ["appointment-scheduling", "insurance-verification", "patient-follow-up"],
@@ -61,6 +88,54 @@ const DEFAULT_AGENTS: MyAgent[] = [
     costMonth: 87.40,
     tokensUsed: 412500,
     avgResponseTime: "1.4s",
+    role: "Clinical Operations Lead",
+    department: "Clinical Operations",
+    level: "department-head",
+    parentId: "ceo-1",
+  },
+  {
+    id: "clin-1",
+    name: "Nurse Navigator",
+    skills: ["Care Coordination", "Follow-Up Scheduling"],
+    model: "openai",
+    active: true,
+    capabilities: { ...DEFAULT_CAPABILITIES },
+    archived: false,
+    taskCount: 5,
+    zone: "clinical",
+    language: "en",
+    tasksToday: 15,
+    successRate: 92,
+    costToday: 1.80,
+    costMonth: 35.50,
+    tokensUsed: 152000,
+    avgResponseTime: "1.8s",
+    role: "Clinical Coordinator",
+    department: "Clinical Operations",
+    level: "worker",
+    parentId: "1",
+  },
+  {
+    id: "clin-2",
+    name: "InsureBot",
+    skills: ["Eligibility Checks", "Prior Authorization"],
+    model: "gemini",
+    active: true,
+    capabilities: { ...DEFAULT_CAPABILITIES },
+    archived: false,
+    taskCount: 8,
+    zone: "clinical",
+    language: "en",
+    tasksToday: 31,
+    successRate: 96,
+    costToday: 2.45,
+    costMonth: 52.10,
+    tokensUsed: 220000,
+    avgResponseTime: "1.2s",
+    role: "Insurance Verifier",
+    department: "Clinical Operations",
+    level: "worker",
+    parentId: "1",
   },
   {
     id: "2",
@@ -79,6 +154,54 @@ const DEFAULT_AGENTS: MyAgent[] = [
     costMonth: 43.60,
     tokensUsed: 198000,
     avgResponseTime: "2.1s",
+    role: "Chief Marketing Officer",
+    department: "Marketing & Growth",
+    level: "department-head",
+    parentId: "ceo-1",
+  },
+  {
+    id: "mkt-1",
+    name: "CopySmith",
+    skills: ["Ad Copy", "Blog Writing", "Email Sequences"],
+    model: "claude",
+    active: true,
+    capabilities: { ...DEFAULT_CAPABILITIES },
+    archived: false,
+    taskCount: 4,
+    zone: "external",
+    language: "en",
+    tasksToday: 12,
+    successRate: 95,
+    costToday: 1.50,
+    costMonth: 28.90,
+    tokensUsed: 130000,
+    avgResponseTime: "2.3s",
+    role: "Copywriter",
+    department: "Marketing & Growth",
+    level: "worker",
+    parentId: "2",
+  },
+  {
+    id: "mkt-2",
+    name: "Social Pulse",
+    skills: ["Content Scheduling", "Engagement Tracking", "Trend Analysis"],
+    model: "openai",
+    active: false,
+    capabilities: { ...DEFAULT_CAPABILITIES },
+    archived: false,
+    taskCount: 0,
+    zone: "external",
+    language: "en",
+    tasksToday: 0,
+    successRate: 89,
+    costToday: 0,
+    costMonth: 15.20,
+    tokensUsed: 67000,
+    avgResponseTime: "2.0s",
+    role: "Social Media Manager",
+    department: "Marketing & Growth",
+    level: "worker",
+    parentId: "2",
   },
   {
     id: "3",
@@ -97,6 +220,32 @@ const DEFAULT_AGENTS: MyAgent[] = [
     costMonth: 21.30,
     tokensUsed: 89200,
     avgResponseTime: "3.4s",
+    role: "Chief Financial Officer",
+    department: "Finance & Accounting",
+    level: "department-head",
+    parentId: "ceo-1",
+  },
+  {
+    id: "fin-1",
+    name: "Ledger AI",
+    skills: ["Bookkeeping", "Tax Prep", "Invoice Processing"],
+    model: "gemini",
+    active: true,
+    capabilities: { ...DEFAULT_CAPABILITIES },
+    archived: false,
+    taskCount: 6,
+    zone: "operations",
+    language: "en",
+    tasksToday: 18,
+    successRate: 97,
+    costToday: 1.90,
+    costMonth: 38.40,
+    tokensUsed: 175000,
+    avgResponseTime: "1.5s",
+    role: "Accountant",
+    department: "Finance & Accounting",
+    level: "worker",
+    parentId: "3",
   },
 ];
 
@@ -125,6 +274,9 @@ function loadAgentsFromStorage(): MyAgent[] {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
+        // Migration: if no agents have org chart fields, reset to new defaults
+        const hasOrgFields = parsed.some((a: MyAgent) => a.department);
+        if (!hasOrgFields) return DEFAULT_AGENTS;
         return parsed;
       }
     }

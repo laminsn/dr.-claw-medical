@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Bot,
@@ -41,25 +41,22 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useAgents, type MyAgent } from "@/hooks/useAgents";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
 type AgentZone = "clinical" | "operations" | "external";
-type AgentStatus = "active" | "inactive";
 type AccessLevel = "all-staff" | "department-only" | "admin-only";
 type ViewMode = "tree" | "list";
 
-interface OrgAgent {
-  id: string;
+interface TemplateAgent {
   name: string;
   role: string;
   zone: AgentZone;
-  status: AgentStatus;
+  active: boolean;
   model: string;
   skills: string[];
-  department: string;
-  level: "ceo" | "department-head" | "worker";
-  parentId: string | null;
+  level: "department-head" | "worker";
 }
 
 interface DepartmentTemplate {
@@ -67,7 +64,7 @@ interface DepartmentTemplate {
   name: string;
   icon: string;
   description: string;
-  agents: Omit<OrgAgent, "id" | "department">[];
+  agents: TemplateAgent[];
 }
 
 interface DepartmentAccess {
@@ -111,11 +108,11 @@ const ZONE_LABELS: Record<AgentZone, string> = {
 };
 
 const MODEL_OPTIONS = [
-  { id: "gpt-5", label: "OpenAI GPT-5", color: "text-green-400" },
-  { id: "claude-4", label: "Claude 4 Opus", color: "text-violet-400" },
-  { id: "gemini-2", label: "Gemini 2 Ultra", color: "text-blue-400" },
-  { id: "llama-4", label: "Llama 4", color: "text-amber-400" },
-  { id: "mistral-xl", label: "Mistral XL", color: "text-rose-400" },
+  { id: "openai", label: "OpenAI GPT-5", color: "text-green-400" },
+  { id: "claude", label: "Claude 4 Opus", color: "text-violet-400" },
+  { id: "gemini", label: "Gemini 2 Ultra", color: "text-blue-400" },
+  { id: "minimax", label: "MiniMax", color: "text-amber-400" },
+  { id: "kimi", label: "Kimi", color: "text-rose-400" },
 ];
 
 const DEPARTMENT_ICONS: Record<string, string> = {
@@ -128,121 +125,20 @@ const DEPARTMENT_ICONS: Record<string, string> = {
   "IT & Security": "settings",
 };
 
-// ── Mock Data ───────────────────────────────────────────────────────────────
+// ── Default Capabilities for new agents ─────────────────────────────────────
 
-const INITIAL_AGENTS: OrgAgent[] = [
-  {
-    id: "ceo-1",
-    name: "Dr. Claw Prime",
-    role: "Chief AI Officer (CEO)",
-    zone: "operations",
-    status: "active",
-    model: "claude-4",
-    skills: ["Strategic Planning", "Cross-Department Coordination", "Decision Making"],
-    department: "Executive",
-    level: "ceo",
-    parentId: null,
-  },
-  // Clinical Operations
-  {
-    id: "clin-head",
-    name: "Dr. Front Desk",
-    role: "Clinical Operations Lead",
-    zone: "clinical",
-    status: "active",
-    model: "gpt-5",
-    skills: ["Patient Triage", "Scheduling", "Insurance Verification"],
-    department: "Clinical Operations",
-    level: "department-head",
-    parentId: "ceo-1",
-  },
-  {
-    id: "clin-1",
-    name: "Nurse Navigator",
-    role: "Clinical Coordinator",
-    zone: "clinical",
-    status: "active",
-    model: "gpt-5",
-    skills: ["Care Coordination", "Follow-Up Scheduling"],
-    department: "Clinical Operations",
-    level: "worker",
-    parentId: "clin-head",
-  },
-  {
-    id: "clin-2",
-    name: "InsureBot",
-    role: "Insurance Verifier",
-    zone: "clinical",
-    status: "active",
-    model: "gemini-2",
-    skills: ["Eligibility Checks", "Prior Authorization"],
-    department: "Clinical Operations",
-    level: "worker",
-    parentId: "clin-head",
-  },
-  // Marketing & Growth
-  {
-    id: "mkt-head",
-    name: "Marketing Maven",
-    role: "Chief Marketing Officer",
-    zone: "external",
-    status: "active",
-    model: "claude-4",
-    skills: ["Campaign Strategy", "Brand Management", "Analytics"],
-    department: "Marketing & Growth",
-    level: "department-head",
-    parentId: "ceo-1",
-  },
-  {
-    id: "mkt-1",
-    name: "CopySmith",
-    role: "Copywriter",
-    zone: "external",
-    status: "active",
-    model: "claude-4",
-    skills: ["Ad Copy", "Blog Writing", "Email Sequences"],
-    department: "Marketing & Growth",
-    level: "worker",
-    parentId: "mkt-head",
-  },
-  {
-    id: "mkt-2",
-    name: "Social Pulse",
-    role: "Social Media Manager",
-    zone: "external",
-    status: "inactive",
-    model: "gpt-5",
-    skills: ["Content Scheduling", "Engagement Tracking", "Trend Analysis"],
-    department: "Marketing & Growth",
-    level: "worker",
-    parentId: "mkt-head",
-  },
-  // Finance & Accounting
-  {
-    id: "fin-head",
-    name: "Grant Pro",
-    role: "Chief Financial Officer",
-    zone: "operations",
-    status: "active",
-    model: "claude-4",
-    skills: ["Financial Modeling", "Grant Writing", "Budget Oversight"],
-    department: "Finance & Accounting",
-    level: "department-head",
-    parentId: "ceo-1",
-  },
-  {
-    id: "fin-1",
-    name: "Ledger AI",
-    role: "Accountant",
-    zone: "operations",
-    status: "active",
-    model: "gemini-2",
-    skills: ["Bookkeeping", "Tax Prep", "Invoice Processing"],
-    department: "Finance & Accounting",
-    level: "worker",
-    parentId: "fin-head",
-  },
-];
+const DEFAULT_AGENT_CAPABILITIES = {
+  phiProtection: true,
+  messaging: true,
+  voiceRecognition: false,
+  distressDetection: false,
+  taskCreation: false,
+  hrAssistant: false,
+};
+
+// ── Department Access Storage ───────────────────────────────────────────────
+
+const DEPT_ACCESS_KEY = "dr-claw-dept-access";
 
 // ── Department Templates ────────────────────────────────────────────────────
 
@@ -253,10 +149,10 @@ const DEPARTMENT_TEMPLATES: DepartmentTemplate[] = [
     icon: "shield",
     description: "Front desk, coordinator, insurance, and patient follow-up agents for clinical workflows.",
     agents: [
-      { name: "Dr. Front Desk", role: "Front Desk Lead", zone: "clinical", status: "active", model: "gpt-5", skills: ["Patient Triage", "Scheduling", "Insurance Verification"], level: "department-head", parentId: null },
-      { name: "Clinical Coordinator", role: "Clinical Coordinator", zone: "clinical", status: "active", model: "gpt-5", skills: ["Care Coordination", "Follow-Up Scheduling"], level: "worker", parentId: null },
-      { name: "InsureBot", role: "Insurance Verifier", zone: "clinical", status: "active", model: "gemini-2", skills: ["Eligibility Checks", "Prior Authorization", "Claims Tracking"], level: "worker", parentId: null },
-      { name: "FollowUp Agent", role: "Patient Follow-Up", zone: "clinical", status: "active", model: "gpt-5", skills: ["Appointment Reminders", "Post-Visit Surveys", "Lapsed Patient Outreach"], level: "worker", parentId: null },
+      { name: "Dr. Front Desk", role: "Front Desk Lead", zone: "clinical", active: true, model: "openai", skills: ["Patient Triage", "Scheduling", "Insurance Verification"], level: "department-head" },
+      { name: "Clinical Coordinator", role: "Clinical Coordinator", zone: "clinical", active: true, model: "openai", skills: ["Care Coordination", "Follow-Up Scheduling"], level: "worker" },
+      { name: "InsureBot", role: "Insurance Verifier", zone: "clinical", active: true, model: "gemini", skills: ["Eligibility Checks", "Prior Authorization", "Claims Tracking"], level: "worker" },
+      { name: "FollowUp Agent", role: "Patient Follow-Up", zone: "clinical", active: true, model: "openai", skills: ["Appointment Reminders", "Post-Visit Surveys", "Lapsed Patient Outreach"], level: "worker" },
     ],
   },
   {
@@ -265,10 +161,10 @@ const DEPARTMENT_TEMPLATES: DepartmentTemplate[] = [
     icon: "zap",
     description: "CMO, copywriter, content engine, and social media agents for marketing campaigns.",
     agents: [
-      { name: "Marketing Maven", role: "Chief Marketing Officer", zone: "external", status: "active", model: "claude-4", skills: ["Campaign Strategy", "Brand Management", "Analytics"], level: "department-head", parentId: null },
-      { name: "CopySmith", role: "Copywriter", zone: "external", status: "active", model: "claude-4", skills: ["Ad Copy", "Blog Writing", "Email Sequences"], level: "worker", parentId: null },
-      { name: "Content Engine", role: "Content Engine", zone: "external", status: "active", model: "gpt-5", skills: ["SEO Optimization", "Article Generation", "Content Calendar"], level: "worker", parentId: null },
-      { name: "Social Pulse", role: "Social Media Manager", zone: "external", status: "active", model: "gpt-5", skills: ["Content Scheduling", "Engagement Tracking", "Trend Analysis"], level: "worker", parentId: null },
+      { name: "Marketing Maven", role: "Chief Marketing Officer", zone: "external", active: true, model: "claude", skills: ["Campaign Strategy", "Brand Management", "Analytics"], level: "department-head" },
+      { name: "CopySmith", role: "Copywriter", zone: "external", active: true, model: "claude", skills: ["Ad Copy", "Blog Writing", "Email Sequences"], level: "worker" },
+      { name: "Content Engine", role: "Content Engine", zone: "external", active: true, model: "openai", skills: ["SEO Optimization", "Article Generation", "Content Calendar"], level: "worker" },
+      { name: "Social Pulse", role: "Social Media Manager", zone: "external", active: true, model: "openai", skills: ["Content Scheduling", "Engagement Tracking", "Trend Analysis"], level: "worker" },
     ],
   },
   {
@@ -277,10 +173,10 @@ const DEPARTMENT_TEMPLATES: DepartmentTemplate[] = [
     icon: "brain",
     description: "CFO, financial analyst, accountant, and grant writer agents for fiscal management.",
     agents: [
-      { name: "Grant Pro", role: "Chief Financial Officer", zone: "operations", status: "active", model: "claude-4", skills: ["Financial Modeling", "Grant Writing", "Budget Oversight"], level: "department-head", parentId: null },
-      { name: "Forecast AI", role: "Financial Analyst", zone: "operations", status: "active", model: "gemini-2", skills: ["Revenue Forecasting", "Expense Tracking", "KPI Dashboards"], level: "worker", parentId: null },
-      { name: "Ledger AI", role: "Accountant", zone: "operations", status: "active", model: "gemini-2", skills: ["Bookkeeping", "Tax Prep", "Invoice Processing"], level: "worker", parentId: null },
-      { name: "Grant Seeker", role: "Grant Writer", zone: "operations", status: "active", model: "claude-4", skills: ["Grant Research", "Proposal Drafting", "Compliance Tracking"], level: "worker", parentId: null },
+      { name: "Grant Pro", role: "Chief Financial Officer", zone: "operations", active: true, model: "claude", skills: ["Financial Modeling", "Grant Writing", "Budget Oversight"], level: "department-head" },
+      { name: "Forecast AI", role: "Financial Analyst", zone: "operations", active: true, model: "gemini", skills: ["Revenue Forecasting", "Expense Tracking", "KPI Dashboards"], level: "worker" },
+      { name: "Ledger AI", role: "Accountant", zone: "operations", active: true, model: "gemini", skills: ["Bookkeeping", "Tax Prep", "Invoice Processing"], level: "worker" },
+      { name: "Grant Seeker", role: "Grant Writer", zone: "operations", active: true, model: "claude", skills: ["Grant Research", "Proposal Drafting", "Compliance Tracking"], level: "worker" },
     ],
   },
   {
@@ -289,10 +185,10 @@ const DEPARTMENT_TEMPLATES: DepartmentTemplate[] = [
     icon: "users",
     description: "CHRO, HR coordinator, training manager, and payroll agents for people operations.",
     agents: [
-      { name: "HR Prime", role: "Chief HR Officer", zone: "operations", status: "active", model: "claude-4", skills: ["Policy Management", "Culture Strategy", "Conflict Resolution"], level: "department-head", parentId: null },
-      { name: "HR Coordinator", role: "HR Coordinator", zone: "operations", status: "active", model: "gpt-5", skills: ["Onboarding", "Benefits Admin", "PTO Tracking"], level: "worker", parentId: null },
-      { name: "Train Master", role: "Training Manager", zone: "operations", status: "active", model: "gpt-5", skills: ["Curriculum Design", "Compliance Training", "Skill Assessment"], level: "worker", parentId: null },
-      { name: "PayBot", role: "Payroll Specialist", zone: "operations", status: "active", model: "gemini-2", skills: ["Payroll Processing", "Tax Withholding", "Timesheet Review"], level: "worker", parentId: null },
+      { name: "HR Prime", role: "Chief HR Officer", zone: "operations", active: true, model: "claude", skills: ["Policy Management", "Culture Strategy", "Conflict Resolution"], level: "department-head" },
+      { name: "HR Coordinator", role: "HR Coordinator", zone: "operations", active: true, model: "openai", skills: ["Onboarding", "Benefits Admin", "PTO Tracking"], level: "worker" },
+      { name: "Train Master", role: "Training Manager", zone: "operations", active: true, model: "openai", skills: ["Curriculum Design", "Compliance Training", "Skill Assessment"], level: "worker" },
+      { name: "PayBot", role: "Payroll Specialist", zone: "operations", active: true, model: "gemini", skills: ["Payroll Processing", "Tax Withholding", "Timesheet Review"], level: "worker" },
     ],
   },
   {
@@ -301,10 +197,10 @@ const DEPARTMENT_TEMPLATES: DepartmentTemplate[] = [
     icon: "git-branch",
     description: "CAIO, researcher, data analyst, and lab analyst agents for innovation and discovery.",
     agents: [
-      { name: "Research Lead", role: "Chief AI Innovation Officer", zone: "operations", status: "active", model: "claude-4", skills: ["Research Direction", "Innovation Strategy", "Publication Review"], level: "department-head", parentId: null },
-      { name: "Scholar AI", role: "Researcher", zone: "operations", status: "active", model: "claude-4", skills: ["Literature Review", "Hypothesis Generation", "Study Design"], level: "worker", parentId: null },
-      { name: "Data Crunch", role: "Data Analyst", zone: "operations", status: "active", model: "gemini-2", skills: ["Statistical Analysis", "Data Visualization", "Pattern Recognition"], level: "worker", parentId: null },
-      { name: "Lab Intel", role: "Lab Analyst", zone: "clinical", status: "active", model: "gpt-5", skills: ["Lab Result Interpretation", "Quality Control", "Protocol Compliance"], level: "worker", parentId: null },
+      { name: "Research Lead", role: "Chief AI Innovation Officer", zone: "operations", active: true, model: "claude", skills: ["Research Direction", "Innovation Strategy", "Publication Review"], level: "department-head" },
+      { name: "Scholar AI", role: "Researcher", zone: "operations", active: true, model: "claude", skills: ["Literature Review", "Hypothesis Generation", "Study Design"], level: "worker" },
+      { name: "Data Crunch", role: "Data Analyst", zone: "operations", active: true, model: "gemini", skills: ["Statistical Analysis", "Data Visualization", "Pattern Recognition"], level: "worker" },
+      { name: "Lab Intel", role: "Lab Analyst", zone: "clinical", active: true, model: "openai", skills: ["Lab Result Interpretation", "Quality Control", "Protocol Compliance"], level: "worker" },
     ],
   },
   {
@@ -313,10 +209,10 @@ const DEPARTMENT_TEMPLATES: DepartmentTemplate[] = [
     icon: "settings",
     description: "CIO, security analyst, system admin, and compliance officer agents for infrastructure.",
     agents: [
-      { name: "Sys Architect", role: "Chief Information Officer", zone: "operations", status: "active", model: "claude-4", skills: ["Infrastructure Planning", "Vendor Management", "Tech Roadmap"], level: "department-head", parentId: null },
-      { name: "Sentinel", role: "Security Analyst", zone: "operations", status: "active", model: "gpt-5", skills: ["Threat Detection", "Vulnerability Assessment", "Incident Response"], level: "worker", parentId: null },
-      { name: "Ops Runner", role: "System Administrator", zone: "operations", status: "active", model: "gemini-2", skills: ["Server Management", "Deployment Automation", "Monitoring"], level: "worker", parentId: null },
-      { name: "Compliance Guard", role: "Compliance Officer", zone: "operations", status: "active", model: "claude-4", skills: ["HIPAA Compliance", "Audit Preparation", "Policy Enforcement"], level: "worker", parentId: null },
+      { name: "Sys Architect", role: "Chief Information Officer", zone: "operations", active: true, model: "claude", skills: ["Infrastructure Planning", "Vendor Management", "Tech Roadmap"], level: "department-head" },
+      { name: "Sentinel", role: "Security Analyst", zone: "operations", active: true, model: "openai", skills: ["Threat Detection", "Vulnerability Assessment", "Incident Response"], level: "worker" },
+      { name: "Ops Runner", role: "System Administrator", zone: "operations", active: true, model: "gemini", skills: ["Server Management", "Deployment Automation", "Monitoring"], level: "worker" },
+      { name: "Compliance Guard", role: "Compliance Officer", zone: "operations", active: true, model: "claude", skills: ["HIPAA Compliance", "Audit Preparation", "Policy Enforcement"], level: "worker" },
     ],
   },
 ];
@@ -356,10 +252,19 @@ function getModelColor(modelId: string): string {
   return MODEL_OPTIONS.find((m) => m.id === modelId)?.color ?? "text-gray-400";
 }
 
-let nextId = 100;
 function generateId(): string {
-  nextId += 1;
-  return `agent-${nextId}`;
+  return `agent-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+}
+
+function loadDeptAccess(): DepartmentAccess[] {
+  try {
+    const raw = localStorage.getItem(DEPT_ACCESS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch { /* ignore */ }
+  return INITIAL_ACCESS;
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -369,15 +274,18 @@ function generateId(): string {
 const AgentOrgChart = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { agents: allAgents, addAgent: addAgentToContext, updateAgent, deleteAgent: deleteAgentFromContext } = useAgents();
+
+  // Org chart shows only agents with a department assigned (and not archived)
+  const agents = allAgents.filter((a) => a.department && !a.archived);
 
   // ── State ───────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<"org-chart" | "templates" | "access-control">("org-chart");
-  const [agents, setAgents] = useState<OrgAgent[]>(INITIAL_AGENTS);
-  const [departmentAccess, setDepartmentAccess] = useState<DepartmentAccess[]>(INITIAL_ACCESS);
+  const [departmentAccess, setDepartmentAccess] = useState<DepartmentAccess[]>(loadDeptAccess);
   const [viewMode, setViewMode] = useState<ViewMode>("tree");
   const [zoom, setZoom] = useState(100);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedAgent, setSelectedAgent] = useState<OrgAgent | null>(null);
+  const [selectedAgent, setSelectedAgent] = useState<MyAgent | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [addAgentOpen, setAddAgentOpen] = useState(false);
   const [moveAgentId, setMoveAgentId] = useState<string | null>(null);
@@ -390,10 +298,17 @@ const AgentOrgChart = () => {
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("");
   const [newZone, setNewZone] = useState<AgentZone>("operations");
-  const [newModel, setNewModel] = useState("gpt-5");
+  const [newModel, setNewModel] = useState("openai");
   const [newSkills, setNewSkills] = useState("");
   const [newDepartment, setNewDepartment] = useState("Clinical Operations");
   const [newLevel, setNewLevel] = useState<"department-head" | "worker">("worker");
+
+  // Persist department access to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(DEPT_ACCESS_KEY, JSON.stringify(departmentAccess));
+    } catch { /* ignore */ }
+  }, [departmentAccess]);
 
   // ── Derived Data ────────────────────────────────────────────────────────
 
@@ -424,7 +339,7 @@ const AgentOrgChart = () => {
     });
   };
 
-  const openAgentDetail = (agent: OrgAgent) => {
+  const openAgentDetail = (agent: MyAgent) => {
     setSelectedAgent(agent);
     setDetailOpen(true);
   };
@@ -436,7 +351,7 @@ const AgentOrgChart = () => {
       toast({ title: "Cannot remove CEO", description: "The top-level agent cannot be removed." });
       return;
     }
-    setAgents((prev) => prev.filter((a) => a.id !== agentId));
+    deleteAgentFromContext(agentId);
     setDetailOpen(false);
     setSelectedAgent(null);
     toast({ title: "Agent Removed", description: `${agent.name} has been removed from the org chart.` });
@@ -452,11 +367,7 @@ const AgentOrgChart = () => {
     if (!moveAgentId) return;
     const agent = agents.find((a) => a.id === moveAgentId);
     if (!agent) return;
-    setAgents((prev) =>
-      prev.map((a) =>
-        a.id === moveAgentId ? { ...a, department: targetDept, parentId: targetParentId } : a
-      )
-    );
+    updateAgent(moveAgentId, { department: targetDept, parentId: targetParentId });
     toast({ title: "Agent Moved", description: `${agent.name} reassigned to ${targetDept}.` });
     setMoveAgentId(null);
   };
@@ -465,26 +376,36 @@ const AgentOrgChart = () => {
     setMoveAgentId(null);
   };
 
-  const addAgent = () => {
+  const handleAddAgent = () => {
     if (!newName.trim() || !newRole.trim()) {
       toast({ title: "Missing Fields", description: "Name and role are required." });
       return;
     }
     const deptHead = getDeptHead(newDepartment);
     const parentId = newLevel === "department-head" ? (getCeo()?.id ?? null) : (deptHead?.id ?? null);
-    const agent: OrgAgent = {
+    const agent: MyAgent = {
       id: generateId(),
       name: newName.trim(),
-      role: newRole.trim(),
-      zone: newZone,
-      status: "active",
-      model: newModel,
       skills: newSkills.split(",").map((s) => s.trim()).filter(Boolean),
+      model: newModel,
+      active: true,
+      capabilities: { ...DEFAULT_AGENT_CAPABILITIES },
+      archived: false,
+      taskCount: 0,
+      zone: newZone,
+      language: "en",
+      tasksToday: 0,
+      successRate: 100,
+      costToday: 0,
+      costMonth: 0,
+      tokensUsed: 0,
+      avgResponseTime: "—",
+      role: newRole.trim(),
       department: newDepartment,
       level: newLevel,
       parentId,
     };
-    setAgents((prev) => [...prev, agent]);
+    addAgentToContext(agent);
     toast({ title: "Agent Created", description: `${agent.name} added to ${newDepartment}.` });
     setAddAgentOpen(false);
     resetAddForm();
@@ -494,7 +415,7 @@ const AgentOrgChart = () => {
     setNewName("");
     setNewRole("");
     setNewZone("operations");
-    setNewModel("gpt-5");
+    setNewModel("openai");
     setNewSkills("");
     setNewDepartment("Clinical Operations");
     setNewLevel("worker");
@@ -510,8 +431,8 @@ const AgentOrgChart = () => {
 
     const ceo = getCeo();
     const ceoId = ceo?.id ?? null;
-    const newAgents: OrgAgent[] = [];
     let headId: string | null = null;
+    let createdCount = 0;
 
     for (const tplAgent of template.agents) {
       const id = generateId();
@@ -522,15 +443,31 @@ const AgentOrgChart = () => {
       } else {
         parentId = headId;
       }
-      newAgents.push({
-        ...tplAgent,
+      const newAgent: MyAgent = {
         id,
+        name: tplAgent.name,
+        skills: [...tplAgent.skills],
+        model: tplAgent.model,
+        active: tplAgent.active,
+        capabilities: { ...DEFAULT_AGENT_CAPABILITIES },
+        archived: false,
+        taskCount: 0,
+        zone: tplAgent.zone,
+        language: "en",
+        tasksToday: 0,
+        successRate: 100,
+        costToday: 0,
+        costMonth: 0,
+        tokensUsed: 0,
+        avgResponseTime: "—",
+        role: tplAgent.role,
         department: deptName,
+        level: tplAgent.level,
         parentId,
-      });
+      };
+      addAgentToContext(newAgent);
+      createdCount++;
     }
-
-    setAgents((prev) => [...prev, ...newAgents]);
 
     // Ensure department access entry exists
     if (!departmentAccess.find((d) => d.departmentName === deptName)) {
@@ -542,7 +479,7 @@ const AgentOrgChart = () => {
 
     toast({
       title: "Template Applied",
-      description: `${newAgents.length} agents created in ${deptName}. All agents are active and ready.`,
+      description: `${createdCount} agents created in ${deptName}. All agents are active and ready.`,
     });
   };
 
@@ -554,13 +491,10 @@ const AgentOrgChart = () => {
   };
 
   const toggleAgentStatus = (agentId: string) => {
-    setAgents((prev) =>
-      prev.map((a) =>
-        a.id === agentId
-          ? { ...a, status: a.status === "active" ? "inactive" : "active" }
-          : a
-      )
-    );
+    const agent = agents.find((a) => a.id === agentId);
+    if (agent) {
+      updateAgent(agentId, { active: !agent.active });
+    }
   };
 
   const zoomIn = () => setZoom((z) => Math.min(z + 10, 150));
@@ -581,7 +515,7 @@ const AgentOrgChart = () => {
 
   // ── Agent Node ──────────────────────────────────────────────────────────
 
-  const AgentNode = ({ agent, indentLevel = 0 }: { agent: OrgAgent; indentLevel?: number }) => {
+  const AgentNode = ({ agent, indentLevel = 0 }: { agent: MyAgent; indentLevel?: number }) => {
     const zs = ZONE_STYLES[agent.zone];
     const isMoving = moveAgentId === agent.id;
     const isMoveTarget = moveAgentId !== null && moveAgentId !== agent.id && (agent.level === "department-head" || agent.level === "ceo");
@@ -618,13 +552,13 @@ const AgentOrgChart = () => {
               <Bot className={`h-5 w-5 ${zs.text}`} />
             )}
           </div>
-          {agent.status === "active" && (
+          {agent.active && (
             <span className="absolute -top-1 -right-1 flex h-3 w-3">
               <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${zs.dot} opacity-75`} />
               <span className={`relative inline-flex rounded-full h-3 w-3 ${zs.dot}`} />
             </span>
           )}
-          {agent.status === "inactive" && (
+          {!agent.active && (
             <span className="absolute -top-1 -right-1 flex h-3 w-3">
               <span className="relative inline-flex rounded-full h-3 w-3 bg-gray-500" />
             </span>
@@ -744,7 +678,7 @@ const AgentOrgChart = () => {
 
   // ── List View Row ─────────────────────────────────────────────────────
 
-  const ListRow = ({ agent }: { agent: OrgAgent }) => {
+  const ListRow = ({ agent }: { agent: MyAgent }) => {
     const zs = ZONE_STYLES[agent.zone];
     return (
       <div
@@ -755,7 +689,7 @@ const AgentOrgChart = () => {
           <div className={`w-8 h-8 rounded-lg ${zs.bg} flex items-center justify-center`}>
             <Bot className={`h-4 w-4 ${zs.text}`} />
           </div>
-          {agent.status === "active" && (
+          {agent.active && (
             <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
               <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${zs.dot} opacity-75`} />
               <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${zs.dot}`} />
@@ -773,7 +707,7 @@ const AgentOrgChart = () => {
         <span className={`text-[10px] ${getModelColor(agent.model)} hidden md:block`}>
           {getModelLabel(agent.model)}
         </span>
-        <div className={`w-2 h-2 rounded-full ${agent.status === "active" ? zs.dot : "bg-gray-500"}`} />
+        <div className={`w-2 h-2 rounded-full ${agent.active ? zs.dot : "bg-gray-500"}`} />
       </div>
     );
   };
@@ -811,8 +745,8 @@ const AgentOrgChart = () => {
             {[
               { label: "Total Agents", value: agents.length, icon: Bot, color: "text-violet-400" },
               { label: "Departments", value: departments.length, icon: Building2, color: "text-blue-400" },
-              { label: "Active", value: agents.filter((a) => a.status === "active").length, icon: Zap, color: "text-emerald-400" },
-              { label: "Inactive", value: agents.filter((a) => a.status === "inactive").length, icon: EyeOff, color: "text-gray-400" },
+              { label: "Active", value: agents.filter((a) => a.active).length, icon: Zap, color: "text-emerald-400" },
+              { label: "Inactive", value: agents.filter((a) => !a.active).length, icon: EyeOff, color: "text-gray-400" },
             ].map((stat) => (
               <div key={stat.label} className="glass-card rounded-xl p-4 border border-border">
                 <div className="flex items-center gap-2 mb-1">
@@ -1235,7 +1169,7 @@ const AgentOrgChart = () => {
                             {dept.accessLevel === "all-staff" && <Unlock className="h-3.5 w-3.5 text-emerald-400" />}
                           </div>
                           <span className="text-xs text-muted-foreground">
-                            {deptAgents.length} agent{deptAgents.length !== 1 ? "s" : ""} &middot; {deptAgents.filter((a) => a.status === "active").length} active
+                            {deptAgents.length} agent{deptAgents.length !== 1 ? "s" : ""} &middot; {deptAgents.filter((a) => a.active).length} active
                           </span>
                         </div>
 
@@ -1361,9 +1295,9 @@ const AgentOrgChart = () => {
                 <div>
                   <Label className="text-xs text-muted-foreground">Status</Label>
                   <div className="flex items-center gap-2 mt-1">
-                    <div className={`w-2.5 h-2.5 rounded-full ${selectedAgent.status === "active" ? ZONE_STYLES[selectedAgent.zone].dot : "bg-gray-500"}`} />
-                    <span className={`text-sm ${selectedAgent.status === "active" ? "text-emerald-400" : "text-gray-400"}`}>
-                      {selectedAgent.status === "active" ? "Active" : "Inactive"}
+                    <div className={`w-2.5 h-2.5 rounded-full ${selectedAgent.active ? ZONE_STYLES[selectedAgent.zone].dot : "bg-gray-500"}`} />
+                    <span className={`text-sm ${selectedAgent.active ? "text-emerald-400" : "text-gray-400"}`}>
+                      {selectedAgent.active ? "Active" : "Inactive"}
                     </span>
                   </div>
                 </div>
@@ -1392,11 +1326,11 @@ const AgentOrgChart = () => {
                   variant="outline"
                   onClick={() => {
                     toggleAgentStatus(selectedAgent.id);
-                    setSelectedAgent({ ...selectedAgent, status: selectedAgent.status === "active" ? "inactive" : "active" });
+                    setSelectedAgent({ ...selectedAgent, active: !selectedAgent.active });
                   }}
                   className="border-border text-foreground"
                 >
-                  {selectedAgent.status === "active" ? (
+                  {selectedAgent.active ? (
                     <><EyeOff className="h-3.5 w-3.5 mr-1" /> Deactivate</>
                   ) : (
                     <><Eye className="h-3.5 w-3.5 mr-1" /> Activate</>
@@ -1563,7 +1497,7 @@ const AgentOrgChart = () => {
 
             {/* Create Button */}
             <Button
-              onClick={addAgent}
+              onClick={handleAddAgent}
               className="w-full gradient-primary text-primary-foreground shadow-glow-sm"
             >
               <Check className="h-4 w-4 mr-2" />

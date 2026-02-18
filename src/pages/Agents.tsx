@@ -232,6 +232,10 @@ const Agents = () => {
       costMonth: 0,
       tokensUsed: 0,
       avgResponseTime: "—",
+      role: "",
+      department: "",
+      level: "worker",
+      parentId: null,
     };
     addAgent(newAgent);
     setCreateOpen(false);
@@ -266,6 +270,10 @@ const Agents = () => {
       costMonth: 0,
       tokensUsed: 0,
       avgResponseTime: "—",
+      role: "",
+      department: "",
+      level: "worker",
+      parentId: null,
     };
     addAgent(newAgent);
     setDeployOpen(false);
