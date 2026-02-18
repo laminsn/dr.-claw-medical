@@ -17,6 +17,12 @@ import {
   CheckCircle2,
   Circle,
   Bot,
+  RefreshCw,
+  Database,
+  CheckCircle,
+  AlertTriangle,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
@@ -320,6 +326,12 @@ const mockCarePlans: CarePlan[] = [
 // Component
 // ---------------------------------------------------------------------------
 
+const EHR_SYSTEMS = [
+  { id: "epic", name: "Epic MyChart", status: "connected", lastSync: "2 min ago", patients: 8, color: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" },
+  { id: "athena", name: "athenahealth", status: "syncing", lastSync: "syncing...", patients: 0, color: "text-amber-400 border-amber-500/30 bg-amber-500/10" },
+  { id: "cerner", name: "Oracle Cerner", status: "disconnected", lastSync: "Never", patients: 0, color: "text-red-400 border-red-500/30 bg-red-500/10" },
+];
+
 const PatientPortal = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -329,6 +341,8 @@ const PatientPortal = () => {
   const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
   const [messages, setMessages] = useState<PatientMessage[]>(mockMessages);
   const [carePlans] = useState<CarePlan[]>(mockCarePlans);
+  const [ehrSyncing, setEhrSyncing] = useState(false);
+  const [lastSynced, setLastSynced] = useState("2 min ago");
 
   // --- i18n label maps ---
   const PATIENT_STATUS_LABELS: Record<PatientStatus, string> = {
@@ -420,6 +434,15 @@ const PatientPortal = () => {
     });
   };
 
+  const handleEhrSync = () => {
+    setEhrSyncing(true);
+    setTimeout(() => {
+      setEhrSyncing(false);
+      setLastSynced("just now");
+      toast({ title: "EHR Sync Complete", description: "8 patient records synced from Epic MyChart." });
+    }, 2200);
+  };
+
   // ---------------------------------------------------------------------------
   // Stat Cards
   // ---------------------------------------------------------------------------
@@ -456,14 +479,54 @@ const PatientPortal = () => {
       <DashboardSidebar />
       <main className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto space-y-8">
-          {/* Header */}
-          <div>
-            <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-              {t("patientPortal.title")}
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {t("patientPortal.subtitle")}
-            </p>
+          {/* Header + EHR Sync */}
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold font-heading gradient-hero-text">
+                {t("patientPortal.title")}
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                {t("patientPortal.subtitle")}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10">
+                <Wifi className="h-3.5 w-3.5 text-emerald-400" />
+                <span className="text-xs font-medium text-emerald-400">Epic MyChart</span>
+                <span className="text-[10px] text-emerald-400/70">· {t("patientPortal.ehrSynced")} {lastSynced}</span>
+              </div>
+              <Button
+                onClick={handleEhrSync}
+                disabled={ehrSyncing}
+                size="sm"
+                className="gradient-primary text-primary-foreground gap-2 text-xs"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${ehrSyncing ? "animate-spin" : ""}`} />
+                {ehrSyncing ? t("patientPortal.ehrSyncing") : t("patientPortal.ehrSyncButton")}
+              </Button>
+            </div>
+          </div>
+
+          {/* EHR Connection Status */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {EHR_SYSTEMS.map((ehr) => (
+              <div key={ehr.id} className={`rounded-xl border p-3 flex items-center gap-3 ${ehr.color}`}>
+                {ehr.status === "connected" ? <CheckCircle className="h-4 w-4 shrink-0" /> :
+                 ehr.status === "syncing" ? <RefreshCw className="h-4 w-4 shrink-0 animate-spin" /> :
+                 <WifiOff className="h-4 w-4 shrink-0" />}
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold truncate">{ehr.name}</p>
+                  <p className="text-[10px] opacity-70">{ehr.status === "connected" ? `${t("patientPortal.ehrLastSync")}: ${ehr.lastSync}` : ehr.status === "syncing" ? t("patientPortal.ehrSyncing") : t("patientPortal.ehrNotConnected")}</p>
+                </div>
+                {ehr.status === "disconnected" && (
+                  <Button size="sm" variant="outline" className="text-[10px] h-6 px-2 border-current text-current hover:bg-current/10 shrink-0"
+                    onClick={() => toast({ title: t("patientPortal.ehrConnectTitle"), description: `${t("patientPortal.ehrConnectDesc")} ${ehr.name}.` })}>
+                    {t("patientPortal.ehrConnect")}
+                  </Button>
+                )}
+              </div>
+            ))}
+
           </div>
 
           {/* Stats Cards */}

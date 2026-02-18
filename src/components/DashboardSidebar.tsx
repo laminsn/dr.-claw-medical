@@ -31,6 +31,7 @@ import {
   MessageCircle,
   LayoutGrid,
   Code2,
+  Terminal,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "react-i18next";
@@ -46,6 +47,7 @@ const DashboardSidebar = () => {
   const menuItems = [
     { icon: LayoutDashboard, label: t("sidebar.clinicalOverview"), path: "/dashboard" },
     { icon: Bot, label: t("sidebar.healthcareAgents"), path: "/dashboard/agents" },
+    { icon: Terminal, label: "Command Station", path: "/dashboard/command" },
     { icon: MessageCircle, label: t("sidebar.agentPlayground"), path: "/dashboard/playground" },
     { icon: Zap, label: t("sidebar.medicalSkills"), path: "/dashboard/skills" },
     { icon: GitBranch, label: t("sidebar.careWorkflows"), path: "/dashboard/workflows" },
