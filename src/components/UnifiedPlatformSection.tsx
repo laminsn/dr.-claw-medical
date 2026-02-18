@@ -1,4 +1,5 @@
 import { ShieldCheck, Lock, Layers, HeartPulse, Users, Zap } from "lucide-react";
+import PlatformDiagram from "@/components/PlatformDiagram";
 
 const pillars = [
   {
@@ -94,6 +95,19 @@ export default function UnifiedPlatformSection() {
               </p>
             </div>
           ))}
+        </div>
+
+        {/* Interactive Platform Diagram */}
+        <div className="mb-14">
+          <div className="text-center mb-8 animate-fade-up">
+            <span className="text-sm font-medium text-muted-foreground uppercase tracking-widest">
+              Interactive Demo
+            </span>
+            <h3 className="text-xl sm:text-2xl font-bold font-heading mt-1">
+              See How Agents, Data & Workflows Connect
+            </h3>
+          </div>
+          <PlatformDiagram />
         </div>
 
         {/* Central callout banner */}
