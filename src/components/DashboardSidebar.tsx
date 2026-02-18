@@ -32,6 +32,9 @@ import {
   LayoutGrid,
   Code2,
   Terminal,
+  Network,
+  Database,
+  Wallet,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "react-i18next";
@@ -48,6 +51,8 @@ const DashboardSidebar = () => {
     { icon: LayoutDashboard, label: t("sidebar.clinicalOverview"), path: "/dashboard" },
     { icon: Bot, label: t("sidebar.healthcareAgents"), path: "/dashboard/agents" },
     { icon: Terminal, label: "Command Station", path: "/dashboard/command" },
+    { icon: Network, label: t("sidebar.agentOrgChart"), path: "/dashboard/org-chart" },
+    { icon: Database, label: t("sidebar.agentDataCenter"), path: "/dashboard/data-center" },
     { icon: MessageCircle, label: t("sidebar.agentPlayground"), path: "/dashboard/playground" },
     { icon: Zap, label: t("sidebar.medicalSkills"), path: "/dashboard/skills" },
     { icon: GitBranch, label: t("sidebar.careWorkflows"), path: "/dashboard/workflows" },
@@ -67,6 +72,7 @@ const DashboardSidebar = () => {
     { icon: GraduationCap, label: t("sidebar.trainingCenter"), path: "/dashboard/training" },
     { icon: ShieldAlert, label: t("sidebar.phiMonitor"), path: "/dashboard/phi-monitor" },
     { icon: Code2, label: t("sidebar.apiPortal"), path: "/dashboard/api" },
+    { icon: Wallet, label: t("sidebar.companyCards"), path: "/dashboard/cards" },
     { icon: CreditCard, label: t("sidebar.billingPlans"), path: "/dashboard/billing" },
     { icon: User, label: t("sidebar.providerProfile"), path: "/dashboard/profile" },
     { icon: Shield, label: t("sidebar.admin"), path: "/dashboard/admin" },
