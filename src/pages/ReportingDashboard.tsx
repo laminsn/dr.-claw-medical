@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   FileText,
   BarChart3,
@@ -74,192 +75,6 @@ interface ExportEntry {
 }
 
 // ---------------------------------------------------------------------------
-// Mock Data
-// ---------------------------------------------------------------------------
-
-const initialTemplates: ReportTemplate[] = [
-  {
-    id: "tpl-1",
-    name: "Agent Performance Report",
-    description: "Comprehensive analysis of agent response times, task completion rates, and efficiency metrics across all active agents.",
-    icon: BarChart3,
-    lastGenerated: "Feb 14, 2026",
-    generating: false,
-  },
-  {
-    id: "tpl-2",
-    name: "Task Completion Summary",
-    description: "Detailed breakdown of completed, pending, and failed tasks with trend analysis and bottleneck identification.",
-    icon: CheckSquare,
-    lastGenerated: "Feb 13, 2026",
-    generating: false,
-  },
-  {
-    id: "tpl-3",
-    name: "PHI Audit Trail",
-    description: "Full audit log of all Protected Health Information access events, modifications, and data handling compliance records.",
-    icon: ShieldCheck,
-    lastGenerated: "Feb 15, 2026",
-    generating: false,
-  },
-  {
-    id: "tpl-4",
-    name: "Financial Summary",
-    description: "Revenue tracking, cost analysis, billing summaries, and financial projections based on operational data.",
-    icon: DollarSign,
-    lastGenerated: "Feb 10, 2026",
-    generating: false,
-  },
-  {
-    id: "tpl-5",
-    name: "Compliance Report",
-    description: "HIPAA compliance status, policy adherence metrics, training completion rates, and regulatory requirement tracking.",
-    icon: ClipboardList,
-    lastGenerated: "Feb 12, 2026",
-    generating: false,
-  },
-  {
-    id: "tpl-6",
-    name: "Communication Analytics",
-    description: "Analysis of all communication channels including SMS, email, voice calls, with volume trends and response metrics.",
-    icon: MessageSquare,
-    lastGenerated: "Feb 14, 2026",
-    generating: false,
-  },
-  {
-    id: "tpl-7",
-    name: "Patient Engagement Report",
-    description: "Patient interaction metrics, appointment adherence rates, satisfaction scores, and engagement trend analysis.",
-    icon: Heart,
-    lastGenerated: "Feb 11, 2026",
-    generating: false,
-  },
-  {
-    id: "tpl-8",
-    name: "Team Productivity",
-    description: "Staff and agent combined productivity metrics, workload distribution, and output quality measurements.",
-    icon: Users,
-    lastGenerated: "Feb 13, 2026",
-    generating: false,
-  },
-];
-
-const initialScheduledReports: ScheduledReport[] = [
-  {
-    id: "sched-1",
-    name: "Daily Agent Performance Summary",
-    frequency: "Daily",
-    nextRun: "Feb 17, 2026 — 6:00 AM",
-    recipients: "admin@drclaw.com",
-    format: "PDF",
-    status: "Active",
-  },
-  {
-    id: "sched-2",
-    name: "Weekly Task Completion Digest",
-    frequency: "Weekly",
-    nextRun: "Feb 23, 2026 — 8:00 AM",
-    recipients: "ops@drclaw.com, admin@drclaw.com",
-    format: "Excel",
-    status: "Active",
-  },
-  {
-    id: "sched-3",
-    name: "Monthly PHI Audit Report",
-    frequency: "Monthly",
-    nextRun: "Mar 1, 2026 — 7:00 AM",
-    recipients: "compliance@drclaw.com",
-    format: "PDF",
-    status: "Active",
-  },
-  {
-    id: "sched-4",
-    name: "Quarterly Financial Summary",
-    frequency: "Quarterly",
-    nextRun: "Apr 1, 2026 — 9:00 AM",
-    recipients: "finance@drclaw.com, admin@drclaw.com",
-    format: "Excel",
-    status: "Paused",
-  },
-  {
-    id: "sched-5",
-    name: "Weekly Communication Analytics",
-    frequency: "Weekly",
-    nextRun: "Feb 23, 2026 — 7:30 AM",
-    recipients: "marketing@drclaw.com",
-    format: "CSV",
-    status: "Active",
-  },
-];
-
-const initialExportHistory: ExportEntry[] = [
-  {
-    id: "exp-1",
-    name: "Agent Performance Report",
-    type: "Automated",
-    generatedDate: "Feb 16, 2026 — 6:02 AM",
-    fileSize: "2.4 MB",
-    format: "PDF",
-  },
-  {
-    id: "exp-2",
-    name: "PHI Audit Trail",
-    type: "On-Demand",
-    generatedDate: "Feb 15, 2026 — 3:15 PM",
-    fileSize: "5.1 MB",
-    format: "PDF",
-  },
-  {
-    id: "exp-3",
-    name: "Task Completion Summary",
-    type: "Scheduled",
-    generatedDate: "Feb 15, 2026 — 8:00 AM",
-    fileSize: "1.8 MB",
-    format: "Excel",
-  },
-  {
-    id: "exp-4",
-    name: "Communication Analytics",
-    type: "On-Demand",
-    generatedDate: "Feb 14, 2026 — 4:30 PM",
-    fileSize: "3.2 MB",
-    format: "CSV",
-  },
-  {
-    id: "exp-5",
-    name: "Compliance Report",
-    type: "Scheduled",
-    generatedDate: "Feb 14, 2026 — 7:00 AM",
-    fileSize: "4.7 MB",
-    format: "PDF",
-  },
-  {
-    id: "exp-6",
-    name: "Patient Engagement Report",
-    type: "On-Demand",
-    generatedDate: "Feb 13, 2026 — 2:45 PM",
-    fileSize: "1.3 MB",
-    format: "PDF",
-  },
-  {
-    id: "exp-7",
-    name: "Financial Summary",
-    type: "Automated",
-    generatedDate: "Feb 12, 2026 — 9:00 AM",
-    fileSize: "2.9 MB",
-    format: "Excel",
-  },
-  {
-    id: "exp-8",
-    name: "Team Productivity",
-    type: "On-Demand",
-    generatedDate: "Feb 11, 2026 — 11:20 AM",
-    fileSize: "1.6 MB",
-    format: "CSV",
-  },
-];
-
-// ---------------------------------------------------------------------------
 // Format badge helper
 // ---------------------------------------------------------------------------
 
@@ -281,7 +96,194 @@ const FREQUENCY_CONFIG: Record<ScheduleFrequency, string> = {
 // ---------------------------------------------------------------------------
 
 const ReportingDashboard = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
+
+  // ---------------------------------------------------------------------------
+  // Mock Data (inside component for t() access)
+  // ---------------------------------------------------------------------------
+
+  const initialTemplates: ReportTemplate[] = [
+    {
+      id: "tpl-1",
+      name: t("reporting.templateAgentPerformance"),
+      description: t("reporting.templateAgentPerformanceDesc"),
+      icon: BarChart3,
+      lastGenerated: "Feb 14, 2026",
+      generating: false,
+    },
+    {
+      id: "tpl-2",
+      name: t("reporting.templateTaskCompletion"),
+      description: t("reporting.templateTaskCompletionDesc"),
+      icon: CheckSquare,
+      lastGenerated: "Feb 13, 2026",
+      generating: false,
+    },
+    {
+      id: "tpl-3",
+      name: t("reporting.templatePhiAudit"),
+      description: t("reporting.templatePhiAuditDesc"),
+      icon: ShieldCheck,
+      lastGenerated: "Feb 15, 2026",
+      generating: false,
+    },
+    {
+      id: "tpl-4",
+      name: t("reporting.templateFinancialSummary"),
+      description: t("reporting.templateFinancialSummaryDesc"),
+      icon: DollarSign,
+      lastGenerated: "Feb 10, 2026",
+      generating: false,
+    },
+    {
+      id: "tpl-5",
+      name: t("reporting.templateComplianceReport"),
+      description: t("reporting.templateComplianceReportDesc"),
+      icon: ClipboardList,
+      lastGenerated: "Feb 12, 2026",
+      generating: false,
+    },
+    {
+      id: "tpl-6",
+      name: t("reporting.templateCommunicationAnalytics"),
+      description: t("reporting.templateCommunicationAnalyticsDesc"),
+      icon: MessageSquare,
+      lastGenerated: "Feb 14, 2026",
+      generating: false,
+    },
+    {
+      id: "tpl-7",
+      name: t("reporting.templatePatientEngagement"),
+      description: t("reporting.templatePatientEngagementDesc"),
+      icon: Heart,
+      lastGenerated: "Feb 11, 2026",
+      generating: false,
+    },
+    {
+      id: "tpl-8",
+      name: t("reporting.templateTeamProductivity"),
+      description: t("reporting.templateTeamProductivityDesc"),
+      icon: Users,
+      lastGenerated: "Feb 13, 2026",
+      generating: false,
+    },
+  ];
+
+  const initialScheduledReports: ScheduledReport[] = [
+    {
+      id: "sched-1",
+      name: t("reporting.schedDailyAgentPerformance"),
+      frequency: "Daily",
+      nextRun: "Feb 17, 2026 — 6:00 AM",
+      recipients: "admin@drclaw.com",
+      format: "PDF",
+      status: "Active",
+    },
+    {
+      id: "sched-2",
+      name: t("reporting.schedWeeklyTaskCompletion"),
+      frequency: "Weekly",
+      nextRun: "Feb 23, 2026 — 8:00 AM",
+      recipients: "ops@drclaw.com, admin@drclaw.com",
+      format: "Excel",
+      status: "Active",
+    },
+    {
+      id: "sched-3",
+      name: t("reporting.schedMonthlyPhiAudit"),
+      frequency: "Monthly",
+      nextRun: "Mar 1, 2026 — 7:00 AM",
+      recipients: "compliance@drclaw.com",
+      format: "PDF",
+      status: "Active",
+    },
+    {
+      id: "sched-4",
+      name: t("reporting.schedQuarterlyFinancial"),
+      frequency: "Quarterly",
+      nextRun: "Apr 1, 2026 — 9:00 AM",
+      recipients: "finance@drclaw.com, admin@drclaw.com",
+      format: "Excel",
+      status: "Paused",
+    },
+    {
+      id: "sched-5",
+      name: t("reporting.schedWeeklyCommunication"),
+      frequency: "Weekly",
+      nextRun: "Feb 23, 2026 — 7:30 AM",
+      recipients: "marketing@drclaw.com",
+      format: "CSV",
+      status: "Active",
+    },
+  ];
+
+  const initialExportHistory: ExportEntry[] = [
+    {
+      id: "exp-1",
+      name: t("reporting.templateAgentPerformance"),
+      type: t("reporting.typeAutomated"),
+      generatedDate: "Feb 16, 2026 — 6:02 AM",
+      fileSize: "2.4 MB",
+      format: "PDF",
+    },
+    {
+      id: "exp-2",
+      name: t("reporting.templatePhiAudit"),
+      type: t("reporting.typeOnDemand"),
+      generatedDate: "Feb 15, 2026 — 3:15 PM",
+      fileSize: "5.1 MB",
+      format: "PDF",
+    },
+    {
+      id: "exp-3",
+      name: t("reporting.templateTaskCompletion"),
+      type: t("reporting.typeScheduled"),
+      generatedDate: "Feb 15, 2026 — 8:00 AM",
+      fileSize: "1.8 MB",
+      format: "Excel",
+    },
+    {
+      id: "exp-4",
+      name: t("reporting.templateCommunicationAnalytics"),
+      type: t("reporting.typeOnDemand"),
+      generatedDate: "Feb 14, 2026 — 4:30 PM",
+      fileSize: "3.2 MB",
+      format: "CSV",
+    },
+    {
+      id: "exp-5",
+      name: t("reporting.templateComplianceReport"),
+      type: t("reporting.typeScheduled"),
+      generatedDate: "Feb 14, 2026 — 7:00 AM",
+      fileSize: "4.7 MB",
+      format: "PDF",
+    },
+    {
+      id: "exp-6",
+      name: t("reporting.templatePatientEngagement"),
+      type: t("reporting.typeOnDemand"),
+      generatedDate: "Feb 13, 2026 — 2:45 PM",
+      fileSize: "1.3 MB",
+      format: "PDF",
+    },
+    {
+      id: "exp-7",
+      name: t("reporting.templateFinancialSummary"),
+      type: t("reporting.typeAutomated"),
+      generatedDate: "Feb 12, 2026 — 9:00 AM",
+      fileSize: "2.9 MB",
+      format: "Excel",
+    },
+    {
+      id: "exp-8",
+      name: t("reporting.templateTeamProductivity"),
+      type: t("reporting.typeOnDemand"),
+      generatedDate: "Feb 11, 2026 — 11:20 AM",
+      fileSize: "1.6 MB",
+      format: "CSV",
+    },
+  ];
 
   // --- Report templates ---
   const [templates, setTemplates] = useState<ReportTemplate[]>(initialTemplates);
@@ -296,11 +298,11 @@ const ReportingDashboard = () => {
   const [customStartDate, setCustomStartDate] = useState("2026-02-01");
   const [customEndDate, setCustomEndDate] = useState("2026-02-16");
   const [customMetrics, setCustomMetrics] = useState<Record<string, boolean>>({
-    "Agent Tasks": true,
-    "Response Times": false,
-    "Success Rates": true,
-    "PHI Events": false,
-    "Communication Volume": true,
+    [t("reporting.metricAgentTasks")]: true,
+    [t("reporting.metricResponseTimes")]: false,
+    [t("reporting.metricSuccessRates")]: true,
+    [t("reporting.metricPhiEvents")]: false,
+    [t("reporting.metricCommunicationVolume")]: true,
   });
   const [customFormat, setCustomFormat] = useState<ReportFormat>("PDF");
   const [customGenerating, setCustomGenerating] = useState(false);
@@ -314,8 +316,8 @@ const ReportingDashboard = () => {
       prev.map((t) => (t.id === templateId ? { ...t, generating: true } : t)),
     );
     toast({
-      title: "Generating report",
-      description: `Your report is being generated. This may take a moment.`,
+      title: t("reporting.toastGeneratingTitle"),
+      description: t("reporting.toastGeneratingDesc"),
     });
 
     setTimeout(() => {
@@ -326,10 +328,10 @@ const ReportingDashboard = () => {
             : t,
         ),
       );
-      const template = templates.find((t) => t.id === templateId);
+      const template = templates.find((tpl) => tpl.id === templateId);
       toast({
-        title: "Report ready",
-        description: `"${template?.name}" has been generated and is available for download.`,
+        title: t("reporting.toastReportReadyTitle"),
+        description: t("reporting.toastReportReadyDesc", { name: template?.name }),
       });
     }, 2000);
   };
@@ -340,8 +342,8 @@ const ReportingDashboard = () => {
         if (r.id === scheduleId) {
           const newStatus: ScheduleStatus = r.status === "Active" ? "Paused" : "Active";
           toast({
-            title: `Schedule ${newStatus.toLowerCase()}`,
-            description: `"${r.name}" has been ${newStatus.toLowerCase()}.`,
+            title: t("reporting.toastScheduleToggleTitle", { status: newStatus.toLowerCase() }),
+            description: t("reporting.toastScheduleToggleDesc", { name: r.name, status: newStatus.toLowerCase() }),
           });
           return { ...r, status: newStatus };
         }
@@ -384,8 +386,8 @@ const ReportingDashboard = () => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     toast({
-      title: "Download complete",
-      description: `"${exportEntry.name}" (${exportEntry.fileSize}) saved to your device.`,
+      title: t("reporting.toastDownloadTitle"),
+      description: t("reporting.toastDownloadDesc", { name: exportEntry.name, size: exportEntry.fileSize }),
     });
   };
 
@@ -403,23 +405,23 @@ const ReportingDashboard = () => {
 
     if (selectedMetrics.length === 0) {
       toast({
-        title: "No metrics selected",
-        description: "Please select at least one metric for your custom report.",
+        title: t("reporting.toastNoMetricsTitle"),
+        description: t("reporting.toastNoMetricsDesc"),
       });
       return;
     }
 
     setCustomGenerating(true);
     toast({
-      title: "Custom report generating",
-      description: `Building report with ${selectedMetrics.length} metrics in ${customFormat} format.`,
+      title: t("reporting.toastCustomGeneratingTitle"),
+      description: t("reporting.toastCustomGeneratingDesc", { count: selectedMetrics.length, format: customFormat }),
     });
 
     setTimeout(() => {
       setCustomGenerating(false);
       toast({
-        title: "Custom report ready",
-        description: `Your custom report (${customStartDate} to ${customEndDate}) is available for download.`,
+        title: t("reporting.toastCustomReadyTitle"),
+        description: t("reporting.toastCustomReadyDesc", { startDate: customStartDate, endDate: customEndDate }),
       });
     }, 2500);
   };
@@ -430,27 +432,27 @@ const ReportingDashboard = () => {
 
   const stats = [
     {
-      label: "Reports Generated",
+      label: t("reporting.statsReportsGenerated"),
       value: "148",
-      change: "+12 this week",
+      change: t("reporting.statsReportsGeneratedChange"),
       icon: FileText,
     },
     {
-      label: "Compliance Score",
+      label: t("reporting.statsComplianceScore"),
       value: "97.3%",
-      change: "+1.2% from last month",
+      change: t("reporting.statsComplianceScoreChange"),
       icon: ShieldCheck,
     },
     {
-      label: "Data Exports",
+      label: t("reporting.statsDataExports"),
       value: "64",
-      change: "8 pending",
+      change: t("reporting.statsDataExportsChange"),
       icon: Download,
     },
     {
-      label: "Scheduled Reports",
+      label: t("reporting.statsScheduledReports"),
       value: String(scheduledReports.filter((r) => r.status === "Active").length),
-      change: `of ${scheduledReports.length} total`,
+      change: t("reporting.statsScheduledReportsChange", { total: scheduledReports.length }),
       icon: Calendar,
     },
   ];
@@ -468,10 +470,10 @@ const ReportingDashboard = () => {
           {/* Header */}
           <div>
             <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-              Clinical Reporting & Exports
+              {t("reporting.title")}
             </h1>
             <p className="text-muted-foreground mt-1">
-              Generate HIPAA-compliant clinical reports, compliance audits, and practice analytics.
+              {t("reporting.subtitle")}
             </p>
           </div>
 
@@ -506,10 +508,10 @@ const ReportingDashboard = () => {
               <div>
                 <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <FileText className="h-5 w-5 text-primary" />
-                  Report Templates
+                  {t("reporting.reportTemplates")}
                 </h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Select a template to generate a report instantly
+                  {t("reporting.reportTemplatesDesc")}
                 </p>
               </div>
             </div>
@@ -533,7 +535,7 @@ const ReportingDashboard = () => {
                     </p>
                     <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-3">
                       <Clock className="h-3 w-3" />
-                      Last generated: {template.lastGenerated}
+                      {t("reporting.lastGenerated")}: {template.lastGenerated}
                     </div>
                     <Button
                       size="sm"
@@ -544,12 +546,12 @@ const ReportingDashboard = () => {
                       {template.generating ? (
                         <>
                           <Activity className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                          Generating...
+                          {t("reporting.generating")}
                         </>
                       ) : (
                         <>
                           <Play className="h-3.5 w-3.5 mr-1.5" />
-                          Generate
+                          {t("reporting.generate")}
                         </>
                       )}
                     </Button>
@@ -567,10 +569,10 @@ const ReportingDashboard = () => {
               <div>
                 <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-primary" />
-                  Scheduled Reports
+                  {t("reporting.scheduledReports")}
                 </h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Recurring reports delivered automatically
+                  {t("reporting.scheduledReportsDesc")}
                 </p>
               </div>
             </div>
@@ -578,12 +580,12 @@ const ReportingDashboard = () => {
             <div className="bg-card rounded-xl border border-white/[0.06] overflow-hidden">
               {/* Table header */}
               <div className="grid grid-cols-[1fr_100px_160px_1fr_80px_90px] gap-3 px-5 py-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-white/[0.06]">
-                <span>Report Name</span>
-                <span>Frequency</span>
-                <span>Next Run</span>
-                <span>Recipients</span>
-                <span>Format</span>
-                <span className="text-right">Status</span>
+                <span>{t("reporting.colReportName")}</span>
+                <span>{t("reporting.colFrequency")}</span>
+                <span>{t("reporting.colNextRun")}</span>
+                <span>{t("reporting.colRecipients")}</span>
+                <span>{t("reporting.colFormat")}</span>
+                <span className="text-right">{t("reporting.colStatus")}</span>
               </div>
 
               {/* Table rows */}
@@ -627,7 +629,7 @@ const ReportingDashboard = () => {
                           report.status === "Active" ? "text-green-400" : "text-amber-400"
                         }`}
                       >
-                        {report.status}
+                        {report.status === "Active" ? t("reporting.statusActive") : t("reporting.statusPaused")}
                       </span>
                       <Switch
                         checked={report.status === "Active"}
@@ -648,10 +650,10 @@ const ReportingDashboard = () => {
               <div>
                 <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <Download className="h-5 w-5 text-primary" />
-                  Export History
+                  {t("reporting.exportHistory")}
                 </h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Recent reports and data exports
+                  {t("reporting.exportHistoryDesc")}
                 </p>
               </div>
             </div>
@@ -659,12 +661,12 @@ const ReportingDashboard = () => {
             <div className="bg-card rounded-xl border border-white/[0.06] overflow-hidden">
               {/* Table header */}
               <div className="grid grid-cols-[1fr_100px_160px_80px_70px_80px] gap-3 px-5 py-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-white/[0.06]">
-                <span>Report Name</span>
-                <span>Type</span>
-                <span>Generated</span>
-                <span>Size</span>
-                <span>Format</span>
-                <span className="text-right">Action</span>
+                <span>{t("reporting.colReportName")}</span>
+                <span>{t("reporting.colType")}</span>
+                <span>{t("reporting.colGenerated")}</span>
+                <span>{t("reporting.colSize")}</span>
+                <span>{t("reporting.colFormat")}</span>
+                <span className="text-right">{t("reporting.colAction")}</span>
               </div>
 
               {/* Table rows */}
@@ -709,7 +711,7 @@ const ReportingDashboard = () => {
                         onClick={() => handleDownload(entry)}
                       >
                         <Download className="h-3 w-3" />
-                        Download
+                        {t("reporting.download")}
                       </Button>
                     </div>
                   </div>
@@ -726,10 +728,10 @@ const ReportingDashboard = () => {
               <div>
                 <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <Filter className="h-5 w-5 text-primary" />
-                  Custom Report Builder
+                  {t("reporting.customReportBuilder")}
                 </h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Build a tailored report with custom date ranges and metrics
+                  {t("reporting.customReportBuilderDesc")}
                 </p>
               </div>
             </div>
@@ -740,11 +742,11 @@ const ReportingDashboard = () => {
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-primary" />
-                    Date Range
+                    {t("reporting.dateRange")}
                   </h3>
                   <div className="space-y-3">
                     <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Start Date</Label>
+                      <Label className="text-xs text-muted-foreground">{t("reporting.startDate")}</Label>
                       <Input
                         type="date"
                         value={customStartDate}
@@ -753,7 +755,7 @@ const ReportingDashboard = () => {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">End Date</Label>
+                      <Label className="text-xs text-muted-foreground">{t("reporting.endDate")}</Label>
                       <Input
                         type="date"
                         value={customEndDate}
@@ -768,7 +770,7 @@ const ReportingDashboard = () => {
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                     <BarChart3 className="h-4 w-4 text-primary" />
-                    Metrics
+                    {t("reporting.metrics")}
                   </h3>
                   <div className="space-y-3">
                     {Object.entries(customMetrics).map(([metric, checked]) => (
@@ -793,7 +795,7 @@ const ReportingDashboard = () => {
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                     <FileText className="h-4 w-4 text-primary" />
-                    Output Format
+                    {t("reporting.outputFormat")}
                   </h3>
                   <div className="space-y-3">
                     <Select
@@ -801,7 +803,7 @@ const ReportingDashboard = () => {
                       onValueChange={(value: ReportFormat) => setCustomFormat(value)}
                     >
                       <SelectTrigger className="bg-white/[0.03] border-white/10 focus:border-primary/50">
-                        <SelectValue placeholder="Select format" />
+                        <SelectValue placeholder={t("reporting.selectFormat")} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="PDF">PDF</SelectItem>
@@ -812,7 +814,7 @@ const ReportingDashboard = () => {
 
                     <div className="pt-2">
                       <p className="text-[10px] text-muted-foreground mb-3">
-                        Selected: {Object.values(customMetrics).filter(Boolean).length} metrics
+                        {t("reporting.selectedSummary", { count: Object.values(customMetrics).filter(Boolean).length })}
                         {" | "}
                         {customStartDate} to {customEndDate}
                         {" | "}
@@ -826,12 +828,12 @@ const ReportingDashboard = () => {
                         {customGenerating ? (
                           <>
                             <Activity className="h-4 w-4 mr-2 animate-spin" />
-                            Generating Custom Report...
+                            {t("reporting.generatingCustomReport")}
                           </>
                         ) : (
                           <>
                             <Play className="h-4 w-4 mr-2" />
-                            Generate Custom Report
+                            {t("reporting.generateCustomReport")}
                           </>
                         )}
                       </Button>

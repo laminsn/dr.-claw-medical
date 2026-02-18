@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Bot,
   Send,
@@ -78,12 +79,6 @@ const AGENT_ZONE_MAP: Record<string, AgentZone> = {
   "content-engine": "external",
   "financial-analyst": "operations",
   "hr-coordinator": "operations",
-};
-
-const ZONE_CONFIG: Record<AgentZone, { label: string; shortLabel: string; color: string; bgColor: string; description: string }> = {
-  clinical: { label: "Zone 1 — Clinical (PHI)", shortLabel: "Clinical", color: "text-red-400", bgColor: "bg-red-500/15 border-red-500/30 text-red-400", description: "Internal platform only. No email, phone, SMS, or external endpoints." },
-  operations: { label: "Zone 2 — Operations", shortLabel: "Operations", color: "text-amber-400", bgColor: "bg-amber-500/15 border-amber-500/30 text-amber-400", description: "Internal tools only. Receives de-identified data from Zone 1." },
-  external: { label: "Zone 3 — External", shortLabel: "External", color: "text-blue-400", bgColor: "bg-blue-500/15 border-blue-500/30 text-blue-400", description: "Patient-facing channels enabled. Zero PHI access." },
 };
 
 // ---------------------------------------------------------------------------
@@ -328,57 +323,6 @@ const DEFAULT_CONVERSATIONS: Record<string, ChatMessage[]> = {
   ],
 };
 
-const TEST_SCENARIOS: TestScenario[] = [
-  {
-    id: "book-appointment",
-    title: "Book Appointment",
-    description: "Tests scheduling capability",
-    icon: Calendar,
-    firstMessage:
-      "I need to schedule a follow-up appointment with my primary care doctor for sometime next week. I prefer mornings if possible.",
-  },
-  {
-    id: "handle-complaint",
-    title: "Handle Complaint",
-    description: "Tests empathy and de-escalation",
-    icon: AlertTriangle,
-    firstMessage:
-      "I'm extremely frustrated. I've been waiting over 45 minutes past my appointment time and nobody has told me what's going on. This is unacceptable.",
-  },
-  {
-    id: "insurance-query",
-    title: "Insurance Query",
-    description: "Tests insurance verification flow",
-    icon: Shield,
-    firstMessage:
-      "I just switched to a new insurance plan through my employer - Aetna PPO. Can you check if Dr. Williams is still in-network and what my copay would be?",
-  },
-  {
-    id: "emergency-triage",
-    title: "Emergency Triage",
-    description: "Tests urgent care protocol",
-    icon: HeartPulse,
-    firstMessage:
-      "My child has a fever of 103.5 and has been vomiting for the past 2 hours. Should I come to the clinic or go to the emergency room?",
-  },
-  {
-    id: "prescription-refill",
-    title: "Prescription Refill",
-    description: "Tests medication workflow",
-    icon: Pill,
-    firstMessage:
-      "I need to refill my blood pressure medication - Lisinopril 10mg. I think I have one refill left on the prescription. Can you help me with that?",
-  },
-  {
-    id: "billing-question",
-    title: "Billing Question",
-    description: "Tests financial knowledge",
-    icon: DollarSign,
-    firstMessage:
-      "I received a bill for $450 from my last visit but my insurance should have covered most of it. Can you explain the charges and check if the claim was processed correctly?",
-  },
-];
-
 const MOCK_AGENT_RESPONSES: Record<string, string[]> = {
   "front-desk": [
     "I'd be happy to help with that! Let me pull up the schedule and check availability for you. One moment please...",
@@ -431,7 +375,65 @@ function getTimeNow(): string {
 // ---------------------------------------------------------------------------
 
 const AgentPlayground = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
+
+  const ZONE_CONFIG: Record<AgentZone, { label: string; shortLabel: string; color: string; bgColor: string; description: string }> = {
+    clinical: { label: t("playground.zoneClinicalLabel"), shortLabel: t("playground.zoneClinicalShort"), color: "text-red-400", bgColor: "bg-red-500/15 border-red-500/30 text-red-400", description: t("playground.zoneClinicalDesc") },
+    operations: { label: t("playground.zoneOperationsLabel"), shortLabel: t("playground.zoneOperationsShort"), color: "text-amber-400", bgColor: "bg-amber-500/15 border-amber-500/30 text-amber-400", description: t("playground.zoneOperationsDesc") },
+    external: { label: t("playground.zoneExternalLabel"), shortLabel: t("playground.zoneExternalShort"), color: "text-blue-400", bgColor: "bg-blue-500/15 border-blue-500/30 text-blue-400", description: t("playground.zoneExternalDesc") },
+  };
+
+  const TEST_SCENARIOS: TestScenario[] = [
+    {
+      id: "book-appointment",
+      title: t("playground.scenarioBookAppointment"),
+      description: t("playground.scenarioBookAppointmentDesc"),
+      icon: Calendar,
+      firstMessage:
+        "I need to schedule a follow-up appointment with my primary care doctor for sometime next week. I prefer mornings if possible.",
+    },
+    {
+      id: "handle-complaint",
+      title: t("playground.scenarioHandleComplaint"),
+      description: t("playground.scenarioHandleComplaintDesc"),
+      icon: AlertTriangle,
+      firstMessage:
+        "I'm extremely frustrated. I've been waiting over 45 minutes past my appointment time and nobody has told me what's going on. This is unacceptable.",
+    },
+    {
+      id: "insurance-query",
+      title: t("playground.scenarioInsuranceQuery"),
+      description: t("playground.scenarioInsuranceQueryDesc"),
+      icon: Shield,
+      firstMessage:
+        "I just switched to a new insurance plan through my employer - Aetna PPO. Can you check if Dr. Williams is still in-network and what my copay would be?",
+    },
+    {
+      id: "emergency-triage",
+      title: t("playground.scenarioEmergencyTriage"),
+      description: t("playground.scenarioEmergencyTriageDesc"),
+      icon: HeartPulse,
+      firstMessage:
+        "My child has a fever of 103.5 and has been vomiting for the past 2 hours. Should I come to the clinic or go to the emergency room?",
+    },
+    {
+      id: "prescription-refill",
+      title: t("playground.scenarioPrescriptionRefill"),
+      description: t("playground.scenarioPrescriptionRefillDesc"),
+      icon: Pill,
+      firstMessage:
+        "I need to refill my blood pressure medication - Lisinopril 10mg. I think I have one refill left on the prescription. Can you help me with that?",
+    },
+    {
+      id: "billing-question",
+      title: t("playground.scenarioBillingQuestion"),
+      description: t("playground.scenarioBillingQuestionDesc"),
+      icon: DollarSign,
+      firstMessage:
+        "I received a bill for $450 from my last visit but my insurance should have covered most of it. Can you explain the charges and check if the claim was processed correctly?",
+    },
+  ];
 
   // Agent selection
   const [selectedAgentId, setSelectedAgentId] = useState<string>("front-desk");
@@ -492,7 +494,7 @@ const AgentPlayground = () => {
       phiDetections: 0,
       sentimentScore: parseFloat((Math.random() * 0.3 + 0.7).toFixed(2)),
     });
-    toast({ title: "Agent Switched", description: `Now testing ${agent.name}.` });
+    toast({ title: t("playground.agentSwitched"), description: t("playground.agentSwitchedDesc", { name: agent.name }) });
   };
 
   // Handler: reset conversation
@@ -506,7 +508,7 @@ const AgentPlayground = () => {
       phiDetections: 0,
       sentimentScore: 0.87,
     });
-    toast({ title: "Conversation Reset", description: "Chat has been reset to default." });
+    toast({ title: t("playground.conversationReset"), description: t("playground.conversationResetDesc") });
   };
 
   // Handler: send message
@@ -589,8 +591,8 @@ const AgentPlayground = () => {
     }, delay);
 
     toast({
-      title: "Scenario Loaded",
-      description: `"${scenario.title}" scenario loaded into chat.`,
+      title: t("playground.scenarioLoaded"),
+      description: t("playground.scenarioLoadedDesc", { title: scenario.title }),
     });
   };
 
@@ -612,17 +614,17 @@ const AgentPlayground = () => {
       <DashboardSidebar />
       <main className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto space-y-8">
-          {/* ── Header ─────────────────────────────── */}
+          {/* -- Header -- */}
           <div>
             <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-              Clinical Agent Playground
+              {t("playground.title")}
             </h1>
             <p className="text-muted-foreground mt-1">
-              Test and refine your healthcare AI agents before deploying them to your practice.
+              {t("playground.subtitle")}
             </p>
           </div>
 
-          {/* ── Agent Selector Top Bar ──────────────── */}
+          {/* -- Agent Selector Top Bar -- */}
           <div className="bg-card rounded-xl border border-white/[0.06] p-5 card-hover">
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <div className="flex items-center gap-3 flex-1">
@@ -672,12 +674,12 @@ const AgentPlayground = () => {
                 onClick={handleReset}
               >
                 <RotateCcw className="h-4 w-4" />
-                Reset Conversation
+                {t("playground.resetConversation")}
               </Button>
             </div>
           </div>
 
-          {/* ── Main Content: Chat + Controls ──────── */}
+          {/* -- Main Content: Chat + Controls -- */}
           <div className="flex gap-6">
             {/* Chat Interface (main area) */}
             <div className="flex-1 flex flex-col min-w-0">
@@ -687,7 +689,7 @@ const AgentPlayground = () => {
                   <div className="px-4 py-2 bg-red-500/5 border-b border-red-500/20 flex items-center gap-2">
                     <Shield className="h-3.5 w-3.5 text-red-400 shrink-0" />
                     <p className="text-[10px] text-red-400/90">
-                      <span className="font-semibold">Zone 1 Test Mode:</span> In production, this agent is restricted to internal platform communication. No external channels or cross-zone data sharing.
+                      <span className="font-semibold">{t("playground.zone1TestMode")}:</span> {t("playground.zone1TestModeDesc")}
                     </p>
                   </div>
                 )}
@@ -756,7 +758,7 @@ const AgentPlayground = () => {
                       value={inputText}
                       onChange={(e) => setInputText(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      placeholder="Type a message to test the agent..."
+                      placeholder={t("playground.typeMessagePlaceholder")}
                       className="bg-background border-border resize-none min-h-[44px] max-h-[120px]"
                       rows={1}
                     />
@@ -771,14 +773,14 @@ const AgentPlayground = () => {
                 </div>
               </div>
 
-              {/* ── Performance Metrics ──────────────── */}
+              {/* -- Performance Metrics -- */}
               <div className="grid grid-cols-4 gap-4 mt-4">
                 <div className="bg-card rounded-xl border border-white/[0.06] p-4 card-hover">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500">
                       <Clock className="h-4 w-4 text-white" />
                     </div>
-                    <span className="text-xs text-muted-foreground">Response Time</span>
+                    <span className="text-xs text-muted-foreground">{t("playground.responseTime")}</span>
                   </div>
                   <p className="text-lg font-bold text-foreground">{metrics.responseTime}ms</p>
                 </div>
@@ -787,7 +789,7 @@ const AgentPlayground = () => {
                     <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500">
                       <Activity className="h-4 w-4 text-white" />
                     </div>
-                    <span className="text-xs text-muted-foreground">Token Usage</span>
+                    <span className="text-xs text-muted-foreground">{t("playground.tokenUsage")}</span>
                   </div>
                   <p className="text-lg font-bold text-foreground">{metrics.tokenUsage.toLocaleString()}</p>
                 </div>
@@ -796,7 +798,7 @@ const AgentPlayground = () => {
                     <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-gradient-to-br from-red-500 to-rose-500">
                       <Eye className="h-4 w-4 text-white" />
                     </div>
-                    <span className="text-xs text-muted-foreground">PHI Detections</span>
+                    <span className="text-xs text-muted-foreground">{t("playground.phiDetections")}</span>
                   </div>
                   <p className="text-lg font-bold text-foreground">{metrics.phiDetections}</p>
                 </div>
@@ -805,19 +807,19 @@ const AgentPlayground = () => {
                     <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-green-500">
                       <SmilePlus className="h-4 w-4 text-white" />
                     </div>
-                    <span className="text-xs text-muted-foreground">Sentiment Score</span>
+                    <span className="text-xs text-muted-foreground">{t("playground.sentimentScore")}</span>
                   </div>
                   <p className="text-lg font-bold text-foreground">{metrics.sentimentScore}</p>
                 </div>
               </div>
             </div>
 
-            {/* ── Conversation Controls Sidebar ────── */}
+            {/* -- Conversation Controls Sidebar -- */}
             <div className="w-80 shrink-0 space-y-4 hidden lg:block">
               <div className="bg-card rounded-xl border border-white/[0.06] p-5 card-hover space-y-5">
                 <div className="flex items-center gap-2">
                   <SlidersHorizontal className="h-4 w-4 text-primary" />
-                  <h3 className="text-sm font-semibold text-foreground">Controls</h3>
+                  <h3 className="text-sm font-semibold text-foreground">{t("playground.controls")}</h3>
                 </div>
 
                 <Separator className="bg-white/[0.06]" />
@@ -826,7 +828,7 @@ const AgentPlayground = () => {
                 <div className="space-y-2">
                   <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                     <Shield className="h-3.5 w-3.5 text-red-400" />
-                    Security Zone
+                    {t("playground.securityZone")}
                   </Label>
                   <div className={`rounded-lg border p-3 ${
                     AGENT_ZONE_MAP[selectedAgentId] === "clinical" ? "border-red-500/30 bg-red-500/5" :
@@ -844,7 +846,7 @@ const AgentPlayground = () => {
                     <div className="flex items-start gap-2 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
                       <Lock className="h-3 w-3 text-red-400 mt-0.5 shrink-0" />
                       <p className="text-[10px] text-red-400/80 leading-relaxed">
-                        In production, this agent's communications are restricted to the internal platform only. Email, SMS, voice, and external API access are disabled.
+                        {t("playground.clinicalRestrictionNote")}
                       </p>
                     </div>
                   )}
@@ -857,7 +859,7 @@ const AgentPlayground = () => {
                   <div className="flex items-center justify-between">
                     <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                       <Thermometer className="h-3.5 w-3.5" />
-                      Temperature
+                      {t("playground.temperature")}
                     </Label>
                     <span className="text-xs font-mono text-foreground">{temperature.toFixed(1)}</span>
                   </div>
@@ -874,7 +876,7 @@ const AgentPlayground = () => {
                 <div className="space-y-2">
                   <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                     <Hash className="h-3.5 w-3.5" />
-                    Max Tokens
+                    {t("playground.maxTokens")}
                   </Label>
                   <Input
                     type="number"
@@ -892,7 +894,7 @@ const AgentPlayground = () => {
                 <div className="space-y-2">
                   <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                     <FileText className="h-3.5 w-3.5" />
-                    System Prompt
+                    {t("playground.systemPrompt")}
                   </Label>
                   <Textarea
                     value={systemPrompt}
@@ -908,7 +910,7 @@ const AgentPlayground = () => {
                 <div className="space-y-3">
                   <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                     <Zap className="h-3.5 w-3.5" />
-                    Active Skills
+                    {t("playground.activeSkills")}
                   </Label>
                   <div className="space-y-2.5">
                     {selectedAgent.skills.map((skill) => (
@@ -929,7 +931,7 @@ const AgentPlayground = () => {
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                     <Shield className="h-3.5 w-3.5 text-red-400" />
-                    PHI Protection
+                    {t("playground.phiProtection")}
                   </Label>
                   <Switch
                     checked={phiProtection}
@@ -940,7 +942,7 @@ const AgentPlayground = () => {
                   <div className="flex items-start gap-2 p-2.5 rounded-lg bg-red-500/10 border border-red-500/20">
                     <Shield className="h-3.5 w-3.5 text-red-400 mt-0.5 shrink-0" />
                     <p className="text-[10px] text-red-400/80 leading-relaxed">
-                      PHI protection is active. The agent will redact and refuse to transmit any protected health information.
+                      {t("playground.phiProtectionDesc")}
                     </p>
                   </div>
                 )}
@@ -951,16 +953,16 @@ const AgentPlayground = () => {
                 <div className="space-y-2">
                   <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                     <MessageSquare className="h-3.5 w-3.5" />
-                    Response Format
+                    {t("playground.responseFormat")}
                   </Label>
                   <Select value={responseFormat} onValueChange={setResponseFormat}>
                     <SelectTrigger className="bg-background border-border text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="text">Text</SelectItem>
-                      <SelectItem value="json">JSON</SelectItem>
-                      <SelectItem value="structured">Structured</SelectItem>
+                      <SelectItem value="text">{t("playground.formatText")}</SelectItem>
+                      <SelectItem value="json">{t("playground.formatJson")}</SelectItem>
+                      <SelectItem value="structured">{t("playground.formatStructured")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -968,12 +970,12 @@ const AgentPlayground = () => {
             </div>
           </div>
 
-          {/* ── Test Scenarios ──────────────────────── */}
+          {/* -- Test Scenarios -- */}
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Play className="h-5 w-5 text-primary" />
               <h2 className="text-lg font-semibold font-heading text-foreground">
-                Test Scenarios
+                {t("playground.testScenarios")}
               </h2>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">

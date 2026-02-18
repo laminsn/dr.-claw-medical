@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   MessageSquare,
   Search,
@@ -119,25 +120,6 @@ const ZONE_ALLOWED_CHANNELS: Record<AgentZone, ChannelType[]> = {
   clinical: ["chat"], // Internal platform only
   operations: ["chat"], // Internal only
   external: ["sms", "email", "voice", "chat", "web"], // All channels
-};
-
-const ZONE_BADGE_CONFIG: Record<AgentZone, { label: string; color: string }> = {
-  clinical: { label: "Zone 1 — Clinical", color: "text-red-400 bg-red-500/15 border-red-500/30" },
-  operations: { label: "Zone 2 — Operations", color: "text-amber-400 bg-amber-500/15 border-amber-500/30" },
-  external: { label: "Zone 3 — External", color: "text-blue-400 bg-blue-500/15 border-blue-500/30" },
-};
-
-const CONTACT_TYPE_CONFIG: Record<ContactType, { icon: typeof User; label: string; color: string }> = {
-  patient: { icon: Heart, label: "Patient", color: "text-rose-400 bg-rose-500/15 border-rose-500/30" },
-  "external-partner": { icon: Building2, label: "Partner", color: "text-emerald-400 bg-emerald-500/15 border-emerald-500/30" },
-};
-
-const CHANNEL_CONFIG: Record<ChannelType, { icon: typeof MessageSquare; label: string; color: string }> = {
-  sms: { icon: MessageCircle, label: "SMS", color: "text-green-400 bg-green-500/15 border-green-500/30" },
-  email: { icon: Mail, label: "Email", color: "text-blue-400 bg-blue-500/15 border-blue-500/30" },
-  voice: { icon: Phone, label: "Voice", color: "text-amber-400 bg-amber-500/15 border-amber-500/30" },
-  chat: { icon: MessageSquare, label: "Chat", color: "text-violet-400 bg-violet-500/15 border-violet-500/30" },
-  web: { icon: Globe, label: "Web", color: "text-cyan-400 bg-cyan-500/15 border-cyan-500/30" },
 };
 
 const mockConversations: Conversation[] = [
@@ -323,7 +305,7 @@ const mockConversations: Conversation[] = [
   },
 ];
 
-/* ── PHI validation helper ─────────────────────────────────── */
+/* -- PHI validation helper -- */
 
 function validateFieldsForPhi(fields: Record<string, string>): string[] {
   const warnings: string[] = [];
@@ -335,7 +317,7 @@ function validateFieldsForPhi(fields: Record<string, string>): string[] {
   return warnings;
 }
 
-/* ── Zone violation check for external partner + clinical ──── */
+/* -- Zone violation check for external partner + clinical -- */
 
 function isExternalPartnerZoneViolation(contactType: ContactType, zone: AgentZone): boolean {
   // External partners should NEVER be routed to clinical agents (Zone 1 has PHI)
@@ -345,6 +327,27 @@ function isExternalPartnerZoneViolation(contactType: ContactType, zone: AgentZon
 }
 
 const AgentCommunication = () => {
+  const { t } = useTranslation();
+
+  const ZONE_BADGE_CONFIG: Record<AgentZone, { label: string; color: string }> = {
+    clinical: { label: t("communication.zoneClinical"), color: "text-red-400 bg-red-500/15 border-red-500/30" },
+    operations: { label: t("communication.zoneOperations"), color: "text-amber-400 bg-amber-500/15 border-amber-500/30" },
+    external: { label: t("communication.zoneExternal"), color: "text-blue-400 bg-blue-500/15 border-blue-500/30" },
+  };
+
+  const CONTACT_TYPE_CONFIG: Record<ContactType, { icon: typeof User; label: string; color: string }> = {
+    patient: { icon: Heart, label: t("communication.patient"), color: "text-rose-400 bg-rose-500/15 border-rose-500/30" },
+    "external-partner": { icon: Building2, label: t("communication.partner"), color: "text-emerald-400 bg-emerald-500/15 border-emerald-500/30" },
+  };
+
+  const CHANNEL_CONFIG: Record<ChannelType, { icon: typeof MessageSquare; label: string; color: string }> = {
+    sms: { icon: MessageCircle, label: t("communication.channelSms"), color: "text-green-400 bg-green-500/15 border-green-500/30" },
+    email: { icon: Mail, label: t("communication.channelEmail"), color: "text-blue-400 bg-blue-500/15 border-blue-500/30" },
+    voice: { icon: Phone, label: t("communication.channelVoice"), color: "text-amber-400 bg-amber-500/15 border-amber-500/30" },
+    chat: { icon: MessageSquare, label: t("communication.channelChat"), color: "text-violet-400 bg-violet-500/15 border-violet-500/30" },
+    web: { icon: Globe, label: t("communication.channelWeb"), color: "text-cyan-400 bg-cyan-500/15 border-cyan-500/30" },
+  };
+
   const [conversations, setConversations] = useState<Conversation[]>(mockConversations);
   const [selectedConv, setSelectedConv] = useState<Conversation | null>(mockConversations[0]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -392,7 +395,7 @@ const AgentCommunication = () => {
 
   const totalUnread = conversations.reduce((sum, c) => sum + c.unread, 0);
 
-  /* ── New Conversation handlers ──────────────────────────── */
+  /* -- New Conversation handlers -- */
 
   function resetNewConvForm() {
     setNewConvContactType("patient");
@@ -483,7 +486,7 @@ const AgentCommunication = () => {
     resetNewConvForm();
   }
 
-  /* ── New Thread handlers ────────────────────────────────── */
+  /* -- New Thread handlers -- */
 
   function resetNewThreadForm() {
     setNewThreadSubject("");
@@ -539,7 +542,7 @@ const AgentCommunication = () => {
     resetNewThreadForm();
   }
 
-  /* ── Send message in thread ─────────────────────────────── */
+  /* -- Send message in thread -- */
 
   function handleSendThreadMessage() {
     if (!selectedConv || !selectedThread || !threadComposeText.trim()) return;
@@ -563,7 +566,7 @@ const AgentCommunication = () => {
     const updatedThread = { ...selectedThread, messages: [...selectedThread.messages, newMsg] };
     const updatedConv = {
       ...selectedConv,
-      threads: selectedConv.threads.map((t) => (t.id === selectedThread.id ? updatedThread : t)),
+      threads: selectedConv.threads.map((t2) => (t2.id === selectedThread.id ? updatedThread : t2)),
     };
 
     setConversations((prev) => prev.map((c) => (c.id === selectedConv.id ? updatedConv : c)));
@@ -572,7 +575,7 @@ const AgentCommunication = () => {
     setThreadComposeText("");
   }
 
-  /* ── Send message in main conversation ──────────────────── */
+  /* -- Send message in main conversation -- */
 
   function handleSendMessage() {
     if (!selectedConv || !composeText.trim()) return;
@@ -614,40 +617,40 @@ const AgentCommunication = () => {
           <div>
             <h1 className="font-display text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
               <MessageSquare className="h-6 w-6 text-primary" />
-              Patient Communication Center
+              {t("communication.title")}
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Unified clinical inbox — manage conversations with patients and external partners in real time
+              {t("communication.subtitle")}
             </p>
           </div>
           <div className="flex items-center gap-3">
             {totalUnread > 0 && (
               <Badge className="gradient-primary text-primary-foreground border-0 text-xs px-2.5">
-                {totalUnread} unread
+                {t("communication.unreadCount", { count: totalUnread })}
               </Badge>
             )}
             <Dialog open={showNewConvDialog} onOpenChange={(open) => { setShowNewConvDialog(open); if (!open) resetNewConvForm(); }}>
               <DialogTrigger asChild>
                 <Button size="sm" className="gradient-primary text-primary-foreground shadow-glow-sm hover:opacity-90 gap-1.5 rounded-lg">
                   <Plus className="h-3.5 w-3.5" />
-                  New Conversation
+                  {t("communication.newConversation")}
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[540px] bg-card border-border">
                 <DialogHeader>
                   <DialogTitle className="font-display text-foreground flex items-center gap-2">
                     <MessageSquare className="h-5 w-5 text-primary" />
-                    Start New Conversation
+                    {t("communication.startNewConversation")}
                   </DialogTitle>
                   <DialogDescription className="text-muted-foreground">
-                    Create a conversation with a patient or external partner. All PHI rules and zone isolation are enforced.
+                    {t("communication.startNewConversationDesc")}
                   </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4 py-2">
                   {/* Contact Type Toggle */}
                   <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Contact Type</Label>
+                    <Label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{t("communication.contactType")}</Label>
                     <div className="grid grid-cols-2 gap-2">
                       {(["patient", "external-partner"] as const).map((ct) => {
                         const cfg = CONTACT_TYPE_CONFIG[ct];
@@ -666,7 +669,7 @@ const AgentCommunication = () => {
                             <div className="text-left">
                               <p className="text-sm font-semibold">{cfg.label}</p>
                               <p className="text-[10px] opacity-70">
-                                {ct === "patient" ? "Clinical or outreach" : "Vendors, labs, partners"}
+                                {ct === "patient" ? t("communication.clinicalOrOutreach") : t("communication.vendorsLabsPartners")}
                               </p>
                             </div>
                           </button>
@@ -678,17 +681,17 @@ const AgentCommunication = () => {
                   {/* Contact Details */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <Label htmlFor="conv-name" className="text-xs">Contact Name *</Label>
+                      <Label htmlFor="conv-name" className="text-xs">{t("communication.contactName")} *</Label>
                       <Input
                         id="conv-name"
                         value={newConvName}
                         onChange={(e) => setNewConvName(e.target.value)}
-                        placeholder={newConvContactType === "patient" ? "Patient name" : "Contact name"}
+                        placeholder={newConvContactType === "patient" ? t("communication.patientNamePlaceholder") : t("communication.contactNamePlaceholder")}
                         className="bg-white/[0.03] border-white/10 focus:border-primary/50 text-sm"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor="conv-email" className="text-xs">Email</Label>
+                      <Label htmlFor="conv-email" className="text-xs">{t("communication.email")}</Label>
                       <Input
                         id="conv-email"
                         value={newConvEmail}
@@ -698,7 +701,7 @@ const AgentCommunication = () => {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor="conv-phone" className="text-xs">Phone</Label>
+                      <Label htmlFor="conv-phone" className="text-xs">{t("communication.phone")}</Label>
                       <Input
                         id="conv-phone"
                         value={newConvPhone}
@@ -709,12 +712,12 @@ const AgentCommunication = () => {
                     </div>
                     {newConvContactType === "external-partner" && (
                       <div className="space-y-1.5">
-                        <Label htmlFor="conv-org" className="text-xs">Organization</Label>
+                        <Label htmlFor="conv-org" className="text-xs">{t("communication.organization")}</Label>
                         <Input
                           id="conv-org"
                           value={newConvOrg}
                           onChange={(e) => setNewConvOrg(e.target.value)}
-                          placeholder="Company / Lab / Vendor"
+                          placeholder={t("communication.organizationPlaceholder")}
                           className="bg-white/[0.03] border-white/10 focus:border-primary/50 text-sm"
                         />
                       </div>
@@ -723,10 +726,10 @@ const AgentCommunication = () => {
 
                   {/* Agent Assignment */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Assign Agent *</Label>
+                    <Label className="text-xs">{t("communication.assignAgent")} *</Label>
                     <Select value={newConvAgent} onValueChange={(val) => { setNewConvAgent(val); const z = AGENT_ZONE_MAP[val]; if (z && !ZONE_ALLOWED_CHANNELS[z].includes(newConvChannel)) setNewConvChannel(ZONE_ALLOWED_CHANNELS[z][0]); }}>
                       <SelectTrigger className="bg-white/[0.03] border-white/10 focus:border-primary/50 text-sm">
-                        <SelectValue placeholder="Select an agent..." />
+                        <SelectValue placeholder={t("communication.selectAgent")} />
                       </SelectTrigger>
                       <SelectContent>
                         {AVAILABLE_AGENTS.map((agent) => {
@@ -748,7 +751,7 @@ const AgentCommunication = () => {
                     {zoneViolation && (
                       <p className="text-[10px] text-red-400 flex items-center gap-1 mt-1">
                         <Shield className="h-3 w-3" />
-                        External partners cannot be routed to Clinical (Zone 1) agents — PHI exposure risk.
+                        {t("communication.zoneViolationWarning")}
                       </p>
                     )}
                   </div>
@@ -756,7 +759,7 @@ const AgentCommunication = () => {
                   {/* Channel Selection */}
                   {selectedAgentZone && (
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Channel</Label>
+                      <Label className="text-xs">{t("communication.channel")}</Label>
                       <div className="flex gap-1.5 flex-wrap">
                         {(["chat", "sms", "email", "voice", "web"] as ChannelType[]).map((ch) => {
                           const allowed = allowedChannels.includes(ch);
@@ -786,8 +789,8 @@ const AgentCommunication = () => {
                         <p className="text-[10px] text-amber-400 flex items-center gap-1">
                           <Shield className="h-3 w-3" />
                           {selectedAgentZone === "clinical"
-                            ? "Zone 1 agents are restricted to internal chat — no external channels."
-                            : "Zone 2 agents are restricted to internal chat only."}
+                            ? t("communication.zone1Restriction")
+                            : t("communication.zone2Restriction")}
                         </p>
                       )}
                     </div>
@@ -795,22 +798,22 @@ const AgentCommunication = () => {
 
                   {/* Subject & Initial Message */}
                   <div className="space-y-1.5">
-                    <Label htmlFor="conv-subject" className="text-xs">Subject / Topic</Label>
+                    <Label htmlFor="conv-subject" className="text-xs">{t("communication.subjectTopic")}</Label>
                     <Input
                       id="conv-subject"
                       value={newConvSubject}
                       onChange={(e) => setNewConvSubject(e.target.value)}
-                      placeholder="e.g. Appointment scheduling, Vendor onboarding..."
+                      placeholder={t("communication.subjectPlaceholder")}
                       className="bg-white/[0.03] border-white/10 focus:border-primary/50 text-sm"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="conv-msg" className="text-xs">Initial Message</Label>
+                    <Label htmlFor="conv-msg" className="text-xs">{t("communication.initialMessage")}</Label>
                     <Textarea
                       id="conv-msg"
                       value={newConvMessage}
                       onChange={(e) => setNewConvMessage(e.target.value)}
-                      placeholder="Enter the opening message for this conversation..."
+                      placeholder={t("communication.initialMessagePlaceholder")}
                       rows={3}
                       className="bg-white/[0.03] border-white/10 focus:border-primary/50 text-sm resize-none"
                     />
@@ -821,7 +824,7 @@ const AgentCommunication = () => {
                     <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 space-y-1">
                       <div className="flex items-center gap-1.5 text-amber-400 text-xs font-semibold">
                         <AlertTriangle className="h-3.5 w-3.5" />
-                        PHI Detected
+                        {t("communication.phiDetected")}
                       </div>
                       {newConvPhiWarnings.map((w, i) => (
                         <p key={i} className="text-[11px] text-amber-400/80">{w}</p>
@@ -833,15 +836,15 @@ const AgentCommunication = () => {
                   <div className="rounded-lg border border-border bg-red-500/5 p-3 flex items-start gap-2">
                     <Shield className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
                     <div className="text-[11px] text-red-400/80 space-y-0.5">
-                      <p className="font-semibold text-red-400">PHI Compliance Active</p>
-                      <p>All messages are scanned for PHI before transmission. Zone isolation rules are strictly enforced. External partners never receive PHI — clinical agents (Zone 1) communicate via internal platform only.</p>
+                      <p className="font-semibold text-red-400">{t("communication.phiComplianceActive")}</p>
+                      <p>{t("communication.phiComplianceDesc")}</p>
                     </div>
                   </div>
                 </div>
 
                 <DialogFooter className="gap-2">
                   <Button variant="outline" onClick={() => { setShowNewConvDialog(false); resetNewConvForm(); }} className="border-border text-muted-foreground hover:text-foreground">
-                    Cancel
+                    {t("communication.cancel")}
                   </Button>
                   <Button
                     onClick={() => { handleNewConvPhiCheck(); handleCreateConversation(); }}
@@ -849,7 +852,7 @@ const AgentCommunication = () => {
                     className="gradient-primary text-primary-foreground shadow-glow-sm hover:opacity-90 gap-1.5"
                   >
                     <Send className="h-3.5 w-3.5" />
-                    Start Conversation
+                    {t("communication.startConversation")}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -861,12 +864,12 @@ const AgentCommunication = () => {
         <div className="border-b border-border px-6 py-2.5 bg-red-500/5 flex items-center gap-3">
           <Shield className="h-4 w-4 text-red-400 shrink-0" />
           <p className="text-xs text-red-400/90">
-            <span className="font-semibold">Zone Isolation Active:</span> Clinical (Zone 1) agents communicate via internal platform only — no email, phone, or SMS. External channels are restricted to Zone 3 agents. PHI rules apply to all conversations including external partners.
+            <span className="font-semibold">{t("communication.zoneIsolationActive")}:</span> {t("communication.zoneIsolationDesc")}
           </p>
         </div>
 
         <div className="flex flex-1 overflow-hidden">
-          {/* ── Left Panel: Conversation List ── */}
+          {/* -- Left Panel: Conversation List -- */}
           <div className="w-80 border-r border-border flex flex-col shrink-0">
             {/* Search & Filter */}
             <div className="p-3 space-y-2 border-b border-border">
@@ -875,7 +878,7 @@ const AgentCommunication = () => {
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search conversations..."
+                  placeholder={t("communication.searchConversations")}
                   className="pl-9 bg-white/[0.03] border-white/10 focus:border-primary/50 h-9 text-sm"
                 />
               </div>
@@ -892,11 +895,11 @@ const AgentCommunication = () => {
                     }`}
                   >
                     {ct === "all" ? (
-                      "All"
+                      t("communication.all")
                     ) : ct === "patient" ? (
-                      <><Heart className="h-3 w-3" /> Patients</>
+                      <><Heart className="h-3 w-3" /> {t("communication.patients")}</>
                     ) : (
-                      <><Building2 className="h-3 w-3" /> Partners</>
+                      <><Building2 className="h-3 w-3" /> {t("communication.partners")}</>
                     )}
                   </button>
                 ))}
@@ -919,7 +922,7 @@ const AgentCommunication = () => {
                       disabled={isRestricted}
                     >
                       {isRestricted && <Lock className="h-2.5 w-2.5" />}
-                      {ch === "all" ? "All" : CHANNEL_CONFIG[ch as ChannelType].label}
+                      {ch === "all" ? t("communication.all") : CHANNEL_CONFIG[ch as ChannelType].label}
                     </button>
                   );
                 })}
@@ -969,7 +972,7 @@ const AgentCommunication = () => {
                         <div className="flex items-center gap-1.5 mb-1">
                           <ChannelIcon className="h-3 w-3 text-muted-foreground shrink-0" />
                           <span className="text-[11px] text-muted-foreground truncate">
-                            via {conv.agentName}
+                            {t("communication.via")} {conv.agentName}
                           </span>
                           <Badge variant="outline" className={`text-[8px] px-1 py-0 ${ZONE_BADGE_CONFIG[conv.zone || "external"].color}`}>
                             {(conv.zone || "external") === "clinical" ? "Z1" : (conv.zone || "external") === "operations" ? "Z2" : "Z3"}
@@ -997,13 +1000,13 @@ const AgentCommunication = () => {
 
               {filteredConversations.length === 0 && (
                 <div className="p-8 text-center text-muted-foreground text-sm">
-                  No conversations match your filters.
+                  {t("communication.noConversationsMatch")}
                 </div>
               )}
             </div>
           </div>
 
-          {/* ── Center Panel: Message Thread ── */}
+          {/* -- Center Panel: Message Thread -- */}
           {selectedConv ? (
             <div className="flex-1 flex flex-col min-w-0">
               {/* Thread Header */}
@@ -1039,14 +1042,14 @@ const AgentCommunication = () => {
                     <div className="flex items-center gap-2">
                       {selectedThread && (
                         <span className="text-[11px] text-muted-foreground">
-                          in {selectedConv.contactName}
+                          {t("communication.in")} {selectedConv.contactName}
                         </span>
                       )}
                       <Badge variant="outline" className={`text-[10px] border ${CHANNEL_CONFIG[selectedConv.channel].color} px-1.5 py-0`}>
                         {CHANNEL_CONFIG[selectedConv.channel].label}
                       </Badge>
                       <span className="text-[11px] text-muted-foreground">
-                        Handled by <span className="text-primary font-medium">{selectedConv.agentName}</span>
+                        {t("communication.handledBy")} <span className="text-primary font-medium">{selectedConv.agentName}</span>
                       </span>
                       {selectedConv.zone && (
                         <Badge variant="outline" className={`text-[9px] ${ZONE_BADGE_CONFIG[selectedConv.zone].color}`}>
@@ -1068,37 +1071,37 @@ const AgentCommunication = () => {
                       <DialogTrigger asChild>
                         <Button variant="outline" size="sm" className="gap-1.5 text-xs border-border text-muted-foreground hover:text-foreground">
                           <GitBranch className="h-3 w-3" />
-                          New Thread
+                          {t("communication.newThread")}
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="sm:max-w-[440px] bg-card border-border">
                         <DialogHeader>
                           <DialogTitle className="font-display text-foreground flex items-center gap-2">
                             <GitBranch className="h-5 w-5 text-violet-400" />
-                            Create Thread
+                            {t("communication.createThread")}
                           </DialogTitle>
                           <DialogDescription className="text-muted-foreground">
-                            Start a focused thread within this conversation with {selectedConv.contactName}. PHI rules still apply.
+                            {t("communication.createThreadDesc", { name: selectedConv.contactName })}
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 py-2">
                           <div className="space-y-1.5">
-                            <Label htmlFor="thread-subject" className="text-xs">Thread Subject *</Label>
+                            <Label htmlFor="thread-subject" className="text-xs">{t("communication.threadSubject")} *</Label>
                             <Input
                               id="thread-subject"
                               value={newThreadSubject}
                               onChange={(e) => setNewThreadSubject(e.target.value)}
-                              placeholder="e.g. Lab results follow-up, Invoice review..."
+                              placeholder={t("communication.threadSubjectPlaceholder")}
                               className="bg-white/[0.03] border-white/10 focus:border-primary/50 text-sm"
                             />
                           </div>
                           <div className="space-y-1.5">
-                            <Label htmlFor="thread-msg" className="text-xs">Initial Message (optional)</Label>
+                            <Label htmlFor="thread-msg" className="text-xs">{t("communication.initialMessageOptional")}</Label>
                             <Textarea
                               id="thread-msg"
                               value={newThreadMessage}
                               onChange={(e) => setNewThreadMessage(e.target.value)}
-                              placeholder="Start the thread with a message..."
+                              placeholder={t("communication.startThreadPlaceholder")}
                               rows={3}
                               className="bg-white/[0.03] border-white/10 focus:border-primary/50 text-sm resize-none"
                             />
@@ -1107,7 +1110,7 @@ const AgentCommunication = () => {
                             <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 space-y-1">
                               <div className="flex items-center gap-1.5 text-amber-400 text-xs font-semibold">
                                 <AlertTriangle className="h-3.5 w-3.5" />
-                                PHI Detected — content will be redacted
+                                {t("communication.phiDetectedRedacted")}
                               </div>
                               {newThreadPhiWarnings.map((w, i) => (
                                 <p key={i} className="text-[11px] text-amber-400/80">{w}</p>
@@ -1117,13 +1120,13 @@ const AgentCommunication = () => {
                           <div className="rounded-lg border border-border bg-red-500/5 p-2.5 flex items-center gap-2">
                             <Shield className="h-3.5 w-3.5 text-red-400 shrink-0" />
                             <p className="text-[10px] text-red-400/80">
-                              Thread inherits zone and PHI restrictions from the parent conversation.
+                              {t("communication.threadInheritsRestrictions")}
                             </p>
                           </div>
                         </div>
                         <DialogFooter className="gap-2">
                           <Button variant="outline" onClick={() => { setShowNewThreadDialog(false); resetNewThreadForm(); }} className="border-border text-muted-foreground hover:text-foreground">
-                            Cancel
+                            {t("communication.cancel")}
                           </Button>
                           <Button
                             onClick={handleCreateThread}
@@ -1131,7 +1134,7 @@ const AgentCommunication = () => {
                             className="gradient-primary text-primary-foreground shadow-glow-sm hover:opacity-90 gap-1.5"
                           >
                             <GitBranch className="h-3.5 w-3.5" />
-                            Create Thread
+                            {t("communication.createThread")}
                           </Button>
                         </DialogFooter>
                       </DialogContent>
@@ -1148,7 +1151,7 @@ const AgentCommunication = () => {
                     }`}
                   >
                     <Circle className={`h-1.5 w-1.5 mr-1 fill-current`} />
-                    {selectedConv.status}
+                    {selectedConv.status === "active" ? t("communication.statusActive") : selectedConv.status === "pending" ? t("communication.statusPending") : t("communication.statusResolved")}
                   </Badge>
                   <button
                     onClick={() => setShowDetails(!showDetails)}
@@ -1163,7 +1166,7 @@ const AgentCommunication = () => {
               {!selectedThread && selectedConv.threads.length > 0 && (
                 <div className="px-5 py-2 border-b border-border bg-violet-500/5 flex items-center gap-2 overflow-x-auto shrink-0">
                   <GitBranch className="h-3.5 w-3.5 text-violet-400 shrink-0" />
-                  <span className="text-[10px] text-violet-400 font-semibold uppercase tracking-wider shrink-0">Threads:</span>
+                  <span className="text-[10px] text-violet-400 font-semibold uppercase tracking-wider shrink-0">{t("communication.threads")}:</span>
                   {selectedConv.threads.map((thread) => (
                     <button
                       key={thread.id}
@@ -1175,7 +1178,7 @@ const AgentCommunication = () => {
                         {thread.messages.length}
                       </Badge>
                       <Badge variant="outline" className={`text-[8px] px-1 py-0 ${thread.status === "open" ? "text-green-400 border-green-500/30" : "text-muted-foreground border-border"}`}>
-                        {thread.status}
+                        {thread.status === "open" ? t("communication.open") : t("communication.closed")}
                       </Badge>
                     </button>
                   ))}
@@ -1232,7 +1235,7 @@ const AgentCommunication = () => {
                         selectedThread ? handleSendThreadMessage() : handleSendMessage();
                       }
                     }}
-                    placeholder={selectedThread ? "Reply in thread..." : "Type a message or override agent response..."}
+                    placeholder={selectedThread ? t("communication.replyInThread") : t("communication.typeMessage")}
                     className="flex-1 bg-white/[0.03] border-white/10 focus:border-primary/50 text-sm"
                   />
                   <button className="p-2 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors">
@@ -1245,22 +1248,22 @@ const AgentCommunication = () => {
                     onClick={() => selectedThread ? handleSendThreadMessage() : handleSendMessage()}
                   >
                     <Send className="h-3.5 w-3.5" />
-                    Send
+                    {t("communication.send")}
                   </Button>
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-1.5 ml-10">
                   {selectedConv?.zone === "clinical" ? (
                     <span className="text-red-400 flex items-center gap-1">
                       <Shield className="h-3 w-3" />
-                      Zone 1 restriction: Messages are internal platform only — no external transmission.
+                      {t("communication.zone1MessageRestriction")}
                     </span>
                   ) : selectedConv?.contactType === "external-partner" ? (
                     <span className="text-emerald-400/80 flex items-center gap-1">
                       <Shield className="h-3 w-3" />
-                      External partner conversation — PHI is automatically redacted from all outbound messages.
+                      {t("communication.externalPartnerPhiRedaction")}
                     </span>
                   ) : (
-                    "Messages sent here will override the agent and be sent directly to the contact."
+                    t("communication.directMessageOverride")
                   )}
                 </p>
               </div>
@@ -1269,13 +1272,13 @@ const AgentCommunication = () => {
             <div className="flex-1 flex items-center justify-center text-center text-muted-foreground">
               <div>
                 <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                <p className="text-sm font-medium">Select a conversation</p>
-                <p className="text-xs mt-1">Choose from the list or start a new conversation</p>
+                <p className="text-sm font-medium">{t("communication.selectConversation")}</p>
+                <p className="text-xs mt-1">{t("communication.selectConversationDesc")}</p>
               </div>
             </div>
           )}
 
-          {/* ── Right Panel: Contact Details ── */}
+          {/* -- Right Panel: Contact Details -- */}
           {selectedConv && showDetails && (
             <div className="w-72 border-l border-border overflow-y-auto shrink-0">
               <div className="p-4 space-y-5">
@@ -1311,7 +1314,7 @@ const AgentCommunication = () => {
                 {/* Contact Info */}
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    Contact Info
+                    {t("communication.contactInfo")}
                   </h4>
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2 text-xs text-foreground/80">
@@ -1328,7 +1331,7 @@ const AgentCommunication = () => {
                 {/* Assigned Agent */}
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    Assigned Agent
+                    {t("communication.assignedAgent")}
                   </h4>
                   <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-card border border-border">
                     <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center shadow-glow-sm">
@@ -1336,7 +1339,7 @@ const AgentCommunication = () => {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-foreground">{selectedConv.agentName}</p>
-                      <p className="text-[10px] text-muted-foreground">AI Agent</p>
+                      <p className="text-[10px] text-muted-foreground">{t("communication.aiAgent")}</p>
                     </div>
                   </div>
                 </div>
@@ -1344,7 +1347,7 @@ const AgentCommunication = () => {
                 {/* Tags */}
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                    <Tag className="h-3 w-3" /> Tags
+                    <Tag className="h-3 w-3" /> {t("communication.tags")}
                   </h4>
                   <div className="flex flex-wrap gap-1.5">
                     {selectedConv.tags.map((tag) => (
@@ -1358,7 +1361,7 @@ const AgentCommunication = () => {
                 {/* Threads */}
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                    <GitBranch className="h-3 w-3" /> Threads
+                    <GitBranch className="h-3 w-3" /> {t("communication.threads")}
                   </h4>
                   {selectedConv.threads.length > 0 ? (
                     <div className="space-y-1.5">
@@ -1374,44 +1377,44 @@ const AgentCommunication = () => {
                         >
                           <p className="text-xs font-semibold text-foreground truncate">{thread.subject}</p>
                           <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[10px] text-muted-foreground">{thread.messages.length} msgs</span>
+                            <span className="text-[10px] text-muted-foreground">{t("communication.msgCount", { count: thread.messages.length })}</span>
                             <Badge variant="outline" className={`text-[8px] px-1 py-0 ${thread.status === "open" ? "text-green-400 border-green-500/30" : "text-muted-foreground border-border"}`}>
-                              {thread.status}
+                              {thread.status === "open" ? t("communication.open") : t("communication.closed")}
                             </Badge>
                           </div>
                         </button>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-[11px] text-muted-foreground">No threads yet</p>
+                    <p className="text-[11px] text-muted-foreground">{t("communication.noThreadsYet")}</p>
                   )}
                 </div>
 
                 {/* Conversation Stats */}
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    Conversation Stats
+                    {t("communication.conversationStats")}
                   </h4>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="p-2.5 rounded-lg bg-card border border-border text-center">
                       <p className="text-lg font-bold text-foreground">{selectedConv.messages.length}</p>
-                      <p className="text-[10px] text-muted-foreground">Messages</p>
+                      <p className="text-[10px] text-muted-foreground">{t("communication.messages")}</p>
                     </div>
                     <div className="p-2.5 rounded-lg bg-card border border-border text-center">
                       <p className="text-lg font-bold text-foreground">
                         {selectedConv.messages.filter((m) => m.sender === "agent").length}
                       </p>
-                      <p className="text-[10px] text-muted-foreground">Agent Msgs</p>
+                      <p className="text-[10px] text-muted-foreground">{t("communication.agentMsgs")}</p>
                     </div>
                     <div className="p-2.5 rounded-lg bg-card border border-border text-center">
                       <p className="text-lg font-bold text-violet-400">{selectedConv.threads.length}</p>
-                      <p className="text-[10px] text-muted-foreground">Threads</p>
+                      <p className="text-[10px] text-muted-foreground">{t("communication.threads")}</p>
                     </div>
                     <div className="p-2.5 rounded-lg bg-card border border-border text-center">
                       <p className="text-lg font-bold text-foreground">
-                        {selectedConv.threads.reduce((sum, t) => sum + t.messages.length, 0)}
+                        {selectedConv.threads.reduce((sum, t2) => sum + t2.messages.length, 0)}
                       </p>
-                      <p className="text-[10px] text-muted-foreground">Thread Msgs</p>
+                      <p className="text-[10px] text-muted-foreground">{t("communication.threadMsgs")}</p>
                     </div>
                   </div>
                 </div>
@@ -1419,20 +1422,20 @@ const AgentCommunication = () => {
                 {/* Timeline */}
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                    <Clock className="h-3 w-3" /> Activity
+                    <Clock className="h-3 w-3" /> {t("communication.activity")}
                   </h4>
                   <div className="space-y-2">
                     <div className="flex items-start gap-2">
                       <div className="h-1.5 w-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
                       <div>
-                        <p className="text-[11px] text-foreground/80">Conversation started</p>
+                        <p className="text-[11px] text-foreground/80">{t("communication.conversationStarted")}</p>
                         <p className="text-[10px] text-muted-foreground">{selectedConv.messages[0]?.timestamp}</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-2">
                       <div className="h-1.5 w-1.5 rounded-full bg-green-500 mt-1.5 shrink-0" />
                       <div>
-                        <p className="text-[11px] text-foreground/80">Last activity</p>
+                        <p className="text-[11px] text-foreground/80">{t("communication.lastActivity")}</p>
                         <p className="text-[10px] text-muted-foreground">{selectedConv.lastTimestamp}</p>
                       </div>
                     </div>

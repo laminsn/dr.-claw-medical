@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   CheckCircle2,
   Circle,
@@ -98,51 +99,8 @@ interface TaskNotification {
 }
 
 // ---------------------------------------------------------------------------
-// Config constants
+// Config constants (non-translatable parts)
 // ---------------------------------------------------------------------------
-
-const STATUS_CONFIG: Record<
-  TaskStatus,
-  { icon: typeof Circle; label: string; color: string; bg: string }
-> = {
-  queued: {
-    icon: Circle,
-    label: "Queued",
-    color: "text-zinc-400",
-    bg: "bg-zinc-500/15 border-zinc-500/30",
-  },
-  in_progress: {
-    icon: RefreshCw,
-    label: "In Progress",
-    color: "text-blue-400",
-    bg: "bg-blue-500/15 border-blue-500/30",
-  },
-  completed: {
-    icon: CheckCircle2,
-    label: "Completed",
-    color: "text-green-400",
-    bg: "bg-green-500/15 border-green-500/30",
-  },
-  failed: {
-    icon: AlertTriangle,
-    label: "Failed",
-    color: "text-red-400",
-    bg: "bg-red-500/15 border-red-500/30",
-  },
-  archived: {
-    icon: Archive,
-    label: "Archived",
-    color: "text-purple-400",
-    bg: "bg-purple-500/15 border-purple-500/30",
-  },
-};
-
-const PRIORITY_CONFIG: Record<TaskPriority, { label: string; color: string }> = {
-  low: { label: "Low", color: "text-zinc-400 bg-zinc-500/10 border-zinc-500/20" },
-  medium: { label: "Medium", color: "text-blue-400 bg-blue-500/10 border-blue-500/20" },
-  high: { label: "High", color: "text-amber-400 bg-amber-500/10 border-amber-500/20" },
-  urgent: { label: "Urgent", color: "text-red-400 bg-red-500/10 border-red-500/20" },
-};
 
 const AGENT_NAMES = [
   "Dr. Front Desk",
@@ -151,170 +109,6 @@ const AGENT_NAMES = [
   "HR Helper",
   "Finance Bot",
   "Doc Collector",
-];
-
-// ---------------------------------------------------------------------------
-// Task Templates
-// ---------------------------------------------------------------------------
-
-const TASK_TEMPLATES: TaskTemplate[] = [
-  {
-    id: "tpl-1",
-    name: "Patient Follow-Up Batch",
-    description:
-      "Reach out to patients from the past month and schedule follow-up appointments based on treatment plans.",
-    category: "Scheduling",
-    priority: "high",
-    suggestedAgent: "Dr. Front Desk",
-    defaultSubtasks: [
-      "Pull patient list from last month",
-      "Cross-reference treatment plans",
-      "Send appointment invitations",
-      "Confirm responses and update calendar",
-    ],
-  },
-  {
-    id: "tpl-2",
-    name: "Insurance Verification Run",
-    description:
-      "Verify insurance eligibility and coverage for all patients with upcoming appointments.",
-    category: "Insurance",
-    priority: "medium",
-    suggestedAgent: "Dr. Front Desk",
-    defaultSubtasks: [
-      "Pull upcoming appointment list",
-      "Submit eligibility checks",
-      "Flag coverage issues",
-      "Notify patients of any issues",
-    ],
-  },
-  {
-    id: "tpl-3",
-    name: "Social Media Campaign",
-    description:
-      "Create a full social media content calendar with posts, graphics briefs, and engagement strategy.",
-    category: "Marketing",
-    priority: "medium",
-    suggestedAgent: "Marketing Maven",
-    defaultSubtasks: [
-      "Analyze previous performance metrics",
-      "Draft content calendar",
-      "Write copy for each post",
-      "Create graphics briefs",
-      "Schedule posts across platforms",
-    ],
-  },
-  {
-    id: "tpl-4",
-    name: "Grant Application Draft",
-    description:
-      "Prepare a complete grant application including aims, significance, innovation, and budget sections.",
-    category: "Research",
-    priority: "urgent",
-    suggestedAgent: "Grant Pro",
-    defaultSubtasks: [
-      "Review funding opportunity announcement",
-      "Draft specific aims page",
-      "Write significance section",
-      "Write innovation section",
-      "Prepare budget justification",
-      "Compile supporting documents",
-    ],
-  },
-  {
-    id: "tpl-5",
-    name: "Staff Training Reminder",
-    description:
-      "Send training reminders and track completion for compliance-related staff training modules.",
-    category: "HR",
-    priority: "medium",
-    suggestedAgent: "HR Helper",
-    defaultSubtasks: [
-      "Identify staff with pending training",
-      "Send initial reminder emails",
-      "Track completion status",
-      "Send follow-up reminders",
-      "Generate compliance report",
-    ],
-  },
-  {
-    id: "tpl-6",
-    name: "Payroll Processing",
-    description:
-      "Process bi-weekly payroll including hours verification, deductions, and direct deposit submissions.",
-    category: "Finance",
-    priority: "high",
-    suggestedAgent: "Finance Bot",
-    defaultSubtasks: [
-      "Collect and verify timesheets",
-      "Calculate deductions and withholdings",
-      "Process direct deposit submissions",
-      "Generate pay stubs",
-      "File payroll tax reports",
-    ],
-  },
-  {
-    id: "tpl-7",
-    name: "Document Collection",
-    description:
-      "Collect outstanding documents from patients including insurance cards, referrals, and consent forms.",
-    category: "Administration",
-    priority: "medium",
-    suggestedAgent: "Doc Collector",
-    defaultSubtasks: [
-      "Identify missing documents per patient",
-      "Send document request emails",
-      "Follow up on unreturned requests",
-      "Upload and file received documents",
-    ],
-  },
-  {
-    id: "tpl-8",
-    name: "Appointment Scheduling Batch",
-    description:
-      "Schedule a batch of appointments for patients who need recurring visits or are on waitlists.",
-    category: "Scheduling",
-    priority: "high",
-    suggestedAgent: "Dr. Front Desk",
-    defaultSubtasks: [
-      "Review waitlist and recurring visit needs",
-      "Check provider availability",
-      "Send scheduling offers to patients",
-      "Confirm bookings and send reminders",
-    ],
-  },
-  {
-    id: "tpl-9",
-    name: "Email Campaign A/B Test",
-    description:
-      "Set up and run an A/B test for an email campaign with variations in subject lines and CTAs.",
-    category: "Marketing",
-    priority: "medium",
-    suggestedAgent: "Marketing Maven",
-    defaultSubtasks: [
-      "Define test hypothesis and metrics",
-      "Create variant A and variant B",
-      "Segment audience into test groups",
-      "Launch campaign",
-      "Analyze results and pick winner",
-    ],
-  },
-  {
-    id: "tpl-10",
-    name: "Quarterly Compliance Audit",
-    description:
-      "Run a quarterly compliance audit across departments, checking documentation and process adherence.",
-    category: "Administration",
-    priority: "high",
-    suggestedAgent: "HR Helper",
-    defaultSubtasks: [
-      "Collect compliance checklists per department",
-      "Review documentation completeness",
-      "Interview department leads",
-      "Compile findings report",
-      "Create remediation action items",
-    ],
-  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -522,6 +316,219 @@ const getWeekDays = (): { label: string; dateStr: string }[] => {
 
 const TaskTracker = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
+
+  // ---------------------------------------------------------------------------
+  // Translated config constants (moved inside component for t() access)
+  // ---------------------------------------------------------------------------
+
+  const STATUS_CONFIG: Record<
+    TaskStatus,
+    { icon: typeof Circle; label: string; color: string; bg: string }
+  > = {
+    queued: {
+      icon: Circle,
+      label: t("taskTracker.queued"),
+      color: "text-zinc-400",
+      bg: "bg-zinc-500/15 border-zinc-500/30",
+    },
+    in_progress: {
+      icon: RefreshCw,
+      label: t("taskTracker.inProgress"),
+      color: "text-blue-400",
+      bg: "bg-blue-500/15 border-blue-500/30",
+    },
+    completed: {
+      icon: CheckCircle2,
+      label: t("taskTracker.completed"),
+      color: "text-green-400",
+      bg: "bg-green-500/15 border-green-500/30",
+    },
+    failed: {
+      icon: AlertTriangle,
+      label: t("taskTracker.failed"),
+      color: "text-red-400",
+      bg: "bg-red-500/15 border-red-500/30",
+    },
+    archived: {
+      icon: Archive,
+      label: t("taskTracker.archived"),
+      color: "text-purple-400",
+      bg: "bg-purple-500/15 border-purple-500/30",
+    },
+  };
+
+  const PRIORITY_CONFIG: Record<TaskPriority, { label: string; color: string }> = {
+    low: { label: t("taskTracker.priorityLow"), color: "text-zinc-400 bg-zinc-500/10 border-zinc-500/20" },
+    medium: { label: t("taskTracker.priorityMedium"), color: "text-blue-400 bg-blue-500/10 border-blue-500/20" },
+    high: { label: t("taskTracker.priorityHigh"), color: "text-amber-400 bg-amber-500/10 border-amber-500/20" },
+    urgent: { label: t("taskTracker.priorityUrgent"), color: "text-red-400 bg-red-500/10 border-red-500/20" },
+  };
+
+  const TASK_TEMPLATES: TaskTemplate[] = [
+    {
+      id: "tpl-1",
+      name: t("taskTracker.templatePatientFollowUpName"),
+      description: t("taskTracker.templatePatientFollowUpDesc"),
+      category: t("taskTracker.categoryScheduling"),
+      priority: "high",
+      suggestedAgent: "Dr. Front Desk",
+      defaultSubtasks: [
+        t("taskTracker.subtaskPullPatientList"),
+        t("taskTracker.subtaskCrossReferencePlans"),
+        t("taskTracker.subtaskSendInvitations"),
+        t("taskTracker.subtaskConfirmResponses"),
+      ],
+    },
+    {
+      id: "tpl-2",
+      name: t("taskTracker.templateInsuranceVerificationName"),
+      description: t("taskTracker.templateInsuranceVerificationDesc"),
+      category: t("taskTracker.categoryInsurance"),
+      priority: "medium",
+      suggestedAgent: "Dr. Front Desk",
+      defaultSubtasks: [
+        t("taskTracker.subtaskPullAppointmentList"),
+        t("taskTracker.subtaskSubmitEligibility"),
+        t("taskTracker.subtaskFlagCoverage"),
+        t("taskTracker.subtaskNotifyPatients"),
+      ],
+    },
+    {
+      id: "tpl-3",
+      name: t("taskTracker.templateSocialMediaName"),
+      description: t("taskTracker.templateSocialMediaDesc"),
+      category: t("taskTracker.categoryMarketing"),
+      priority: "medium",
+      suggestedAgent: "Marketing Maven",
+      defaultSubtasks: [
+        t("taskTracker.subtaskAnalyzeMetrics"),
+        t("taskTracker.subtaskDraftCalendar"),
+        t("taskTracker.subtaskWriteCopy"),
+        t("taskTracker.subtaskCreateGraphics"),
+        t("taskTracker.subtaskSchedulePosts"),
+      ],
+    },
+    {
+      id: "tpl-4",
+      name: t("taskTracker.templateGrantApplicationName"),
+      description: t("taskTracker.templateGrantApplicationDesc"),
+      category: t("taskTracker.categoryResearch"),
+      priority: "urgent",
+      suggestedAgent: "Grant Pro",
+      defaultSubtasks: [
+        t("taskTracker.subtaskReviewFunding"),
+        t("taskTracker.subtaskDraftAims"),
+        t("taskTracker.subtaskWriteSignificance"),
+        t("taskTracker.subtaskWriteInnovation"),
+        t("taskTracker.subtaskPrepareBudget"),
+        t("taskTracker.subtaskCompileDocs"),
+      ],
+    },
+    {
+      id: "tpl-5",
+      name: t("taskTracker.templateStaffTrainingName"),
+      description: t("taskTracker.templateStaffTrainingDesc"),
+      category: t("taskTracker.categoryHR"),
+      priority: "medium",
+      suggestedAgent: "HR Helper",
+      defaultSubtasks: [
+        t("taskTracker.subtaskIdentifyPendingTraining"),
+        t("taskTracker.subtaskSendReminders"),
+        t("taskTracker.subtaskTrackCompletion"),
+        t("taskTracker.subtaskSendFollowUp"),
+        t("taskTracker.subtaskGenerateComplianceReport"),
+      ],
+    },
+    {
+      id: "tpl-6",
+      name: t("taskTracker.templatePayrollName"),
+      description: t("taskTracker.templatePayrollDesc"),
+      category: t("taskTracker.categoryFinance"),
+      priority: "high",
+      suggestedAgent: "Finance Bot",
+      defaultSubtasks: [
+        t("taskTracker.subtaskCollectTimesheets"),
+        t("taskTracker.subtaskCalculateDeductions"),
+        t("taskTracker.subtaskProcessDeposits"),
+        t("taskTracker.subtaskGeneratePayStubs"),
+        t("taskTracker.subtaskFilePayrollTax"),
+      ],
+    },
+    {
+      id: "tpl-7",
+      name: t("taskTracker.templateDocCollectionName"),
+      description: t("taskTracker.templateDocCollectionDesc"),
+      category: t("taskTracker.categoryAdministration"),
+      priority: "medium",
+      suggestedAgent: "Doc Collector",
+      defaultSubtasks: [
+        t("taskTracker.subtaskIdentifyMissingDocs"),
+        t("taskTracker.subtaskSendDocRequests"),
+        t("taskTracker.subtaskFollowUpUnreturned"),
+        t("taskTracker.subtaskUploadFileDocs"),
+      ],
+    },
+    {
+      id: "tpl-8",
+      name: t("taskTracker.templateAppointmentBatchName"),
+      description: t("taskTracker.templateAppointmentBatchDesc"),
+      category: t("taskTracker.categoryScheduling"),
+      priority: "high",
+      suggestedAgent: "Dr. Front Desk",
+      defaultSubtasks: [
+        t("taskTracker.subtaskReviewWaitlist"),
+        t("taskTracker.subtaskCheckAvailability"),
+        t("taskTracker.subtaskSendSchedulingOffers"),
+        t("taskTracker.subtaskConfirmBookings"),
+      ],
+    },
+    {
+      id: "tpl-9",
+      name: t("taskTracker.templateEmailABTestName"),
+      description: t("taskTracker.templateEmailABTestDesc"),
+      category: t("taskTracker.categoryMarketing"),
+      priority: "medium",
+      suggestedAgent: "Marketing Maven",
+      defaultSubtasks: [
+        t("taskTracker.subtaskDefineHypothesis"),
+        t("taskTracker.subtaskCreateVariants"),
+        t("taskTracker.subtaskSegmentAudience"),
+        t("taskTracker.subtaskLaunchCampaign"),
+        t("taskTracker.subtaskAnalyzeResults"),
+      ],
+    },
+    {
+      id: "tpl-10",
+      name: t("taskTracker.templateComplianceAuditName"),
+      description: t("taskTracker.templateComplianceAuditDesc"),
+      category: t("taskTracker.categoryAdministration"),
+      priority: "high",
+      suggestedAgent: "HR Helper",
+      defaultSubtasks: [
+        t("taskTracker.subtaskCollectChecklists"),
+        t("taskTracker.subtaskReviewDocumentation"),
+        t("taskTracker.subtaskInterviewLeads"),
+        t("taskTracker.subtaskCompileFindings"),
+        t("taskTracker.subtaskCreateRemediation"),
+      ],
+    },
+  ];
+
+  const VIEW_MODES: { mode: ViewMode; icon: typeof ListTodo; label: string }[] = [
+    { mode: "list", icon: ListTodo, label: t("taskTracker.viewList") },
+    { mode: "board", icon: Columns3, label: t("taskTracker.viewBoard") },
+    { mode: "calendar", icon: Calendar, label: t("taskTracker.viewCalendar") },
+    { mode: "assigned", icon: Users, label: t("taskTracker.viewAssigned") },
+    { mode: "timeline", icon: Clock, label: t("taskTracker.viewTimeline") },
+  ];
+
+  const boardColumns: { status: TaskStatus; label: string }[] = [
+    { status: "queued", label: t("taskTracker.queued") },
+    { status: "in_progress", label: t("taskTracker.inProgress") },
+    { status: "completed", label: t("taskTracker.completed") },
+    { status: "failed", label: t("taskTracker.failed") },
+  ];
 
   // --- Core state ---
   const [tasks, setTasks] = useState<AgentTask[]>(mockTasks);
@@ -541,29 +548,29 @@ const TaskTracker = () => {
   const [notifications, setNotifications] = useState<TaskNotification[]>([
     {
       type: "delay",
-      label: "Task Delay Alerts",
-      description: "Get notified when a task exceeds its expected duration.",
+      label: t("taskTracker.notifDelayLabel"),
+      description: t("taskTracker.notifDelayDesc"),
       enabled: true,
       recipients: ["admin@clinic.com"],
     },
     {
       type: "completion",
-      label: "Completion Notifications",
-      description: "Get notified when an agent completes a task.",
+      label: t("taskTracker.notifCompletionLabel"),
+      description: t("taskTracker.notifCompletionDesc"),
       enabled: true,
       recipients: ["admin@clinic.com"],
     },
     {
       type: "progress",
-      label: "Progress Updates",
-      description: "Receive periodic progress updates on long-running tasks.",
+      label: t("taskTracker.notifProgressLabel"),
+      description: t("taskTracker.notifProgressDesc"),
       enabled: false,
       recipients: [],
     },
     {
       type: "blocker",
-      label: "Blocker Alerts",
-      description: "Get notified immediately when a task encounters a blocker.",
+      label: t("taskTracker.notifBlockerLabel"),
+      description: t("taskTracker.notifBlockerDesc"),
       enabled: true,
       recipients: ["admin@clinic.com", "ops@clinic.com"],
     },
@@ -603,13 +610,6 @@ const TaskTracker = () => {
     archived: tasks.filter((t) => t.archived).length,
   };
 
-  const boardColumns: { status: TaskStatus; label: string }[] = [
-    { status: "queued", label: "Queued" },
-    { status: "in_progress", label: "In Progress" },
-    { status: "completed", label: "Completed" },
-    { status: "failed", label: "Failed" },
-  ];
-
   // ---------------------------------------------------------------------------
   // Task actions
   // ---------------------------------------------------------------------------
@@ -625,17 +625,17 @@ const TaskTracker = () => {
     setTasks((prev) => prev.map((t) => (t.id === editingTask.id ? { ...editingTask } : t)));
     setEditDialogOpen(false);
     setEditingTask(null);
-    toast({ title: "Task updated", description: "Your changes have been saved." });
+    toast({ title: t("taskTracker.toastTaskUpdatedTitle"), description: t("taskTracker.toastTaskUpdatedDesc") });
   };
 
   const duplicateTask = (task: AgentTask) => {
     const dup: AgentTask = {
       ...task,
       id: nextId(),
-      title: `${task.title} (copy)`,
+      title: t("taskTracker.copyTitle", { title: task.title }),
       status: "queued",
       progress: 0,
-      createdAt: "Just now",
+      createdAt: t("taskTracker.justNow"),
       startedAt: undefined,
       completedAt: undefined,
       duration: undefined,
@@ -643,7 +643,7 @@ const TaskTracker = () => {
       subtasks: task.subtasks ? task.subtasks.map((s) => ({ ...s, done: false })) : undefined,
     };
     setTasks((prev) => [dup, ...prev]);
-    toast({ title: "Task duplicated", description: `"${dup.title}" has been created.` });
+    toast({ title: t("taskTracker.toastTaskDuplicatedTitle"), description: t("taskTracker.toastTaskDuplicatedDesc", { title: dup.title }) });
   };
 
   const archiveTask = (task: AgentTask) => {
@@ -652,7 +652,7 @@ const TaskTracker = () => {
         t.id === task.id ? { ...t, archived: true, status: "archived" as TaskStatus } : t,
       ),
     );
-    toast({ title: "Task archived", description: `"${task.title}" moved to archive.` });
+    toast({ title: t("taskTracker.toastTaskArchivedTitle"), description: t("taskTracker.toastTaskArchivedDesc", { title: task.title }) });
   };
 
   const saveAsTemplate = (task: AgentTask) => {
@@ -666,7 +666,7 @@ const TaskTracker = () => {
       defaultSubtasks: task.subtasks ? task.subtasks.map((s) => s.label) : [],
     };
     setUserTemplates((prev) => [...prev, tpl]);
-    toast({ title: "Template saved", description: `"${tpl.name}" is now available as a template.` });
+    toast({ title: t("taskTracker.toastTemplateSavedTitle"), description: t("taskTracker.toastTemplateSavedDesc", { name: tpl.name }) });
   };
 
   const deployTemplate = (tpl: TaskTemplate) => {
@@ -679,13 +679,13 @@ const TaskTracker = () => {
       status: "queued",
       priority: tpl.priority,
       category: tpl.category,
-      createdAt: "Just now",
+      createdAt: t("taskTracker.justNow"),
       progress: 0,
       subtasks: tpl.defaultSubtasks.map((label) => ({ label, done: false })),
     };
     setTasks((prev) => [task, ...prev]);
     setActiveTab("tasks");
-    toast({ title: "Task created from template", description: `"${task.title}" has been queued.` });
+    toast({ title: t("taskTracker.toastTemplateDeployedTitle"), description: t("taskTracker.toastTemplateDeployedDesc", { title: task.title }) });
   };
 
   // ---------------------------------------------------------------------------
@@ -756,7 +756,7 @@ const TaskTracker = () => {
                 <button
                   onClick={() => openEditDialog(task)}
                   className="p-1 rounded hover:bg-white/5 text-muted-foreground"
-                  title="Edit task"
+                  title={t("taskTracker.editTask")}
                 >
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
@@ -770,14 +770,14 @@ const TaskTracker = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-44">
                     <DropdownMenuItem onClick={() => duplicateTask(task)}>
-                      <Copy className="h-4 w-4 mr-2" /> Duplicate
+                      <Copy className="h-4 w-4 mr-2" /> {t("taskTracker.duplicate")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => archiveTask(task)}>
-                      <Archive className="h-4 w-4 mr-2" /> Archive
+                      <Archive className="h-4 w-4 mr-2" /> {t("taskTracker.archive")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => saveAsTemplate(task)}>
-                      <FileText className="h-4 w-4 mr-2" /> Save as Template
+                      <FileText className="h-4 w-4 mr-2" /> {t("taskTracker.saveAsTemplate")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -821,7 +821,7 @@ const TaskTracker = () => {
                     className="text-[10px] border-emerald-500/30 text-emerald-400 bg-emerald-500/10 px-1.5 py-0 flex items-center gap-1"
                   >
                     <ExternalLink className="h-2.5 w-2.5" />
-                    Synced to {name}
+                    {t("taskTracker.syncedTo", { name })}
                   </Badge>
                 ))}
             </div>
@@ -830,7 +830,7 @@ const TaskTracker = () => {
             {task.progress > 0 && task.progress < 100 && (
               <div className="mb-2">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] text-muted-foreground">Progress</span>
+                  <span className="text-[10px] text-muted-foreground">{t("taskTracker.progress")}</span>
                   <span className="text-[10px] font-medium text-foreground">{task.progress}%</span>
                 </div>
                 <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
@@ -856,7 +856,7 @@ const TaskTracker = () => {
               </span>
               {task.dueDate && (
                 <span className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" /> Due {task.dueDate}
+                  <Clock className="h-3 w-3" /> {t("taskTracker.due")} {task.dueDate}
                 </span>
               )}
             </div>
@@ -870,7 +870,7 @@ const TaskTracker = () => {
                 {task.subtasks && task.subtasks.length > 0 && (
                   <div className="space-y-1.5">
                     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                      Subtasks ({task.subtasks.filter((s) => s.done).length}/{task.subtasks.length})
+                      {t("taskTracker.subtasksCount", { done: task.subtasks.filter((s) => s.done).length, total: task.subtasks.length })}
                     </p>
                     {task.subtasks.map((sub, i) => (
                       <div key={i} className="flex items-center gap-2">
@@ -892,8 +892,8 @@ const TaskTracker = () => {
                 )}
                 {task.startedAt && (
                   <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
-                    <span>Started: {task.startedAt}</span>
-                    {task.completedAt && <span>Completed: {task.completedAt}</span>}
+                    <span>{t("taskTracker.started")}: {task.startedAt}</span>
+                    {task.completedAt && <span>{t("taskTracker.completedLabel")}: {task.completedAt}</span>}
                   </div>
                 )}
               </div>
@@ -914,8 +914,8 @@ const TaskTracker = () => {
       {filteredTasks.length === 0 && (
         <div className="text-center py-16 text-muted-foreground">
           <ListTodo className="h-12 w-12 mx-auto mb-3 opacity-30" />
-          <p className="text-sm font-medium">No tasks match your filters</p>
-          <p className="text-xs mt-1">Try adjusting your search or filter criteria</p>
+          <p className="text-sm font-medium">{t("taskTracker.noTasksMatch")}</p>
+          <p className="text-xs mt-1">{t("taskTracker.tryAdjusting")}</p>
         </div>
       )}
     </div>
@@ -939,7 +939,7 @@ const TaskTracker = () => {
               {colTasks.map((task) => renderTaskCard(task, true))}
               {colTasks.length === 0 && (
                 <div className="rounded-xl border-2 border-dashed border-border p-6 text-center">
-                  <p className="text-xs text-muted-foreground">No tasks</p>
+                  <p className="text-xs text-muted-foreground">{t("taskTracker.noTasks")}</p>
                 </div>
               )}
             </div>
@@ -1027,7 +1027,9 @@ const TaskTracker = () => {
               <Bot className="h-4 w-4 text-primary" />
               <h3 className="text-sm font-semibold text-foreground">{agentName}</h3>
               <Badge variant="outline" className="text-[10px] border-border ml-1">
-                {agentTasks.length} task{agentTasks.length !== 1 ? "s" : ""}
+                {agentTasks.length === 1
+                  ? t("taskTracker.taskCountSingular", { count: agentTasks.length })
+                  : t("taskTracker.taskCountPlural", { count: agentTasks.length })}
               </Badge>
             </div>
             <div className="space-y-2">
@@ -1038,7 +1040,7 @@ const TaskTracker = () => {
         {Object.keys(agentGroups).length === 0 && (
           <div className="text-center py-16 text-muted-foreground">
             <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
-            <p className="text-sm font-medium">No tasks match your filters</p>
+            <p className="text-sm font-medium">{t("taskTracker.noTasksMatch")}</p>
           </div>
         )}
       </div>
@@ -1064,9 +1066,9 @@ const TaskTracker = () => {
       <div className="bg-card rounded-xl border border-border p-5">
         <div className="flex items-center gap-2 mb-4">
           <Clock className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-semibold text-foreground">Timeline</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t("taskTracker.timeline")}</h3>
           <span className="text-[10px] text-muted-foreground ml-2">
-            {minDate} to {maxDate}
+            {minDate} {t("taskTracker.to")} {maxDate}
           </span>
         </div>
 
@@ -1130,7 +1132,7 @@ const TaskTracker = () => {
           })}
           {sorted.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
-              <p className="text-xs">No tasks with due dates to display on the timeline.</p>
+              <p className="text-xs">{t("taskTracker.noTasksWithDueDates")}</p>
             </div>
           )}
         </div>
@@ -1181,7 +1183,9 @@ const TaskTracker = () => {
                         <Bot className="h-3 w-3" />
                         <span>{tpl.suggestedAgent}</span>
                         <span className="ml-auto">
-                          {tpl.defaultSubtasks.length} subtask{tpl.defaultSubtasks.length !== 1 ? "s" : ""}
+                          {tpl.defaultSubtasks.length === 1
+                            ? t("taskTracker.subtaskSingular", { count: tpl.defaultSubtasks.length })
+                            : t("taskTracker.subtaskPlural", { count: tpl.defaultSubtasks.length })}
                         </span>
                       </div>
                       <Button
@@ -1190,7 +1194,7 @@ const TaskTracker = () => {
                         onClick={() => deployTemplate(tpl)}
                       >
                         <Zap className="h-3.5 w-3.5 mr-1.5" />
-                        Deploy Template
+                        {t("taskTracker.deployTemplate")}
                       </Button>
                     </div>
                   );
@@ -1214,13 +1218,13 @@ const TaskTracker = () => {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="sm:max-w-[600px] bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Edit Task</DialogTitle>
+            <DialogTitle className="text-foreground">{t("taskTracker.editTaskTitle")}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
             {/* Title */}
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Title</Label>
+              <Label className="text-xs text-muted-foreground">{t("taskTracker.labelTitle")}</Label>
               <Input
                 value={editingTask.title}
                 onChange={(e) => setEditingTask({ ...editingTask, title: e.target.value })}
@@ -1230,7 +1234,7 @@ const TaskTracker = () => {
 
             {/* Description */}
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Description</Label>
+              <Label className="text-xs text-muted-foreground">{t("taskTracker.labelDescription")}</Label>
               <Textarea
                 value={editingTask.description}
                 onChange={(e) =>
@@ -1243,7 +1247,7 @@ const TaskTracker = () => {
             {/* Priority + Status row */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Priority</Label>
+                <Label className="text-xs text-muted-foreground">{t("taskTracker.labelPriority")}</Label>
                 <div className="flex gap-1 flex-wrap">
                   {(["low", "medium", "high", "urgent"] as TaskPriority[]).map((p) => (
                     <button
@@ -1262,7 +1266,7 @@ const TaskTracker = () => {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Status</Label>
+                <Label className="text-xs text-muted-foreground">{t("taskTracker.labelStatus")}</Label>
                 <div className="flex gap-1 flex-wrap">
                   {(["queued", "in_progress", "completed", "failed"] as TaskStatus[]).map((s) => (
                     <button
@@ -1284,7 +1288,7 @@ const TaskTracker = () => {
             {/* Category + Agent row */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Category</Label>
+                <Label className="text-xs text-muted-foreground">{t("taskTracker.labelCategory")}</Label>
                 <Input
                   value={editingTask.category}
                   onChange={(e) => setEditingTask({ ...editingTask, category: e.target.value })}
@@ -1292,7 +1296,7 @@ const TaskTracker = () => {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Assigned Agent</Label>
+                <Label className="text-xs text-muted-foreground">{t("taskTracker.labelAssignedAgent")}</Label>
                 <div className="flex gap-1 flex-wrap">
                   {AGENT_NAMES.map((name) => (
                     <button
@@ -1313,7 +1317,7 @@ const TaskTracker = () => {
 
             {/* Due date */}
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Due Date</Label>
+              <Label className="text-xs text-muted-foreground">{t("taskTracker.labelDueDate")}</Label>
               <Input
                 type="date"
                 value={editingTask.dueDate || ""}
@@ -1328,7 +1332,7 @@ const TaskTracker = () => {
 
             {/* Subtasks */}
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Subtasks</Label>
+              <Label className="text-xs text-muted-foreground">{t("taskTracker.labelSubtasks")}</Label>
               {editingTask.subtasks &&
                 editingTask.subtasks.map((sub, i) => (
                   <div key={i} className="flex items-center gap-2 group">
@@ -1368,7 +1372,7 @@ const TaskTracker = () => {
                 <Input
                   value={newSubtaskLabel}
                   onChange={(e) => setNewSubtaskLabel(e.target.value)}
-                  placeholder="Add a subtask..."
+                  placeholder={t("taskTracker.addSubtaskPlaceholder")}
                   className="bg-white/[0.03] border-white/10 focus:border-primary/50 text-xs"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && newSubtaskLabel.trim()) {
@@ -1408,13 +1412,13 @@ const TaskTracker = () => {
               className="border-border text-muted-foreground"
               onClick={() => setEditDialogOpen(false)}
             >
-              Cancel
+              {t("taskTracker.cancel")}
             </Button>
             <Button
               className="gradient-primary text-primary-foreground rounded-xl shadow-glow-sm hover:opacity-90"
               onClick={saveEditedTask}
             >
-              Save Changes
+              {t("taskTracker.saveChanges")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1432,7 +1436,7 @@ const TaskTracker = () => {
         <DialogHeader>
           <DialogTitle className="text-foreground flex items-center gap-2">
             <BellRing className="h-5 w-5 text-primary" />
-            Task Notifications
+            {t("taskTracker.taskNotifications")}
           </DialogTitle>
         </DialogHeader>
 
@@ -1458,7 +1462,7 @@ const TaskTracker = () => {
               {notif.enabled && (
                 <div className="space-y-2">
                   <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                    Recipients
+                    {t("taskTracker.recipients")}
                   </Label>
                   <div className="flex flex-wrap gap-1.5">
                     {notif.recipients.map((email) => (
@@ -1507,10 +1511,10 @@ const TaskTracker = () => {
             className="gradient-primary text-primary-foreground rounded-xl shadow-glow-sm hover:opacity-90"
             onClick={() => {
               setNotifDialogOpen(false);
-              toast({ title: "Notifications saved", description: "Your notification preferences have been updated." });
+              toast({ title: t("taskTracker.toastNotifSavedTitle"), description: t("taskTracker.toastNotifSavedDesc") });
             }}
           >
-            Save Preferences
+            {t("taskTracker.savePreferences")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -1520,14 +1524,6 @@ const TaskTracker = () => {
   // ---------------------------------------------------------------------------
   // Main Render
   // ---------------------------------------------------------------------------
-
-  const VIEW_MODES: { mode: ViewMode; icon: typeof ListTodo; label: string }[] = [
-    { mode: "list", icon: ListTodo, label: "List" },
-    { mode: "board", icon: Columns3, label: "Board" },
-    { mode: "calendar", icon: Calendar, label: "Calendar" },
-    { mode: "assigned", icon: Users, label: "Assigned" },
-    { mode: "timeline", icon: Clock, label: "Timeline" },
-  ];
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -1540,10 +1536,10 @@ const TaskTracker = () => {
             <div>
               <h1 className="font-display text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
                 <ListTodo className="h-7 w-7 text-primary" />
-                Clinical Task Tracker
+                {t("taskTracker.title")}
               </h1>
               <p className="text-muted-foreground mt-1">
-                Monitor and track all clinical agent tasks across your healthcare practice
+                {t("taskTracker.subtitle")}
               </p>
             </div>
             <Button
@@ -1571,7 +1567,7 @@ const TaskTracker = () => {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              My Tasks
+              {t("taskTracker.myTasks")}
             </button>
             <button
               onClick={() => setActiveTab("templates")}
@@ -1582,7 +1578,7 @@ const TaskTracker = () => {
               }`}
             >
               <FileText className="h-3.5 w-3.5" />
-              Templates
+              {t("taskTracker.templates")}
               <Badge variant="outline" className="text-[9px] border-border ml-1 px-1.5 py-0">
                 {allTemplates.length}
               </Badge>
@@ -1598,35 +1594,35 @@ const TaskTracker = () => {
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
                 {[
                   {
-                    label: "Queued",
+                    label: t("taskTracker.queued"),
                     value: stats.queued,
                     icon: Circle,
                     color: "text-zinc-400",
                     bg: "bg-zinc-500/10",
                   },
                   {
-                    label: "In Progress",
+                    label: t("taskTracker.inProgress"),
                     value: stats.inProgress,
                     icon: RefreshCw,
                     color: "text-blue-400",
                     bg: "bg-blue-500/10",
                   },
                   {
-                    label: "Completed",
+                    label: t("taskTracker.completed"),
                     value: stats.completed,
                     icon: CheckCircle2,
                     color: "text-green-400",
                     bg: "bg-green-500/10",
                   },
                   {
-                    label: "Failed",
+                    label: t("taskTracker.failed"),
                     value: stats.failed,
                     icon: AlertTriangle,
                     color: "text-red-400",
                     bg: "bg-red-500/10",
                   },
                   {
-                    label: "Archived",
+                    label: t("taskTracker.archived"),
                     value: stats.archived,
                     icon: Archive,
                     color: "text-purple-400",
@@ -1644,7 +1640,7 @@ const TaskTracker = () => {
                     </div>
                     <p className="text-2xl font-bold text-foreground">{stat.value}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      of {stats.total} active tasks
+                      {t("taskTracker.ofActiveTasks", { total: stats.total })}
                     </p>
                   </div>
                 ))}
@@ -1657,7 +1653,7 @@ const TaskTracker = () => {
                   <Input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search tasks, agents, categories..."
+                    placeholder={t("taskTracker.searchPlaceholder")}
                     className="pl-9 bg-white/[0.03] border-white/10 focus:border-primary/50"
                   />
                 </div>
@@ -1677,9 +1673,9 @@ const TaskTracker = () => {
                         }`}
                       >
                         {s === "all"
-                          ? "All"
+                          ? t("taskTracker.filterAll")
                           : s === "in_progress"
-                            ? "Active"
+                            ? t("taskTracker.filterActive")
                             : STATUS_CONFIG[s].label}
                       </button>
                     ))}

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Link2,
   Link,
@@ -42,12 +43,6 @@ import { useToast } from "@/hooks/use-toast";
 type PermissionLevel = "full" | "partial" | "none";
 
 type AgentZone = "clinical" | "operations" | "external";
-
-const ZONE_CONFIG: Record<AgentZone, { label: string; shortLabel: string; color: string; bgColor: string }> = {
-  clinical: { label: "Zone 1 — Clinical (PHI)", shortLabel: "Clinical", color: "text-red-400", bgColor: "bg-red-500/15 border-red-500/30 text-red-400" },
-  operations: { label: "Zone 2 — Operations", shortLabel: "Operations", color: "text-amber-400", bgColor: "bg-amber-500/15 border-amber-500/30 text-amber-400" },
-  external: { label: "Zone 3 — External", shortLabel: "External", color: "text-blue-400", bgColor: "bg-blue-500/15 border-blue-500/30 text-blue-400" },
-};
 
 interface DataSharing {
   context: boolean;
@@ -191,12 +186,6 @@ const permissionBadgeClass: Record<PermissionLevel, string> = {
   none: "bg-red-500/15 text-red-400 border-red-500/30",
 };
 
-const permissionLabel: Record<PermissionLevel, string> = {
-  full: "Full",
-  partial: "Partial",
-  none: "None",
-};
-
 const statusBadgeClass: Record<string, string> = {
   active: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
   pending: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
@@ -220,14 +209,36 @@ const CLINICAL_AGENTS = ["Dr. Front Desk", "Clinical Coordinator"];
 // Component
 // ---------------------------------------------------------------------------
 const AgentCollaboration = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
+
+  const ZONE_CONFIG: Record<AgentZone, { label: string; shortLabel: string; color: string; bgColor: string }> = {
+    clinical: { label: t("collaboration.zoneClinicalLabel"), shortLabel: t("collaboration.zoneClinicalShort"), color: "text-red-400", bgColor: "bg-red-500/15 border-red-500/30 text-red-400" },
+    operations: { label: t("collaboration.zoneOperationsLabel"), shortLabel: t("collaboration.zoneOperationsShort"), color: "text-amber-400", bgColor: "bg-amber-500/15 border-amber-500/30 text-amber-400" },
+    external: { label: t("collaboration.zoneExternalLabel"), shortLabel: t("collaboration.zoneExternalShort"), color: "text-blue-400", bgColor: "bg-blue-500/15 border-blue-500/30 text-blue-400" },
+  };
+
+  const permissionLabel: Record<PermissionLevel, string> = {
+    full: t("collaboration.permissionFull"),
+    partial: t("collaboration.permissionPartial"),
+    none: t("collaboration.permissionNone"),
+  };
 
   // Core state
   const [channels, setChannels] = useState<Channel[]>(initialChannels);
   const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>(initialLinkedAccounts);
 
   // Collaboration scoping
-  const departments = ["Administration", "Clinical", "Marketing", "Operations", "Billing", "HR", "IT", "Research"];
+  const departments = [
+    t("collaboration.deptAdministration"),
+    t("collaboration.deptClinical"),
+    t("collaboration.deptMarketing"),
+    t("collaboration.deptOperations"),
+    t("collaboration.deptBilling"),
+    t("collaboration.deptHR"),
+    t("collaboration.deptIT"),
+    t("collaboration.deptResearch"),
+  ];
   const [allowedDepartments, setAllowedDepartments] = useState<string[]>(departments);
   const teammates = ["Dr. Sarah Chen", "James Wilson", "Maria Rodriguez", "Kevin Park", "Lisa Thompson", "Tom Bradley"];
   const [allowedTeammates, setAllowedTeammates] = useState<string[]>(teammates);
@@ -287,8 +298,8 @@ const AgentCollaboration = () => {
       ),
     );
     toast({
-      title: "Channel Updated",
-      description: `${configureChannel.agent1Name} \u2194 ${configureChannel.agent2Name} configuration saved.`,
+      title: t("collaboration.channelUpdated"),
+      description: t("collaboration.channelUpdatedDesc", { agent1: configureChannel.agent1Name, agent2: configureChannel.agent2Name }),
     });
     setConfigureChannel(null);
   };
@@ -310,8 +321,8 @@ const AgentCollaboration = () => {
     };
     setLinkedAccounts((prev) => [...prev, newAccount]);
     toast({
-      title: "Link Request Sent",
-      description: `An invitation has been sent to ${linkForm.companyName}.`,
+      title: t("collaboration.linkRequestSent"),
+      description: t("collaboration.linkRequestSentDesc", { company: linkForm.companyName }),
     });
     setLinkDialogOpen(false);
   };
@@ -320,8 +331,8 @@ const AgentCollaboration = () => {
     const account = linkedAccounts.find((a) => a.id === id);
     setLinkedAccounts((prev) => prev.filter((a) => a.id !== id));
     toast({
-      title: "Account Unlinked",
-      description: `${account?.name ?? "Account"} has been removed.`,
+      title: t("collaboration.accountUnlinked"),
+      description: t("collaboration.accountUnlinkedDesc", { name: account?.name ?? t("collaboration.account") }),
     });
   };
 
@@ -348,8 +359,8 @@ const AgentCollaboration = () => {
       ),
     );
     toast({
-      title: "Account Updated",
-      description: `${manageAccount.name} settings have been saved.`,
+      title: t("collaboration.accountUpdated"),
+      description: t("collaboration.accountUpdatedDesc", { name: manageAccount.name }),
     });
     setManageAccount(null);
   };
@@ -358,9 +369,9 @@ const AgentCollaboration = () => {
   // Stats
   // ---------------------------------------------------------------------------
   const statsCards = [
-    { label: "Linked Accounts", value: linkedAccounts.length, Icon: Link },
-    { label: "Active Channels", value: channels.filter((c) => c.enabled).length, Icon: MessageSquare },
-    { label: "Shared Agents", value: linkedAccounts.reduce((s, a) => s + a.sharedAgents, 0), Icon: Share2 },
+    { label: t("collaboration.linkedAccounts"), value: linkedAccounts.length, Icon: Link },
+    { label: t("collaboration.activeChannels"), value: channels.filter((c) => c.enabled).length, Icon: MessageSquare },
+    { label: t("collaboration.sharedAgents"), value: linkedAccounts.reduce((s, a) => s + a.sharedAgents, 0), Icon: Share2 },
   ];
 
   // ---------------------------------------------------------------------------
@@ -372,14 +383,14 @@ const AgentCollaboration = () => {
 
       <main className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto space-y-10">
-          {/* ── Header ─────────────────────────────────── */}
+          {/* -- Header -- */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-                Clinical Agent Collaboration
+                {t("collaboration.title")}
               </h1>
               <p className="text-muted-foreground mt-1">
-                Coordinate care across clinical agents, departments, and partner organizations.
+                {t("collaboration.subtitle")}
               </p>
             </div>
             <Button
@@ -387,11 +398,11 @@ const AgentCollaboration = () => {
               onClick={handleOpenLinkDialog}
             >
               <Link2 className="h-4 w-4 mr-1.5" />
-              Link Account
+              {t("collaboration.linkAccount")}
             </Button>
           </div>
 
-          {/* ── Overview Stats ─────────────────────────── */}
+          {/* -- Overview Stats -- */}
           <div className="grid sm:grid-cols-3 gap-5">
             {statsCards.map((stat) => (
               <div
@@ -409,24 +420,24 @@ const AgentCollaboration = () => {
             ))}
           </div>
 
-          {/* ── Collaboration Scope ──────────────────────── */}
+          {/* -- Collaboration Scope -- */}
           <section className="space-y-4">
             <div>
               <h2 className="text-xl font-semibold font-heading text-foreground flex items-center gap-2">
                 <Shield className="h-5 w-5 text-primary" />
-                Collaboration Scope
+                {t("collaboration.collaborationScope")}
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Define which departments, accounts, and teammates can collaborate with your agents.
+                {t("collaboration.collaborationScopeDesc")}
               </p>
             </div>
 
             {/* Scope Mode Selector */}
             <div className="flex gap-2">
               {([
-                { value: "all" as const, label: "All Access", icon: Users, desc: "Everyone can collaborate" },
-                { value: "departments" as const, label: "By Department", icon: Building2, desc: "Restrict to specific departments" },
-                { value: "teammates" as const, label: "By Teammate", icon: UserCheck, desc: "Restrict to specific people" },
+                { value: "all" as const, label: t("collaboration.allAccess"), icon: Users, desc: t("collaboration.allAccessDesc") },
+                { value: "departments" as const, label: t("collaboration.byDepartment"), icon: Building2, desc: t("collaboration.byDepartmentDesc") },
+                { value: "teammates" as const, label: t("collaboration.byTeammate"), icon: UserCheck, desc: t("collaboration.byTeammateDesc") },
               ]).map((opt) => (
                 <button
                   key={opt.value}
@@ -449,7 +460,7 @@ const AgentCollaboration = () => {
             {/* Department Toggles */}
             {scopeMode === "departments" && (
               <div className="glass-card rounded-xl p-5 space-y-3">
-                <p className="text-sm font-medium text-foreground">Allowed Departments</p>
+                <p className="text-sm font-medium text-foreground">{t("collaboration.allowedDepartments")}</p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {departments.map((dept) => {
                     const enabled = allowedDepartments.includes(dept);
@@ -474,7 +485,7 @@ const AgentCollaboration = () => {
                   })}
                 </div>
                 <p className="text-[10px] text-muted-foreground">
-                  {allowedDepartments.length} of {departments.length} departments can collaborate
+                  {t("collaboration.departmentsCanCollaborate", { allowed: allowedDepartments.length, total: departments.length })}
                 </p>
               </div>
             )}
@@ -482,7 +493,7 @@ const AgentCollaboration = () => {
             {/* Teammate Toggles */}
             {scopeMode === "teammates" && (
               <div className="glass-card rounded-xl p-5 space-y-3">
-                <p className="text-sm font-medium text-foreground">Allowed Teammates</p>
+                <p className="text-sm font-medium text-foreground">{t("collaboration.allowedTeammates")}</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {teammates.map((name) => {
                     const enabled = allowedTeammates.includes(name);
@@ -507,7 +518,7 @@ const AgentCollaboration = () => {
                   })}
                 </div>
                 <p className="text-[10px] text-muted-foreground">
-                  {allowedTeammates.length} of {teammates.length} teammates can collaborate
+                  {t("collaboration.teammatesCanCollaborate", { allowed: allowedTeammates.length, total: teammates.length })}
                 </p>
               </div>
             )}
@@ -515,21 +526,21 @@ const AgentCollaboration = () => {
             {scopeMode === "all" && (
               <div className="glass-card rounded-xl p-5">
                 <p className="text-sm text-muted-foreground">
-                  All departments and teammates have full collaboration access. Switch to "By Department" or "By Teammate" to restrict scope.
+                  {t("collaboration.allAccessInfo")}
                 </p>
               </div>
             )}
           </section>
 
-          {/* ── Zone Isolation Firewall ───────────────────── */}
+          {/* -- Zone Isolation Firewall -- */}
           <section className="space-y-4">
             <div>
               <h2 className="text-xl font-semibold font-heading text-foreground flex items-center gap-2">
                 <Lock className="h-5 w-5 text-red-400" />
-                Agent Isolation Zones
+                {t("collaboration.agentIsolationZones")}
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Hard-walled security zones prevent PHI data from crossing boundaries. Zone 1 agents can never communicate with Zone 3 agents.
+                {t("collaboration.agentIsolationZonesDesc")}
               </p>
             </div>
 
@@ -564,7 +575,7 @@ const AgentCollaboration = () => {
                       <div className="mt-3 pt-3 border-t border-red-500/20">
                         <p className="text-[10px] text-red-400 font-medium flex items-center gap-1">
                           <Lock className="h-3 w-3" />
-                          No external communication allowed
+                          {t("collaboration.noExternalCommunication")}
                         </p>
                       </div>
                     )}
@@ -577,33 +588,33 @@ const AgentCollaboration = () => {
             <div className="glass-card rounded-xl p-5 space-y-3">
               <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                 <ShieldAlert className="h-4 w-4 text-red-400" />
-                Zone Communication Rules
+                {t("collaboration.zoneCommunicationRules")}
               </h3>
               <div className="grid grid-cols-3 gap-3">
                 <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-3 text-center">
-                  <p className="text-xs font-medium text-green-400 mb-1">Allowed</p>
-                  <p className="text-[10px] text-muted-foreground">Same Zone ↔ Same Zone</p>
+                  <p className="text-xs font-medium text-green-400 mb-1">{t("collaboration.allowed")}</p>
+                  <p className="text-[10px] text-muted-foreground">{t("collaboration.allowedDesc")}</p>
                 </div>
                 <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-center">
-                  <p className="text-xs font-medium text-amber-400 mb-1">Sanitization Required</p>
-                  <p className="text-[10px] text-muted-foreground">Clinical → Operations (de-identified only)</p>
+                  <p className="text-xs font-medium text-amber-400 mb-1">{t("collaboration.sanitizationRequired")}</p>
+                  <p className="text-[10px] text-muted-foreground">{t("collaboration.sanitizationRequiredDesc")}</p>
                 </div>
                 <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-center">
-                  <p className="text-xs font-medium text-red-400 mb-1">Blocked</p>
-                  <p className="text-[10px] text-muted-foreground">Clinical ↔ External (never)</p>
+                  <p className="text-xs font-medium text-red-400 mb-1">{t("collaboration.blocked")}</p>
+                  <p className="text-[10px] text-muted-foreground">{t("collaboration.blockedDesc")}</p>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* ── Internal Agent Collaboration ───────────── */}
+          {/* -- Internal Agent Collaboration -- */}
           <section className="space-y-4">
             <div>
               <h2 className="text-xl font-semibold font-heading text-foreground">
-                Internal Agent Communication
+                {t("collaboration.internalAgentCommunication")}
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Control how your agents share context, data, and insights with each other.
+                {t("collaboration.internalAgentCommunicationDesc")}
               </p>
             </div>
 
@@ -631,18 +642,18 @@ const AgentCollaboration = () => {
                     <Badge variant="outline" className={`text-[9px] ${ZONE_CONFIG[channel.agent1Zone].bgColor}`}>
                       {ZONE_CONFIG[channel.agent1Zone].shortLabel}
                     </Badge>
-                    <span className="text-[10px] text-muted-foreground">↔</span>
+                    <span className="text-[10px] text-muted-foreground">{"\u2194"}</span>
                     <Badge variant="outline" className={`text-[9px] ${ZONE_CONFIG[channel.agent2Zone].bgColor}`}>
                       {ZONE_CONFIG[channel.agent2Zone].shortLabel}
                     </Badge>
                     {isZoneViolation(channel.agent1Zone, channel.agent2Zone) && (
                       <Badge variant="outline" className="text-[9px] bg-red-500/15 border-red-500/30 text-red-400">
-                        <ShieldAlert className="h-2.5 w-2.5 mr-0.5" /> BLOCKED
+                        <ShieldAlert className="h-2.5 w-2.5 mr-0.5" /> {t("collaboration.blockedBadge")}
                       </Badge>
                     )}
                     {requiresSanitizationGate(channel.agent1Zone, channel.agent2Zone) && (
                       <Badge variant="outline" className="text-[9px] bg-amber-500/15 border-amber-500/30 text-amber-400">
-                        Sanitization Gate
+                        {t("collaboration.sanitizationGate")}
                       </Badge>
                     )}
                   </div>
@@ -665,7 +676,7 @@ const AgentCollaboration = () => {
                         onCheckedChange={() => handleToggleChannel(channel.id)}
                       />
                       <span className="text-xs text-muted-foreground">
-                        {channel.enabled ? "Enabled" : "Disabled"}
+                        {channel.enabled ? t("collaboration.enabled") : t("collaboration.disabled")}
                       </span>
                     </div>
                     <Button
@@ -675,7 +686,7 @@ const AgentCollaboration = () => {
                       onClick={() => handleOpenConfigureChannel(channel)}
                     >
                       <Settings className="h-3.5 w-3.5 mr-1" />
-                      Configure
+                      {t("collaboration.configure")}
                     </Button>
                   </div>
                 </div>
@@ -683,14 +694,14 @@ const AgentCollaboration = () => {
             </div>
           </section>
 
-          {/* ── Linked Accounts ────────────────────────── */}
+          {/* -- Linked Accounts -- */}
           <section className="space-y-4">
             <div>
               <h2 className="text-xl font-semibold font-heading text-foreground">
-                Linked Company Accounts
+                {t("collaboration.linkedCompanyAccounts")}
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Connect with partner organizations for operational collaboration. Zone 1 (Clinical) agents are excluded from all cross-organization sharing to protect PHI.
+                {t("collaboration.linkedCompanyAccountsDesc")}
               </p>
             </div>
 
@@ -710,7 +721,7 @@ const AgentCollaboration = () => {
                         {account.name}
                       </h3>
                       <p className="text-xs text-muted-foreground">
-                        {account.sharedAgents} shared agent{account.sharedAgents !== 1 ? "s" : ""}
+                        {t("collaboration.sharedAgentCount", { count: account.sharedAgents })}
                       </p>
                     </div>
                   </div>
@@ -721,7 +732,7 @@ const AgentCollaboration = () => {
                       variant="outline"
                       className={`text-[10px] capitalize ${statusBadgeClass[account.status]}`}
                     >
-                      {account.status}
+                      {account.status === "active" ? t("collaboration.statusActive") : t("collaboration.statusPending")}
                     </Badge>
                     <Badge
                       variant="outline"
@@ -740,7 +751,7 @@ const AgentCollaboration = () => {
                       onClick={() => handleOpenManageAccount(account)}
                     >
                       <Settings className="h-3.5 w-3.5 mr-1" />
-                      Manage
+                      {t("collaboration.manage")}
                     </Button>
                     <Button
                       size="sm"
@@ -749,7 +760,7 @@ const AgentCollaboration = () => {
                       onClick={() => handleUnlinkAccount(account.id)}
                     >
                       <Unlink className="h-3.5 w-3.5 mr-1" />
-                      Unlink
+                      {t("collaboration.unlink")}
                     </Button>
                   </div>
                 </div>
@@ -759,13 +770,13 @@ const AgentCollaboration = () => {
         </div>
       </main>
 
-      {/* ── Link Account Dialog ──────────────────────── */}
+      {/* -- Link Account Dialog -- */}
       <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
         <DialogContent className="max-w-md glass-card border-white/10">
           <DialogHeader>
-            <DialogTitle className="text-lg font-heading">Link Account</DialogTitle>
+            <DialogTitle className="text-lg font-heading">{t("collaboration.linkAccountDialogTitle")}</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Send a collaboration request to a partner organization.
+              {t("collaboration.linkAccountDialogDesc")}
             </DialogDescription>
           </DialogHeader>
 
@@ -773,11 +784,11 @@ const AgentCollaboration = () => {
             {/* Company name */}
             <div className="space-y-2">
               <Label htmlFor="link-company" className="text-sm font-medium">
-                Company Name or ID
+                {t("collaboration.companyNameOrId")}
               </Label>
               <Input
                 id="link-company"
-                placeholder="e.g. Northside Medical Group"
+                placeholder={t("collaboration.companyNamePlaceholder")}
                 value={linkForm.companyName}
                 onChange={(e) => setLinkForm((f) => ({ ...f, companyName: e.target.value }))}
                 className="bg-white/5 border-white/10 focus:border-primary"
@@ -787,12 +798,12 @@ const AgentCollaboration = () => {
             {/* Contact email */}
             <div className="space-y-2">
               <Label htmlFor="link-email" className="text-sm font-medium">
-                Contact Email
+                {t("collaboration.contactEmail")}
               </Label>
               <Input
                 id="link-email"
                 type="email"
-                placeholder="admin@partner.com"
+                placeholder={t("collaboration.contactEmailPlaceholder")}
                 value={linkForm.contactEmail}
                 onChange={(e) => setLinkForm((f) => ({ ...f, contactEmail: e.target.value }))}
                 className="bg-white/5 border-white/10 focus:border-primary"
@@ -801,24 +812,24 @@ const AgentCollaboration = () => {
 
             {/* Permission level */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Default Permission Level</Label>
+              <Label className="text-sm font-medium">{t("collaboration.defaultPermissionLevel")}</Label>
               <div className="space-y-2">
                 {(
                   [
                     {
                       value: "full" as PermissionLevel,
-                      title: "Full Access",
-                      desc: "Partner's agents can access all your shared agents' data, context, and skills.",
+                      title: t("collaboration.fullAccessTitle"),
+                      desc: t("collaboration.fullAccessDesc"),
                     },
                     {
                       value: "partial" as PermissionLevel,
-                      title: "Partial Access",
-                      desc: "Partner's agents receive summaries and outputs only \u2014 no raw data or skill invocation.",
+                      title: t("collaboration.partialAccessTitle"),
+                      desc: t("collaboration.partialAccessDesc"),
                     },
                     {
                       value: "none" as PermissionLevel,
-                      title: "No Access (Pending)",
-                      desc: "Link established but no data sharing until manually approved.",
+                      title: t("collaboration.noAccessTitle"),
+                      desc: t("collaboration.noAccessDesc"),
                     },
                   ] as const
                 ).map((opt) => (
@@ -842,11 +853,11 @@ const AgentCollaboration = () => {
             {/* Optional message */}
             <div className="space-y-2">
               <Label htmlFor="link-message" className="text-sm font-medium">
-                Message (optional)
+                {t("collaboration.messageOptional")}
               </Label>
               <Textarea
                 id="link-message"
-                placeholder="Add a note to accompany your link request..."
+                placeholder={t("collaboration.messagePlaceholder")}
                 value={linkForm.message}
                 onChange={(e) => setLinkForm((f) => ({ ...f, message: e.target.value }))}
                 className="bg-white/5 border-white/10 focus:border-primary resize-none"
@@ -862,13 +873,13 @@ const AgentCollaboration = () => {
               onClick={handleSendLinkRequest}
             >
               <Send className="h-4 w-4 mr-1.5" />
-              Send Link Request
+              {t("collaboration.sendLinkRequest")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ── Configure Channel Dialog ─────────────────── */}
+      {/* -- Configure Channel Dialog -- */}
       <Dialog
         open={!!configureChannel}
         onOpenChange={(open) => {
@@ -879,7 +890,7 @@ const AgentCollaboration = () => {
           <DialogContent className="max-w-lg glass-card border-white/10">
             <DialogHeader>
               <DialogTitle className="text-lg font-heading">
-                Configure Channel
+                {t("collaboration.configureChannel")}
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
                 {configureChannel.agent1Name} &harr; {configureChannel.agent2Name}
@@ -889,24 +900,24 @@ const AgentCollaboration = () => {
             <div className="space-y-5 pt-2">
               {/* Permission level selector */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Permission Level</Label>
+                <Label className="text-sm font-medium">{t("collaboration.permissionLevel")}</Label>
                 <div className="grid gap-2">
                   {(
                     [
                       {
                         value: "full" as PermissionLevel,
-                        title: "Full",
-                        desc: "Share all context, data, outputs, and can invoke each other's skills directly.",
+                        title: t("collaboration.permissionFull"),
+                        desc: t("collaboration.channelFullDesc"),
                       },
                       {
                         value: "partial" as PermissionLevel,
-                        title: "Partial",
-                        desc: "Share summaries and final outputs only. No raw data, no skill invocation.",
+                        title: t("collaboration.permissionPartial"),
+                        desc: t("collaboration.channelPartialDesc"),
                       },
                       {
                         value: "none" as PermissionLevel,
-                        title: "None",
-                        desc: "Agents operate in complete isolation. No data sharing.",
+                        title: t("collaboration.permissionNone"),
+                        desc: t("collaboration.channelNoneDesc"),
                       },
                     ] as const
                   ).map((opt) => (
@@ -939,14 +950,14 @@ const AgentCollaboration = () => {
 
               {/* Data sharing toggles */}
               <div className="space-y-3">
-                <Label className="text-sm font-medium">Data Sharing Options</Label>
+                <Label className="text-sm font-medium">{t("collaboration.dataSharingOptions")}</Label>
                 {(
                   [
-                    { key: "context" as const, label: "Share conversation context" },
-                    { key: "documents" as const, label: "Share generated documents" },
-                    { key: "analytics" as const, label: "Share analytics & metrics" },
-                    { key: "skillInvocation" as const, label: "Allow skill invocation" },
-                    { key: "customerData" as const, label: "Share customer/patient data" },
+                    { key: "context" as const, label: t("collaboration.shareConversationContext") },
+                    { key: "documents" as const, label: t("collaboration.shareGeneratedDocuments") },
+                    { key: "analytics" as const, label: t("collaboration.shareAnalyticsMetrics") },
+                    { key: "skillInvocation" as const, label: t("collaboration.allowSkillInvocation") },
+                    { key: "customerData" as const, label: t("collaboration.shareCustomerPatientData") },
                   ] as const
                 ).map((toggle) => (
                   <div key={toggle.key} className="flex items-center justify-between">
@@ -971,14 +982,14 @@ const AgentCollaboration = () => {
                 onClick={handleSaveChannelConfig}
               >
                 <Save className="h-4 w-4 mr-1.5" />
-                Save Configuration
+                {t("collaboration.saveConfiguration")}
               </Button>
             </DialogFooter>
           </DialogContent>
         )}
       </Dialog>
 
-      {/* ── Manage Linked Account Dialog ──────────────── */}
+      {/* -- Manage Linked Account Dialog -- */}
       <Dialog
         open={!!manageAccount}
         onOpenChange={(open) => {
@@ -997,7 +1008,7 @@ const AgentCollaboration = () => {
                     {manageAccount.name}
                   </DialogTitle>
                   <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                    Manage shared agents and permissions for this partner.
+                    {t("collaboration.manageAccountDesc")}
                   </DialogDescription>
                 </div>
               </div>
@@ -1006,13 +1017,13 @@ const AgentCollaboration = () => {
             <div className="space-y-5 pt-2">
               {/* Default permission level */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Default Permission Level</Label>
+                <Label className="text-sm font-medium">{t("collaboration.defaultPermissionLevel")}</Label>
                 <div className="grid gap-2">
                   {(
                     [
-                      { value: "full" as PermissionLevel, title: "Full" },
-                      { value: "partial" as PermissionLevel, title: "Partial" },
-                      { value: "none" as PermissionLevel, title: "None" },
+                      { value: "full" as PermissionLevel, title: t("collaboration.permissionFull") },
+                      { value: "partial" as PermissionLevel, title: t("collaboration.permissionPartial") },
+                      { value: "none" as PermissionLevel, title: t("collaboration.permissionNone") },
                     ] as const
                   ).map((opt) => (
                     <button
@@ -1043,9 +1054,9 @@ const AgentCollaboration = () => {
 
               {/* Shared agents list */}
               <div className="space-y-3">
-                <Label className="text-sm font-medium">Shared Agents</Label>
+                <Label className="text-sm font-medium">{t("collaboration.sharedAgentsLabel")}</Label>
                 <p className="text-xs text-muted-foreground">
-                  Select which agents to share with {manageAccount.name} and set individual permissions.
+                  {t("collaboration.sharedAgentsDesc", { name: manageAccount.name })}
                 </p>
                 <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                   {accountSharedAgentsList.map((agent, idx) => (
@@ -1063,7 +1074,7 @@ const AgentCollaboration = () => {
                         <div className="flex items-center gap-3 opacity-50">
                           <Lock className="h-4 w-4 text-red-400" />
                           <span className="text-sm text-foreground">{agent.name}</span>
-                          <Badge variant="outline" className="text-[9px] bg-red-500/15 border-red-500/30 text-red-400">Zone 1 — Locked</Badge>
+                          <Badge variant="outline" className="text-[9px] bg-red-500/15 border-red-500/30 text-red-400">{t("collaboration.zoneLocked")}</Badge>
                         </div>
                       ) : (
                         <>
@@ -1099,7 +1110,7 @@ const AgentCollaboration = () => {
                                       : "text-muted-foreground hover:bg-white/10"
                                   }`}
                                 >
-                                  {perm}
+                                  {permissionLabel[perm]}
                                 </button>
                               ))}
                             </div>
@@ -1118,7 +1129,7 @@ const AgentCollaboration = () => {
                 onClick={handleSaveManageAccount}
               >
                 <Check className="h-4 w-4 mr-1.5" />
-                Save
+                {t("collaboration.save")}
               </Button>
             </DialogFooter>
           </DialogContent>

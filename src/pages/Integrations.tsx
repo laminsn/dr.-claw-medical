@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Brain,
   Mic,
@@ -139,20 +140,6 @@ const categoryColors: Record<string, string> = {
   "project-management": "bg-pink-500/15 text-pink-400 border-pink-500/30",
 };
 
-const categoryLabel: Record<string, string> = {
-  llm: "AI Models",
-  voice: "Voice AI",
-  crm: "CRM",
-  cloud: "Cloud",
-  productivity: "Productivity",
-  healthcare: "Healthcare",
-  communication: "Communication",
-  ehr: "EHR / EMR",
-  video: "Video",
-  messaging: "Messaging",
-  "project-management": "Project Mgmt",
-};
-
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -218,14 +205,10 @@ const INTEGRATION_ZONE_ACCESS: Record<string, AgentZone[]> = {
   jira: ["operations"],
 };
 
-const ZONE_BADGE_CONFIG: Record<string, { label: string; color: string }> = {
-  clinical: { label: "Zone 1", color: "text-red-400 bg-red-500/10 border-red-500/30" },
-  operations: { label: "Zone 2", color: "text-amber-400 bg-amber-500/10 border-amber-500/30" },
-  external: { label: "Zone 3", color: "text-blue-400 bg-blue-500/10 border-blue-500/30" },
-};
-
 const Integrations = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
+
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedIntegration, setSelectedIntegration] = useState<
     (typeof integrations)[number] | null
@@ -235,12 +218,33 @@ const Integrations = () => {
     {},
   );
 
+  // --- i18n label maps (inside component so t() is accessible) ---
+  const categoryLabel: Record<string, string> = {
+    llm: t("integrations.categoryAiModels"),
+    voice: t("integrations.categoryVoiceAi"),
+    crm: t("integrations.categoryCrm"),
+    cloud: t("integrations.categoryCloud"),
+    productivity: t("integrations.categoryProductivity"),
+    healthcare: t("integrations.categoryHealthcare"),
+    communication: t("integrations.categoryCommunication"),
+    ehr: t("integrations.categoryEhr"),
+    video: t("integrations.categoryVideo"),
+    messaging: t("integrations.categoryMessaging"),
+    "project-management": t("integrations.categoryProjectMgmt"),
+  };
+
+  const ZONE_BADGE_CONFIG: Record<string, { label: string; color: string }> = {
+    clinical: { label: t("integrations.zone1"), color: "text-red-400 bg-red-500/10 border-red-500/30" },
+    operations: { label: t("integrations.zone2"), color: "text-amber-400 bg-amber-500/10 border-amber-500/30" },
+    external: { label: t("integrations.zone3"), color: "text-blue-400 bg-blue-500/10 border-blue-500/30" },
+  };
+
   const filteredIntegrations = integrations.filter((integ) => {
     return selectedCategory === "all" || integ.category === selectedCategory;
   });
 
   const categoryTabs = [
-    { id: "all", name: "All" },
+    { id: "all", name: t("integrations.all") },
     ...integrationCategories.map((c) => ({ id: c.id, name: c.name })),
   ];
 
@@ -253,8 +257,8 @@ const Integrations = () => {
     }));
 
     toast({
-      title: "Connected",
-      description: `${selectedIntegration.name} has been connected successfully.`,
+      title: t("integrations.toastConnected"),
+      description: t("integrations.toastConnectedDesc", { name: selectedIntegration.name }),
     });
 
     setApiKeyInput("");
@@ -270,10 +274,10 @@ const Integrations = () => {
           {/* ── Header ─────────────────────────────────── */}
           <div>
             <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-              EHR & Healthcare Integrations
+              {t("integrations.title")}
             </h1>
             <p className="text-muted-foreground mt-1">
-              Connect your EHR, practice management, and clinical tools to power your AI agents.
+              {t("integrations.subtitle")}
             </p>
           </div>
 
@@ -281,14 +285,14 @@ const Integrations = () => {
           <div className="flex items-start gap-3 p-4 rounded-xl border border-red-500/20 bg-red-500/5">
             <Lock className="h-5 w-5 text-red-400 mt-0.5 shrink-0" />
             <div>
-              <p className="text-sm font-semibold text-red-400">Zone-Locked Integrations</p>
+              <p className="text-sm font-semibold text-red-400">{t("integrations.zoneLockedTitle")}</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Integrations are restricted by agent security zone. Zone 1 (Clinical/PHI) agents can only access EHR/EMR and approved infrastructure. External CRMs, messaging platforms, and communication tools are blocked for clinical agents to prevent PHI exposure.
+                {t("integrations.zoneLockedDesc")}
               </p>
               <div className="flex items-center gap-4 mt-2">
-                <span className="flex items-center gap-1.5 text-[10px]"><span className="h-2 w-2 rounded-full bg-red-400" /> Zone 1: EHR/EMR + Infrastructure only</span>
-                <span className="flex items-center gap-1.5 text-[10px]"><span className="h-2 w-2 rounded-full bg-amber-400" /> Zone 2: Internal tools + productivity</span>
-                <span className="flex items-center gap-1.5 text-[10px]"><span className="h-2 w-2 rounded-full bg-blue-400" /> Zone 3: All integrations</span>
+                <span className="flex items-center gap-1.5 text-[10px]"><span className="h-2 w-2 rounded-full bg-red-400" /> {t("integrations.zone1Desc")}</span>
+                <span className="flex items-center gap-1.5 text-[10px]"><span className="h-2 w-2 rounded-full bg-amber-400" /> {t("integrations.zone2Desc")}</span>
+                <span className="flex items-center gap-1.5 text-[10px]"><span className="h-2 w-2 rounded-full bg-blue-400" /> {t("integrations.zone3Desc")}</span>
               </div>
             </div>
           </div>
@@ -314,7 +318,7 @@ const Integrations = () => {
           {filteredIntegrations.length === 0 ? (
             <div className="text-center py-20 text-muted-foreground">
               <Search className="h-10 w-10 mx-auto mb-3 opacity-40" />
-              <p className="text-sm">No integrations in this category.</p>
+              <p className="text-sm">{t("integrations.noIntegrations")}</p>
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -340,7 +344,7 @@ const Integrations = () => {
                             className="text-[10px] bg-yellow-500/15 text-yellow-400 border-yellow-500/30"
                           >
                             <Star className="h-2.5 w-2.5 mr-0.5 fill-yellow-400" />
-                            Popular
+                            {t("integrations.popular")}
                           </Badge>
                         )}
                         <Badge
@@ -373,14 +377,14 @@ const Integrations = () => {
                       ))}
                       {integ.features.length > 3 && (
                         <li className="text-[11px] text-muted-foreground/60 pl-[18px]">
-                          +{integ.features.length - 3} more
+                          +{integ.features.length - 3} {t("integrations.more")}
                         </li>
                       )}
                     </ul>
 
                     {/* Zone Access */}
                     <div className="flex items-center gap-1 mt-2 flex-wrap">
-                      <span className="text-[9px] text-muted-foreground/60 mr-0.5">Zones:</span>
+                      <span className="text-[9px] text-muted-foreground/60 mr-0.5">{t("integrations.zones")}:</span>
                       {(INTEGRATION_ZONE_ACCESS[integ.id] || ["operations"]).map((zone) => (
                         <Badge key={zone} variant="outline" className={`text-[8px] px-1.5 py-0 ${ZONE_BADGE_CONFIG[zone]?.color || ""}`}>
                           {ZONE_BADGE_CONFIG[zone]?.label || zone}
@@ -400,7 +404,7 @@ const Integrations = () => {
                       {isConnected ? (
                         <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400">
                           <Check className="h-3.5 w-3.5" />
-                          Connected
+                          {t("integrations.connected")}
                         </span>
                       ) : (
                         <Button
@@ -413,7 +417,7 @@ const Integrations = () => {
                           }}
                         >
                           <Plug className="h-3.5 w-3.5 mr-1" />
-                          Connect
+                          {t("integrations.connect")}
                         </Button>
                       )}
                     </div>
@@ -449,7 +453,7 @@ const Integrations = () => {
                 })()}
                 <div className="min-w-0">
                   <DialogTitle className="text-lg font-heading">
-                    Connect {selectedIntegration.name}
+                    {t("integrations.connectName", { name: selectedIntegration.name })}
                   </DialogTitle>
                   <DialogDescription className="text-xs text-muted-foreground mt-0.5">
                     {selectedIntegration.description}
@@ -473,14 +477,14 @@ const Integrations = () => {
               />
               <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
                 <Lock className="h-3 w-3" />
-                The key is stored encrypted and never shared.
+                {t("integrations.keyEncrypted")}
               </p>
             </div>
 
             {/* Features */}
             <div className="pt-2">
               <h4 className="text-xs font-semibold text-foreground mb-2">
-                Features
+                {t("integrations.features")}
               </h4>
               <ul className="space-y-1.5">
                 {selectedIntegration.features.map((feat) => (
@@ -502,7 +506,7 @@ const Integrations = () => {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
             >
-              Visit {selectedIntegration.name}
+              {t("integrations.visitName", { name: selectedIntegration.name })}
               <ExternalLink className="h-3 w-3" />
             </a>
 
@@ -513,7 +517,7 @@ const Integrations = () => {
                 onClick={handleConnect}
               >
                 <Zap className="h-4 w-4 mr-1.5" />
-                Save &amp; Connect
+                {t("integrations.saveAndConnect")}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Users,
   CalendarCheck,
@@ -333,6 +334,7 @@ const EHR_SYSTEMS = [
 
 const PatientPortal = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [patients] = useState<Patient[]>(mockPatients);
@@ -341,6 +343,34 @@ const PatientPortal = () => {
   const [carePlans] = useState<CarePlan[]>(mockCarePlans);
   const [ehrSyncing, setEhrSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState("2 min ago");
+
+  // --- i18n label maps ---
+  const PATIENT_STATUS_LABELS: Record<PatientStatus, string> = {
+    Active: t("patientPortal.statusActive"),
+    Inactive: t("patientPortal.statusInactive"),
+    New: t("patientPortal.statusNew"),
+  };
+
+  const APPOINTMENT_STATUS_LABELS: Record<AppointmentStatus, string> = {
+    "Checked In": t("patientPortal.statusCheckedIn"),
+    Waiting: t("patientPortal.statusWaiting"),
+    "In Progress": t("patientPortal.statusInProgress"),
+    Completed: t("patientPortal.statusCompleted"),
+  };
+
+  const APPOINTMENT_TYPE_LABELS: Record<AppointmentType, string> = {
+    "Follow-up": t("patientPortal.typeFollowUp"),
+    "New Patient": t("patientPortal.typeNewPatient"),
+    Telehealth: t("patientPortal.typeTelehealth"),
+    "Lab Review": t("patientPortal.typeLabReview"),
+    Consultation: t("patientPortal.typeConsultation"),
+  };
+
+  const PRIORITY_LABELS: Record<string, string> = {
+    normal: t("patientPortal.priorityNormal"),
+    high: t("patientPortal.priorityHigh"),
+    urgent: t("patientPortal.priorityUrgent"),
+  };
 
   // Derived
   const filteredPatients = patients.filter((p) =>
@@ -358,8 +388,8 @@ const PatientPortal = () => {
       prev.map((m) => (m.id === msg.id ? { ...m, read: true } : m)),
     );
     toast({
-      title: "Reply sent",
-      description: `Your reply to ${msg.patientName} has been queued for delivery.`,
+      title: t("patientPortal.toastReplySent"),
+      description: t("patientPortal.toastReplySentDesc", { name: msg.patientName }),
     });
   };
 
@@ -368,15 +398,15 @@ const PatientPortal = () => {
       prev.map((m) => (m.id === msgId ? { ...m, read: true } : m)),
     );
     toast({
-      title: "Message marked as read",
-      description: "The message has been marked as read.",
+      title: t("patientPortal.toastMessageMarkedRead"),
+      description: t("patientPortal.toastMessageMarkedReadDesc"),
     });
   };
 
   const handleViewPatient = (patient: Patient) => {
     toast({
-      title: "Patient record opened",
-      description: `Viewing full record for ${patient.name}.`,
+      title: t("patientPortal.toastPatientRecordOpened"),
+      description: t("patientPortal.toastViewingRecord", { name: patient.name }),
     });
   };
 
@@ -392,15 +422,15 @@ const PatientPortal = () => {
       prev.map((a) => (a.id === apt.id ? { ...a, status: newStatus } : a)),
     );
     toast({
-      title: "Status updated",
-      description: `${apt.patientName} is now "${newStatus}".`,
+      title: t("patientPortal.toastStatusUpdated"),
+      description: t("patientPortal.toastStatusUpdatedDesc", { name: apt.patientName, status: APPOINTMENT_STATUS_LABELS[newStatus] }),
     });
   };
 
   const handleViewCarePlan = (plan: CarePlan) => {
     toast({
-      title: "Care plan opened",
-      description: `Viewing care plan for ${plan.patientName} - ${plan.condition}.`,
+      title: t("patientPortal.toastCarePlanOpened"),
+      description: t("patientPortal.toastViewingCarePlan", { name: plan.patientName, condition: plan.condition }),
     });
   };
 
@@ -418,10 +448,30 @@ const PatientPortal = () => {
   // ---------------------------------------------------------------------------
 
   const statsCards = [
-    { label: "Active Patients", value: activePatients, icon: Users },
-    { label: "Appointments Today", value: appointmentsToday, icon: CalendarCheck },
-    { label: "Pending Messages", value: pendingMessages, icon: MessageSquare },
-    { label: "Satisfaction Score", value: `${satisfactionScore}/5`, icon: Star },
+    {
+      label: t("patientPortal.activePatients"),
+      value: activePatients,
+      icon: Users,
+      gradient: true,
+    },
+    {
+      label: t("patientPortal.appointmentsToday"),
+      value: appointmentsToday,
+      icon: CalendarCheck,
+      gradient: true,
+    },
+    {
+      label: t("patientPortal.pendingMessages"),
+      value: pendingMessages,
+      icon: MessageSquare,
+      gradient: true,
+    },
+    {
+      label: t("patientPortal.satisfactionScore"),
+      value: `${satisfactionScore}/5`,
+      icon: Star,
+      gradient: true,
+    },
   ];
 
   return (
@@ -433,17 +483,17 @@ const PatientPortal = () => {
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-                Patient Portal
+                {t("patientPortal.title")}
               </h1>
               <p className="text-muted-foreground mt-1">
-                Manage patients, appointments, messages, and care plans — powered by live EHR data
+                {t("patientPortal.subtitle")}
               </p>
             </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10">
                 <Wifi className="h-3.5 w-3.5 text-emerald-400" />
                 <span className="text-xs font-medium text-emerald-400">Epic MyChart</span>
-                <span className="text-[10px] text-emerald-400/70">· synced {lastSynced}</span>
+                <span className="text-[10px] text-emerald-400/70">· {t("patientPortal.ehrSynced")} {lastSynced}</span>
               </div>
               <Button
                 onClick={handleEhrSync}
@@ -452,7 +502,7 @@ const PatientPortal = () => {
                 className="gradient-primary text-primary-foreground gap-2 text-xs"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${ehrSyncing ? "animate-spin" : ""}`} />
-                {ehrSyncing ? "Syncing..." : "Sync EHR"}
+                {ehrSyncing ? t("patientPortal.ehrSyncing") : t("patientPortal.ehrSyncButton")}
               </Button>
             </div>
           </div>
@@ -466,16 +516,17 @@ const PatientPortal = () => {
                  <WifiOff className="h-4 w-4 shrink-0" />}
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold truncate">{ehr.name}</p>
-                  <p className="text-[10px] opacity-70">{ehr.status === "connected" ? `Last sync: ${ehr.lastSync}` : ehr.status === "syncing" ? "Syncing..." : "Not connected"}</p>
+                  <p className="text-[10px] opacity-70">{ehr.status === "connected" ? `${t("patientPortal.ehrLastSync")}: ${ehr.lastSync}` : ehr.status === "syncing" ? t("patientPortal.ehrSyncing") : t("patientPortal.ehrNotConnected")}</p>
                 </div>
                 {ehr.status === "disconnected" && (
                   <Button size="sm" variant="outline" className="text-[10px] h-6 px-2 border-current text-current hover:bg-current/10 shrink-0"
-                    onClick={() => toast({ title: "Connect EHR", description: `Go to Integrations to connect ${ehr.name}.` })}>
-                    Connect
+                    onClick={() => toast({ title: t("patientPortal.ehrConnectTitle"), description: `${t("patientPortal.ehrConnectDesc")} ${ehr.name}.` })}>
+                    {t("patientPortal.ehrConnect")}
                   </Button>
                 )}
               </div>
             ))}
+
           </div>
 
           {/* Stats Cards */}
@@ -507,15 +558,15 @@ const PatientPortal = () => {
             <TabsList className="bg-card/50 border border-border">
               <TabsTrigger value="patients" className="gap-1.5">
                 <Users className="h-4 w-4" />
-                Patients
+                {t("patientPortal.patients")}
               </TabsTrigger>
               <TabsTrigger value="appointments" className="gap-1.5">
                 <CalendarCheck className="h-4 w-4" />
-                Appointments
+                {t("patientPortal.appointments")}
               </TabsTrigger>
               <TabsTrigger value="messages" className="gap-1.5">
                 <MessageSquare className="h-4 w-4" />
-                Messages
+                {t("patientPortal.messages")}
                 {pendingMessages > 0 && (
                   <Badge
                     variant="outline"
@@ -527,7 +578,7 @@ const PatientPortal = () => {
               </TabsTrigger>
               <TabsTrigger value="careplans" className="gap-1.5">
                 <ClipboardList className="h-4 w-4" />
-                Care Plans
+                {t("patientPortal.carePlans")}
               </TabsTrigger>
             </TabsList>
 
@@ -538,14 +589,14 @@ const PatientPortal = () => {
               <div className="bg-card rounded-xl border border-white/[0.06] card-hover">
                 <div className="p-5 border-b border-border flex items-center justify-between gap-4">
                   <h2 className="font-display font-semibold text-foreground text-sm">
-                    Patient List
+                    {t("patientPortal.patientList")}
                   </h2>
                   <div className="relative max-w-sm flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search patients by name..."
+                      placeholder={t("patientPortal.searchPatientsPlaceholder")}
                       className="pl-9 bg-white/[0.03] border-white/10 focus:border-primary/50"
                     />
                   </div>
@@ -553,13 +604,13 @@ const PatientPortal = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Patient</TableHead>
-                      <TableHead>Date of Birth</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>Last Visit</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Assigned Agent</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead>{t("patientPortal.columnPatient")}</TableHead>
+                      <TableHead>{t("patientPortal.columnDob")}</TableHead>
+                      <TableHead>{t("patientPortal.columnPhone")}</TableHead>
+                      <TableHead>{t("patientPortal.columnLastVisit")}</TableHead>
+                      <TableHead>{t("patientPortal.columnStatus")}</TableHead>
+                      <TableHead>{t("patientPortal.columnAssignedAgent")}</TableHead>
+                      <TableHead className="text-right">{t("patientPortal.columnActions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -595,7 +646,7 @@ const PatientPortal = () => {
                             variant="outline"
                             className={`text-[10px] border ${PATIENT_STATUS_STYLES[patient.status]} px-2 py-0.5`}
                           >
-                            {patient.status}
+                            {PATIENT_STATUS_LABELS[patient.status]}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -611,7 +662,7 @@ const PatientPortal = () => {
                             className="rounded-lg text-xs border-border text-muted-foreground hover:text-foreground"
                             onClick={() => handleViewPatient(patient)}
                           >
-                            View Record
+                            {t("patientPortal.viewRecord")}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -624,7 +675,7 @@ const PatientPortal = () => {
                         >
                           <Users className="h-10 w-10 mx-auto mb-2 opacity-30" />
                           <p className="text-sm">
-                            No patients match your search
+                            {t("patientPortal.noPatientsMatch")}
                           </p>
                         </TableCell>
                       </TableRow>
@@ -642,10 +693,10 @@ const PatientPortal = () => {
                 <div className="p-5 border-b border-border">
                   <h2 className="font-display font-semibold text-foreground text-sm flex items-center gap-2">
                     <CalendarCheck className="h-4 w-4 text-primary" />
-                    Today's Appointment Queue
+                    {t("patientPortal.todaysAppointmentQueue")}
                   </h2>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {appointments.length} appointments scheduled for today
+                    {t("patientPortal.appointmentsScheduledToday", { count: appointments.length })}
                   </p>
                 </div>
                 <div className="divide-y divide-border">
@@ -671,7 +722,7 @@ const PatientPortal = () => {
                               variant="outline"
                               className="text-[10px] border-border text-foreground/70 px-2 py-0"
                             >
-                              {apt.type}
+                              {APPOINTMENT_TYPE_LABELS[apt.type]}
                             </Badge>
                           </div>
                         </div>
@@ -693,7 +744,7 @@ const PatientPortal = () => {
                           {apt.status === "Completed" && (
                             <Circle className="h-3 w-3 mr-1" />
                           )}
-                          {apt.status}
+                          {APPOINTMENT_STATUS_LABELS[apt.status]}
                         </Badge>
                         <Button
                           variant="outline"
@@ -701,7 +752,7 @@ const PatientPortal = () => {
                           className="rounded-lg text-xs border-border text-muted-foreground hover:text-foreground"
                           onClick={() => handleCheckIn(apt)}
                         >
-                          Update Status
+                          {t("patientPortal.updateStatus")}
                         </Button>
                       </div>
                     </div>
@@ -718,11 +769,10 @@ const PatientPortal = () => {
                 <div className="p-5 border-b border-border">
                   <h2 className="font-display font-semibold text-foreground text-sm flex items-center gap-2">
                     <Mail className="h-4 w-4 text-primary" />
-                    Patient Messages Inbox
+                    {t("patientPortal.patientMessagesInbox")}
                   </h2>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {pendingMessages} unread message
-                    {pendingMessages !== 1 ? "s" : ""}
+                    {pendingMessages} {pendingMessages !== 1 ? t("patientPortal.unreadMessagesPlural") : t("patientPortal.unreadMessageSingular")}
                   </p>
                 </div>
                 <div className="divide-y divide-border">
@@ -757,7 +807,7 @@ const PatientPortal = () => {
                                 {msg.priority === "urgent" && (
                                   <AlertCircle className="h-2.5 w-2.5 mr-0.5" />
                                 )}
-                                {msg.priority}
+                                {PRIORITY_LABELS[msg.priority]}
                               </Badge>
                               <span className="text-[10px] text-muted-foreground ml-auto shrink-0">
                                 {msg.timestamp}
@@ -785,7 +835,7 @@ const PatientPortal = () => {
                               className="rounded-lg text-xs border-border text-muted-foreground hover:text-foreground"
                               onClick={() => handleMarkRead(msg.id)}
                             >
-                              Mark Read
+                              {t("patientPortal.markRead")}
                             </Button>
                           )}
                           <Button
@@ -794,7 +844,7 @@ const PatientPortal = () => {
                             onClick={() => handleReply(msg)}
                           >
                             <Reply className="h-3.5 w-3.5 mr-1" />
-                            Reply
+                            {t("patientPortal.reply")}
                           </Button>
                         </div>
                       </div>
@@ -813,10 +863,10 @@ const PatientPortal = () => {
                   <div>
                     <h2 className="font-display font-semibold text-foreground text-sm flex items-center gap-2">
                       <Heart className="h-4 w-4 text-primary" />
-                      Active Care Plans
+                      {t("patientPortal.activeCarePlans")}
                     </h2>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {carePlans.length} active care plans being tracked
+                      {t("patientPortal.activeCarePlansTracked", { count: carePlans.length })}
                     </p>
                   </div>
                 </div>
@@ -874,7 +924,7 @@ const PatientPortal = () => {
                           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <ClipboardList className="h-3 w-3" />
                             <span className="line-clamp-1">
-                              Next: {plan.nextMilestone}
+                              {t("patientPortal.next")}: {plan.nextMilestone}
                             </span>
                           </div>
                           <Button
@@ -883,7 +933,7 @@ const PatientPortal = () => {
                             className="rounded-lg text-xs border-border text-muted-foreground hover:text-foreground shrink-0 ml-2"
                             onClick={() => handleViewCarePlan(plan)}
                           >
-                            View Plan
+                            {t("patientPortal.viewPlan")}
                           </Button>
                         </div>
                       </div>

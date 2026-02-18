@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Shield,
   Users,
@@ -49,20 +50,21 @@ const roleBadge: Record<string, string> = {
   user: "bg-muted text-muted-foreground",
 };
 
-const roleLabels: Record<string, string> = {
-  master_admin: "Master Admin",
-  admin: "Admin",
-  manager: "Manager",
-  user: "User",
-};
-
 const AdminDashboard = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [roles, setRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
+
+  const roleLabels: Record<string, string> = {
+    master_admin: t("adminDashboard.roleMasterAdmin"),
+    admin: t("adminDashboard.roleAdmin"),
+    manager: t("adminDashboard.roleManager"),
+    user: t("adminDashboard.roleUser"),
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -94,12 +96,12 @@ const AdminDashboard = () => {
         .eq("user_id", userId);
 
       if (error) {
-        toast({ title: "Error", description: error.message, variant: "destructive" });
+        toast({ title: t("adminDashboard.error"), description: error.message, variant: "destructive" });
       } else {
         setRoles((prev) =>
           prev.map((r) => (r.user_id === userId ? { ...r, role: newRole } : r))
         );
-        toast({ title: "Role updated", description: `User role changed to ${roleLabels[newRole]}.` });
+        toast({ title: t("adminDashboard.roleUpdated"), description: t("adminDashboard.roleUpdatedDesc", { role: roleLabels[newRole] }) });
       }
     } else {
       const { error } = await supabase
@@ -107,10 +109,10 @@ const AdminDashboard = () => {
         .insert({ user_id: userId, role: newRole } as any);
 
       if (error) {
-        toast({ title: "Error", description: error.message, variant: "destructive" });
+        toast({ title: t("adminDashboard.error"), description: error.message, variant: "destructive" });
       } else {
         setRoles((prev) => [...prev, { user_id: userId, role: newRole }]);
-        toast({ title: "Role assigned", description: `User assigned ${roleLabels[newRole]} role.` });
+        toast({ title: t("adminDashboard.roleAssigned"), description: t("adminDashboard.roleAssignedDesc", { role: roleLabels[newRole] }) });
       }
     }
     setUpdating(null);
@@ -127,10 +129,10 @@ const AdminDashboard = () => {
           <div className="flex items-start justify-between mb-8">
             <div>
               <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-                <Shield className="h-6 w-6 text-primary" /> Practice Admin Dashboard
+                <Shield className="h-6 w-6 text-primary" /> {t("adminDashboard.title")}
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Manage providers, clinical roles, and permissions across your healthcare organization
+                {t("adminDashboard.subtitle")}
               </p>
             </div>
           </div>
@@ -144,7 +146,7 @@ const AdminDashboard = () => {
                 </div>
                 <div>
                   <p className="font-display text-2xl font-bold text-foreground">{profiles.length}</p>
-                  <p className="text-xs text-muted-foreground">Total Users</p>
+                  <p className="text-xs text-muted-foreground">{t("adminDashboard.totalUsers")}</p>
                 </div>
               </div>
             </div>
@@ -155,7 +157,7 @@ const AdminDashboard = () => {
                 </div>
                 <div>
                   <p className="font-display text-2xl font-bold text-foreground">{adminCount}</p>
-                  <p className="text-xs text-muted-foreground">Admins</p>
+                  <p className="text-xs text-muted-foreground">{t("adminDashboard.admins")}</p>
                 </div>
               </div>
             </div>
@@ -166,7 +168,7 @@ const AdminDashboard = () => {
                 </div>
                 <div>
                   <p className="font-display text-2xl font-bold text-foreground">{managerCount}</p>
-                  <p className="text-xs text-muted-foreground">Managers</p>
+                  <p className="text-xs text-muted-foreground">{t("adminDashboard.managers")}</p>
                 </div>
               </div>
             </div>
@@ -177,7 +179,7 @@ const AdminDashboard = () => {
                 </div>
                 <div>
                   <p className="font-display text-2xl font-bold text-foreground">HIPAA</p>
-                  <p className="text-xs text-muted-foreground">BAA Secured</p>
+                  <p className="text-xs text-muted-foreground">{t("adminDashboard.baaSecured")}</p>
                 </div>
               </div>
             </div>
@@ -186,7 +188,7 @@ const AdminDashboard = () => {
           {/* Users Table */}
           <div className="bg-card rounded-xl border border-border">
             <div className="p-5 border-b border-border">
-              <h2 className="font-display font-semibold text-foreground text-sm">All Users</h2>
+              <h2 className="font-display font-semibold text-foreground text-sm">{t("adminDashboard.allUsers")}</h2>
             </div>
             {loading ? (
               <div className="flex items-center justify-center py-20">
@@ -196,12 +198,12 @@ const AdminDashboard = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Organization</TableHead>
-                    <TableHead>Specialty</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Joined</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("adminDashboard.columnUser")}</TableHead>
+                    <TableHead>{t("adminDashboard.columnOrganization")}</TableHead>
+                    <TableHead>{t("adminDashboard.columnSpecialty")}</TableHead>
+                    <TableHead>{t("adminDashboard.columnRole")}</TableHead>
+                    <TableHead>{t("adminDashboard.columnJoined")}</TableHead>
+                    <TableHead className="text-right">{t("adminDashboard.columnActions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -217,23 +219,23 @@ const AdminDashboard = () => {
                             </div>
                             <div>
                               <p className="text-sm font-medium text-foreground">
-                                {profile.full_name || "Unnamed User"}
+                                {profile.full_name || t("adminDashboard.unnamedUser")}
                                 {isCurrentUser && (
-                                  <span className="ml-2 text-xs text-primary">(you)</span>
+                                  <span className="ml-2 text-xs text-primary">({t("adminDashboard.you")})</span>
                                 )}
                               </p>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {profile.organization || "—"}
+                          {profile.organization || "\u2014"}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {profile.specialty || "—"}
+                          {profile.specialty || "\u2014"}
                         </TableCell>
                         <TableCell>
                           <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${roleBadge[currentRole] || roleBadge.user}`}>
-                            {roleLabels[currentRole] || "User"}
+                            {roleLabels[currentRole] || t("adminDashboard.roleUser")}
                           </span>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
@@ -251,7 +253,7 @@ const AdminDashboard = () => {
                                 {updating === profile.user_id ? (
                                   <Loader2 className="h-3 w-3 animate-spin" />
                                 ) : (
-                                  <>Change Role <ChevronDown className="h-3 w-3" /></>
+                                  <>{t("adminDashboard.changeRole")} <ChevronDown className="h-3 w-3" /></>
                                 )}
                               </Button>
                             </DropdownMenuTrigger>
