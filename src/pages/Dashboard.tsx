@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   DollarSign,
   Sparkles,
+  Terminal,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -332,6 +333,62 @@ const Dashboard = () => {
               <h3 className="text-sm font-semibold text-foreground mb-1">{t("dashboard.careOutcomes")}</h3>
               <p className="text-xs text-muted-foreground mb-4">{t("dashboard.careOutcomesDesc")}</p>
               <OutcomeChart />
+            </div>
+          </div>
+
+          {/* ─── AGENT USAGE COST METER ─── */}
+          <div className="bg-card rounded-xl border border-border p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Agent Usage & Cost Meter</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Real-time spend tracking per agent</p>
+              </div>
+              <Link to="/dashboard/command">
+                <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors">
+                  <Terminal className="h-3.5 w-3.5" />
+                  Command Station
+                </button>
+              </Link>
+            </div>
+            <div className="space-y-3">
+              {[
+                { name: "Dr. Front Desk", model: "OpenAI GPT-5", zone: "clinical", costToday: 4.13, costMonth: 87.40, tokens: 412500, pct: 53 },
+                { name: "Marketing Maven", model: "Claude 3.5", zone: "external", costToday: 2.21, costMonth: 43.60, tokens: 198000, pct: 28 },
+                { name: "Grant Pro", model: "Claude 3.5", zone: "operations", costToday: 0.00, costMonth: 21.30, tokens: 89200, pct: 14 },
+                { name: "Clinical Coordinator", model: "Gemini 2.5 Pro", zone: "clinical", costToday: 0.72, costMonth: 8.10, tokens: 31400, pct: 5 },
+              ].map((agent) => (
+                <div key={agent.name} className="flex items-center gap-4">
+                  <div className="w-36 shrink-0">
+                    <p className="text-xs font-medium text-foreground truncate">{agent.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{agent.model}</p>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${agent.zone === "clinical" ? "bg-red-400" : agent.zone === "operations" ? "bg-amber-400" : "bg-blue-400"}`}
+                          style={{ width: `${agent.pct}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] text-muted-foreground w-8 text-right">{agent.pct}%</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] text-muted-foreground">{(agent.tokens / 1000).toFixed(0)}k tokens</span>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0 w-28">
+                    <p className="text-xs font-bold text-foreground">${agent.costToday.toFixed(2)} <span className="text-muted-foreground font-normal">today</span></p>
+                    <p className="text-[10px] text-muted-foreground">${agent.costMonth.toFixed(2)} this month</p>
+                  </div>
+                </div>
+              ))}
+              <div className="pt-3 border-t border-border flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <DollarSign className="h-3.5 w-3.5 text-amber-400" />
+                  <span className="text-xs font-semibold text-foreground">Total This Month</span>
+                </div>
+                <span className="text-base font-bold text-foreground">$160.40 <span className="text-xs text-muted-foreground font-normal">/ ~$1,924 annualized</span></span>
+              </div>
             </div>
           </div>
 
