@@ -49,21 +49,13 @@ import { skills, skillCategories } from "@/data/skills";
 import { agentTemplates } from "@/data/agentTemplates";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { useAgents, type MyAgent, type AgentCapabilities } from "@/hooks/useAgents";
 
 const AGENT_LANGUAGE_OPTIONS = [
   { code: "en", label: "English", flag: "EN" },
   { code: "es", label: "Español", flag: "ES" },
   { code: "pt", label: "Português", flag: "PT" },
 ];
-
-interface AgentCapabilities {
-  phiProtection: boolean;
-  messaging: boolean;
-  voiceRecognition: boolean;
-  distressDetection: boolean;
-  taskCreation: boolean;
-  hrAssistant: boolean;
-}
 
 const DEFAULT_CAPABILITIES: AgentCapabilities = {
   phiProtection: true,
@@ -75,26 +67,6 @@ const DEFAULT_CAPABILITIES: AgentCapabilities = {
 };
 
 type AgentZone = "clinical" | "operations" | "external";
-
-interface MyAgent {
-  id: string;
-  name: string;
-  skills: string[];
-  model: string;
-  active: boolean;
-  capabilities: AgentCapabilities;
-  archived?: boolean;
-  taskCount: number;
-  zone: AgentZone;
-  language: string;
-  // Usage stats
-  tasksToday: number;
-  successRate: number;
-  costToday: number;
-  costMonth: number;
-  tokensUsed: number;
-  avgResponseTime: string;
-}
 
 interface ActivityEntry {
   id: string;
@@ -173,62 +145,7 @@ function getSkillFullName(skillId: string): string {
 const Agents = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
-  const [myAgents, setMyAgents] = useState<MyAgent[]>([
-    {
-      id: "1",
-      name: "Dr. Front Desk",
-      skills: ["appointment-scheduling", "insurance-verification", "patient-follow-up"],
-      model: "openai",
-      active: true,
-      capabilities: { ...DEFAULT_CAPABILITIES, distressDetection: true, voiceRecognition: true, taskCreation: true },
-      archived: false,
-      taskCount: 12,
-      zone: "clinical",
-      language: "en",
-      tasksToday: 47,
-      successRate: 94,
-      costToday: 4.13,
-      costMonth: 87.40,
-      tokensUsed: 412500,
-      avgResponseTime: "1.4s",
-    },
-    {
-      id: "2",
-      name: "Marketing Maven",
-      skills: ["professional-copywriter", "cmo", "researcher"],
-      model: "claude",
-      active: true,
-      capabilities: { ...DEFAULT_CAPABILITIES, taskCreation: true },
-      archived: false,
-      taskCount: 8,
-      zone: "external",
-      language: "en",
-      tasksToday: 23,
-      successRate: 98,
-      costToday: 2.21,
-      costMonth: 43.60,
-      tokensUsed: 198000,
-      avgResponseTime: "2.1s",
-    },
-    {
-      id: "3",
-      name: "Grant Pro",
-      skills: ["grant-writer", "researcher", "cfo"],
-      model: "claude",
-      active: false,
-      capabilities: { ...DEFAULT_CAPABILITIES },
-      archived: false,
-      taskCount: 3,
-      zone: "operations",
-      language: "en",
-      tasksToday: 0,
-      successRate: 88,
-      costToday: 0.00,
-      costMonth: 21.30,
-      tokensUsed: 89200,
-      avgResponseTime: "3.4s",
-    },
-  ]);
+  const { agents: myAgents, addAgent, updateAgent, deleteAgent: removeAgent, archiveAgent: archiveAgentCtx, restoreAgent: restoreAgentCtx } = useAgents();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [newAgentName, setNewAgentName] = useState("");
@@ -273,9 +190,8 @@ const Agents = () => {
   // ── Handlers ────────────────────────────────────
 
   const toggleAgent = (id: string) => {
-    setMyAgents((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, active: !a.active } : a))
-    );
+    const agent = myAgents.find((a) => a.id === id);
+    if (agent) updateAgent(id, { active: !agent.active });
   };
 
   const toggleSkill = (skillId: string) => {
@@ -317,7 +233,7 @@ const Agents = () => {
       tokensUsed: 0,
       avgResponseTime: "—",
     };
-    setMyAgents((prev) => [...prev, newAgent]);
+    addAgent(newAgent);
     setCreateOpen(false);
     resetCreateForm();
   };
@@ -351,7 +267,7 @@ const Agents = () => {
       tokensUsed: 0,
       avgResponseTime: "—",
     };
-    setMyAgents((prev) => [...prev, newAgent]);
+    addAgent(newAgent);
     setDeployOpen(false);
     setDeployTemplateData(null);
     setDeployName("");
@@ -383,13 +299,14 @@ const Agents = () => {
 
   const handleSaveConfig = () => {
     if (!configAgent || !configName.trim()) return;
-    setMyAgents((prev) =>
-      prev.map((a) =>
-        a.id === configAgent.id
-          ? { ...a, name: configName.trim(), model: configModel, skills: [...configSkills], capabilities: { ...configCapabilities }, zone: configZone, language: configLanguage }
-          : a
-      )
-    );
+    updateAgent(configAgent.id, {
+      name: configName.trim(),
+      model: configModel,
+      skills: [...configSkills],
+      capabilities: { ...configCapabilities },
+      zone: configZone,
+      language: configLanguage,
+    });
     toast({ title: "Agent Updated", description: `${configName.trim()} settings saved.` });
     setConfigOpen(false);
     setConfigAgent(null);
@@ -415,7 +332,7 @@ const Agents = () => {
 
   const executeDeleteAgent = () => {
     if (!configAgent) return;
-    setMyAgents((prev) => prev.filter((a) => a.id !== configAgent.id));
+    removeAgent(configAgent.id);
     toast({ title: "Agent Deleted", description: `${configAgent.name} has been removed.` });
     setConfigOpen(false);
     setConfigAgent(null);
@@ -439,9 +356,7 @@ const Agents = () => {
 
   const executeArchiveAgent = () => {
     if (!configAgent) return;
-    setMyAgents((prev) =>
-      prev.map((a) => (a.id === configAgent.id ? { ...a, archived: true, active: false } : a))
-    );
+    archiveAgentCtx(configAgent.id);
     toast({ title: "Agent Archived", description: `${configAgent.name} has been archived.` });
     setConfigOpen(false);
     setConfigAgent(null);
@@ -449,9 +364,7 @@ const Agents = () => {
   };
 
   const handleRestoreAgent = (agentId: string) => {
-    setMyAgents((prev) =>
-      prev.map((a) => (a.id === agentId ? { ...a, archived: false } : a))
-    );
+    restoreAgentCtx(agentId);
     const agent = myAgents.find((a) => a.id === agentId);
     toast({ title: "Agent Restored", description: `${agent?.name ?? "Agent"} has been restored.` });
   };

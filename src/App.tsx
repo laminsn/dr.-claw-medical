@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { AgentProvider } from "@/hooks/useAgents";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
@@ -33,6 +34,9 @@ import AgentPlayground from "./pages/AgentPlayground";
 import CustomDashboards from "./pages/CustomDashboards";
 import ApiPortal from "./pages/ApiPortal";
 import AgentCommandStation from "./pages/AgentCommandStation";
+import AgentOrgChart from "./pages/AgentOrgChart";
+import AgentDataCenter from "./pages/AgentDataCenter";
+import CompanyCards from "./pages/CompanyCards";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -43,6 +47,7 @@ const App = () => (
   <ThemeProvider defaultTheme="dark" storageKey="dr-claw-theme">
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <AgentProvider>
         <TooltipProvider>
           <Toaster />
           <Sonner />
@@ -76,6 +81,9 @@ const App = () => (
             <Route path="/dashboard/custom-dashboards" element={<ProtectedRoute><CustomDashboards /></ProtectedRoute>} />
             <Route path="/dashboard/api" element={<ProtectedRoute><ApiPortal /></ProtectedRoute>} />
             <Route path="/dashboard/command" element={<ProtectedRoute><AgentCommandStation /></ProtectedRoute>} />
+            <Route path="/dashboard/org-chart" element={<ProtectedRoute><AgentOrgChart /></ProtectedRoute>} />
+            <Route path="/dashboard/data-center" element={<ProtectedRoute><AgentDataCenter /></ProtectedRoute>} />
+            <Route path="/dashboard/cards" element={<ProtectedRoute><CompanyCards /></ProtectedRoute>} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Terms />} />
             <Route path="/security" element={<Terms />} />
@@ -85,6 +93,7 @@ const App = () => (
           </Routes>
           </BrowserRouter>
         </TooltipProvider>
+        </AgentProvider>
       </AuthProvider>
     </QueryClientProvider>
   </ThemeProvider>
