@@ -9,9 +9,10 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Shield, Lock, CheckCircle, ArrowRight, ArrowLeft, Check, Star, AlertTriangle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 /* ---------- Password strength ---------- */
-function getPasswordStrength(pw: string): { score: number; label: string; color: string } {
+function getPasswordStrength(pw: string, t: (k: string) => string): { score: number; label: string; color: string } {
   let score = 0;
   if (pw.length >= 8) score++;
   if (pw.length >= 12) score++;
@@ -19,10 +20,10 @@ function getPasswordStrength(pw: string): { score: number; label: string; color:
   if (/[0-9]/.test(pw)) score++;
   if (/[^A-Za-z0-9]/.test(pw)) score++;
 
-  if (score <= 1) return { score, label: "Weak", color: "bg-red-500" };
-  if (score <= 2) return { score, label: "Fair", color: "bg-yellow-500" };
-  if (score <= 3) return { score, label: "Good", color: "bg-blue-500" };
-  return { score, label: "Strong", color: "bg-green-500" };
+  if (score <= 1) return { score, label: t("auth.passwordWeak"), color: "bg-red-500" };
+  if (score <= 2) return { score, label: t("auth.passwordFair"), color: "bg-yellow-500" };
+  if (score <= 3) return { score, label: t("auth.passwordGood"), color: "bg-blue-500" };
+  return { score, label: t("auth.passwordStrong"), color: "bg-green-500" };
 }
 
 /* ---------- Simple rate-limit ---------- */
@@ -38,6 +39,7 @@ const PLANS = [
 ];
 
 const Auth = () => {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -59,14 +61,17 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
-    // Rate-limit check
     const now = Date.now();
     if (now - loginAttempts.lastAttempt > LOCKOUT_MS) {
       loginAttempts.count = 0;
     }
     if (loginAttempts.count >= MAX_ATTEMPTS) {
       const remaining = Math.ceil((LOCKOUT_MS - (now - loginAttempts.lastAttempt)) / 1000);
-      toast({ title: "Too many attempts", description: `Please wait ${remaining}s before trying again.`, variant: "destructive" });
+      toast({
+        title: t("auth.errors.tooManyAttempts"),
+        description: t("auth.errors.tooManyAttemptsDesc", { remaining }),
+        variant: "destructive",
+      });
       setLoading(false);
       return;
     }
@@ -76,39 +81,38 @@ const Auth = () => {
     if (mode === "signin") {
       const { error } = await signIn(email, password);
       if (error) {
-        toast({ title: "Sign in failed", description: error.message, variant: "destructive" });
+        toast({ title: t("auth.errors.signInFailed"), description: error.message, variant: "destructive" });
       } else {
-        loginAttempts.count = 0; // reset on success
+        loginAttempts.count = 0;
         navigate("/dashboard");
       }
     } else {
       if (!fullName.trim()) {
-        toast({ title: "Name required", description: "Please enter your full name to create an account.", variant: "destructive" });
+        toast({ title: t("auth.errors.nameRequired"), description: t("auth.errors.nameRequiredDesc"), variant: "destructive" });
         setLoading(false);
         return;
       }
       if (!selectedPlan) {
-        toast({ title: "Plan required", description: "Please select a plan for your free trial.", variant: "destructive" });
+        toast({ title: t("auth.errors.planRequired"), description: t("auth.errors.planRequiredDesc"), variant: "destructive" });
         setLoading(false);
         return;
       }
       if (!agreedToTerms) {
-        toast({ title: "Terms required", description: "Please agree to the Terms of Service to continue.", variant: "destructive" });
+        toast({ title: t("auth.errors.termsRequired"), description: t("auth.errors.termsRequiredDesc"), variant: "destructive" });
         setLoading(false);
         return;
       }
-      // Password strength gate
-      const strength = getPasswordStrength(password);
+      const strength = getPasswordStrength(password, t);
       if (strength.score < 3) {
-        toast({ title: "Weak password", description: "Password must include uppercase, numbers, and special characters (12+ chars recommended).", variant: "destructive" });
+        toast({ title: t("auth.errors.weakPassword"), description: t("auth.errors.weakPasswordDesc"), variant: "destructive" });
         setLoading(false);
         return;
       }
       const { error } = await signUp(email, password, fullName);
       if (error) {
-        toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
+        toast({ title: t("auth.errors.signUpFailed"), description: error.message, variant: "destructive" });
       } else {
-        toast({ title: "Welcome to Dr. Claw!", description: "Check your email for a confirmation link." });
+        toast({ title: t("auth.success.welcomeTitle"), description: t("auth.success.welcomeDesc") });
       }
     }
 
@@ -119,9 +123,9 @@ const Auth = () => {
     setGoogleLoading(true);
     try {
       const { error } = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-      if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+      if (error) toast({ title: t("auth.errors.error"), description: error.message, variant: "destructive" });
     } catch {
-      toast({ title: "Error", description: "Google sign-in failed.", variant: "destructive" });
+      toast({ title: t("auth.errors.error"), description: t("auth.errors.googleFailed"), variant: "destructive" });
     } finally {
       setGoogleLoading(false);
     }
@@ -131,9 +135,9 @@ const Auth = () => {
     setAppleLoading(true);
     try {
       const { error } = await lovable.auth.signInWithOAuth("apple" as any, { redirect_uri: window.location.origin });
-      if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+      if (error) toast({ title: t("auth.errors.error"), description: error.message, variant: "destructive" });
     } catch {
-      toast({ title: "Error", description: "Apple sign-in failed.", variant: "destructive" });
+      toast({ title: t("auth.errors.error"), description: t("auth.errors.appleFailed"), variant: "destructive" });
     } finally {
       setAppleLoading(false);
     }
@@ -161,7 +165,7 @@ const Auth = () => {
         className="absolute top-6 left-6 z-20 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back
+        {t("auth.backHome")}
       </Link>
 
       {/* Auth card */}
@@ -173,12 +177,10 @@ const Auth = () => {
               <BrandIcon className="h-7 w-7 text-white" />
             </div>
             <h1 className="text-2xl font-bold font-heading gradient-hero-text">
-              {mode === "signin" ? "Welcome Back" : "Create Your Account"}
+              {mode === "signin" ? t("auth.welcomeBack") : t("auth.createAccount")}
             </h1>
             <p className="text-sm text-muted-foreground mt-1.5">
-              {mode === "signin"
-                ? "Sign in to access your AI agent dashboard"
-                : "Get started with your 14-day free trial"}
+              {mode === "signin" ? t("auth.signInSubtitle") : t("auth.signUpSubtitle")}
             </p>
           </div>
 
@@ -193,7 +195,7 @@ const Auth = () => {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Sign In
+              {t("auth.signIn")}
             </button>
             <button
               type="button"
@@ -204,7 +206,7 @@ const Auth = () => {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Sign Up
+              {t("auth.signUp")}
             </button>
           </div>
 
@@ -219,25 +221,13 @@ const Auth = () => {
               <div className="h-5 w-5 border-2 border-muted-foreground/40 border-t-white rounded-full animate-spin" />
             ) : (
               <svg className="h-5 w-5" viewBox="0 0 24 24">
-                <path
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
-                  fill="#4285F4"
-                />
-                <path
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  fill="#34A853"
-                />
-                <path
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  fill="#FBBC05"
-                />
-                <path
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  fill="#EA4335"
-                />
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
               </svg>
             )}
-            Continue with Google
+            {t("auth.continueWithGoogle")}
           </Button>
 
           {/* Apple ID OAuth */}
@@ -254,14 +244,14 @@ const Auth = () => {
                 <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
               </svg>
             )}
-            Continue with Apple
+            {t("auth.continueWithApple")}
           </Button>
 
           {/* Divider */}
           <div className="relative my-6">
             <Separator className="bg-white/[0.06]" />
             <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-xs text-muted-foreground">
-              or continue with email
+              {t("auth.orContinueWithEmail")}
             </span>
           </div>
 
@@ -270,12 +260,12 @@ const Auth = () => {
             {mode === "signup" && (
               <div className="space-y-2">
                 <Label htmlFor="fullName" className="text-sm text-muted-foreground">
-                  Full Name
+                  {t("auth.fullName")}
                 </Label>
                 <Input
                   id="fullName"
                   type="text"
-                  placeholder="Dr. Jane Smith"
+                  placeholder={t("auth.fullNamePlaceholder")}
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   className="h-11 bg-white/[0.03] border-white/10 focus:border-primary/50 transition-colors"
@@ -285,12 +275,12 @@ const Auth = () => {
 
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm text-muted-foreground">
-                Email
+                {t("auth.email")}
               </Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="jane@clinic.com"
+                placeholder={t("auth.emailPlaceholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -300,7 +290,7 @@ const Auth = () => {
 
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm text-muted-foreground">
-                Password
+                {t("auth.password")}
               </Label>
               <Input
                 id="password"
@@ -314,7 +304,7 @@ const Auth = () => {
               />
               {/* Password strength meter (signup) */}
               {mode === "signup" && password.length > 0 && (() => {
-                const s = getPasswordStrength(password);
+                const s = getPasswordStrength(password, t);
                 return (
                   <div className="space-y-1.5 mt-1.5">
                     <div className="flex gap-1">
@@ -324,7 +314,9 @@ const Auth = () => {
                     </div>
                     <div className="flex items-center gap-1.5">
                       {s.score < 3 && <AlertTriangle className="h-3 w-3 text-yellow-500" />}
-                      <p className="text-[10px] text-muted-foreground">{s.label} — {s.score < 3 ? "use 12+ chars, uppercase, numbers & symbols" : "meets requirements"}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {s.label} — {s.score < 3 ? t("auth.passwordHint") : t("auth.passwordMeetsReqs")}
+                      </p>
                     </div>
                   </div>
                 );
@@ -335,7 +327,7 @@ const Auth = () => {
             {mode === "signup" && (
               <div className="space-y-2">
                 <Label className="text-sm text-muted-foreground">
-                  Select Your Plan <span className="text-red-400">*</span>
+                  {t("auth.selectPlan")} <span className="text-red-400">*</span>
                 </Label>
                 <div className="grid grid-cols-2 gap-2">
                   {PLANS.map((plan) => (
@@ -351,7 +343,7 @@ const Auth = () => {
                     >
                       {plan.popular && (
                         <span className="absolute -top-2 right-2 px-1.5 py-0.5 text-[9px] font-bold gradient-primary text-white rounded-full flex items-center gap-0.5">
-                          <Star className="h-2 w-2 fill-white" /> Popular
+                          <Star className="h-2 w-2 fill-white" /> {t("auth.planPopular")}
                         </span>
                       )}
                       {selectedPlan === plan.id && (
@@ -360,12 +352,17 @@ const Auth = () => {
                         </span>
                       )}
                       <p className="text-xs font-semibold text-foreground">{plan.name}</p>
-                      <p className="text-sm font-bold gradient-hero-text">{plan.price}<span className="text-[10px] text-muted-foreground font-normal">{plan.price !== "Custom" ? "/mo" : ""}</span></p>
+                      <p className="text-sm font-bold gradient-hero-text">
+                        {plan.price}
+                        <span className="text-[10px] text-muted-foreground font-normal">
+                          {plan.price !== "Custom" ? t("auth.perMonth") : ""}
+                        </span>
+                      </p>
                       <p className="text-[10px] text-muted-foreground mt-0.5">{plan.agents} &middot; {plan.skills}</p>
                     </button>
                   ))}
                 </div>
-                <p className="text-[10px] text-muted-foreground">All plans include a 14-day free trial. No credit card required.</p>
+                <p className="text-[10px] text-muted-foreground">{t("auth.allPlansInclude")}</p>
               </div>
             )}
 
@@ -382,15 +379,15 @@ const Auth = () => {
                   {agreedToTerms && <Check className="h-3 w-3 text-white" />}
                 </button>
                 <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
-                  I agree to Dr. Claw's{" "}
+                  {t("auth.agreeToTerms")}{" "}
                   <Link to="/terms" className="text-primary hover:text-primary/80 underline underline-offset-2" target="_blank">
-                    Terms of Service
+                    {t("auth.termsOfService")}
                   </Link>{" "}
-                  and{" "}
+                  {t("auth.and")}{" "}
                   <Link to="/terms" className="text-primary hover:text-primary/80 underline underline-offset-2" target="_blank">
-                    Privacy Policy
+                    {t("auth.privacyPolicy")}
                   </Link>
-                  , including data handling and liability provisions.
+                  {t("auth.includingData")}
                 </p>
               </div>
             )}
@@ -404,7 +401,7 @@ const Auth = () => {
                 <div className="h-5 w-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  {mode === "signin" ? "Sign In" : "Create Account"}
+                  {mode === "signin" ? t("auth.signIn") : t("auth.createAccountBtn")}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </>
               )}
@@ -415,24 +412,24 @@ const Auth = () => {
           <p className="text-sm text-muted-foreground text-center mt-5">
             {mode === "signin" ? (
               <>
-                Don't have an account?{" "}
+                {t("auth.noAccount")}{" "}
                 <button
                   type="button"
                   onClick={() => setMode("signup")}
                   className="text-primary hover:text-primary/80 font-medium transition-colors"
                 >
-                  Sign up free
+                  {t("auth.signUpFree")}
                 </button>
               </>
             ) : (
               <>
-                Already have an account?{" "}
+                {t("auth.alreadyHaveAccount")}{" "}
                 <button
                   type="button"
                   onClick={() => setMode("signin")}
                   className="text-primary hover:text-primary/80 font-medium transition-colors"
                 >
-                  Sign in
+                  {t("auth.signIn")}
                 </button>
               </>
             )}
@@ -442,27 +439,27 @@ const Auth = () => {
           <div className="flex items-center justify-center gap-6 mt-6 pt-6 border-t border-white/[0.06]">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground/60">
               <Shield className="h-3.5 w-3.5 text-primary/70" />
-              HIPAA Compliant
+              {t("auth.hipaaCompliant")}
             </div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground/60">
               <Lock className="h-3.5 w-3.5 text-primary/70" />
-              Encrypted
+              {t("auth.encrypted")}
             </div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground/60">
               <CheckCircle className="h-3.5 w-3.5 text-primary/70" />
-              14-Day Free Trial
+              {t("auth.freeTrial")}
             </div>
           </div>
 
-          {/* Terms */}
+          {/* Bottom terms */}
           <p className="text-[11px] text-muted-foreground/40 text-center mt-5 leading-relaxed">
-            By continuing, you agree to Dr. Claw's{" "}
+            {t("auth.byContinuing")}{" "}
             <Link to="/terms" className="underline underline-offset-2 cursor-pointer hover:text-muted-foreground/60 transition-colors" target="_blank">
-              Terms of Service
+              {t("auth.termsOfService")}
             </Link>{" "}
-            and{" "}
+            {t("auth.and")}{" "}
             <Link to="/terms" className="underline underline-offset-2 cursor-pointer hover:text-muted-foreground/60 transition-colors" target="_blank">
-              Privacy Policy
+              {t("auth.privacyPolicy")}
             </Link>
             .
           </p>
