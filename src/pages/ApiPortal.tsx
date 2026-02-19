@@ -636,7 +636,7 @@ const ApiPortal = () => {
                         <GroupIcon className="h-5 w-5 text-primary" />
                         <span className="font-medium text-foreground">{group.name}</span>
                         <Badge variant="secondary" className="text-xs">
-                          {t("apiPortal.endpointsCount", { count: String(group.endpoints.length) })}
+                          {`${group.endpoints.length} endpoints`}
                         </Badge>
                       </div>
                       {isExpanded ? (
