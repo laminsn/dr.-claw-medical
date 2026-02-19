@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Bot,
   Send,
@@ -207,6 +208,7 @@ const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(ma
 
 // ── Component ───────────────────────────────────────────────────────────────
 const AgentCommandStation = () => {
+  const { t } = useTranslation();
   const [agents, setAgents] = useState<AgentState[]>(MOCK_AGENTS);
   const [selectedAgent, setSelectedAgent] = useState<AgentState>(MOCK_AGENTS[0]);
   const [commandInput, setCommandInput] = useState("");
@@ -465,8 +467,8 @@ const AgentCommandStation = () => {
         <div className="flex items-center justify-between px-6 py-3 border-b border-green-900/60 bg-black/95 shrink-0">
           <div className="flex items-center gap-4">
             <MonitorPlay className="h-5 w-5 text-cyan-400" />
-            <span className="text-sm font-bold tracking-widest text-cyan-400 uppercase">Agent Screen</span>
-            <span className="text-xs text-green-600 animate-pulse">LIVE</span>
+            <span className="text-sm font-bold tracking-widest text-cyan-400 uppercase">{t("commandStation.agentScreen")}</span>
+            <span className="text-xs text-green-600 animate-pulse">{t("commandStation.live")}</span>
             <span className="text-xs text-green-700">Tick #{fsTick}</span>
           </div>
           <div className="flex items-center gap-6">
@@ -490,7 +492,7 @@ const AgentCommandStation = () => {
               className="border-green-800 text-green-400 bg-transparent hover:bg-green-950 hover:text-green-300 text-xs gap-1"
             >
               <Minimize2 className="h-3.5 w-3.5" />
-              Exit (Esc)
+              {t("commandStation.exitEsc")}
             </Button>
           </div>
         </div>
@@ -515,7 +517,7 @@ const AgentCommandStation = () => {
                     <span className="text-[10px] text-green-700">{ag.model}</span>
                   </div>
                   <span className={`text-[10px] px-1.5 py-0.5 rounded border ${ag.active ? "border-green-700 text-green-400 bg-green-950/50" : "border-gray-700 text-gray-500 bg-gray-900/50"}`}>
-                    {ag.active ? "ONLINE" : "OFFLINE"}
+                    {ag.active ? t("commandStation.online") : t("commandStation.offline")}
                   </span>
                 </div>
 
@@ -579,7 +581,7 @@ const AgentCommandStation = () => {
                 {/* Task progress bars */}
                 {ag.active && (
                   <div className="space-y-1.5 border-t border-green-900/40 pt-2">
-                    <p className="text-[10px] text-green-700 uppercase tracking-wider">Task Queue</p>
+                    <p className="text-[10px] text-green-700 uppercase tracking-wider">{t("commandStation.taskQueue")}</p>
                     {agTasks.map((t, i) => (
                       <div key={t.id + "-" + ag.id + "-" + i} className="space-y-0.5">
                         <div className="flex items-center justify-between">
@@ -599,7 +601,7 @@ const AgentCommandStation = () => {
 
                 {/* Recent logs */}
                 <div className="space-y-1 border-t border-green-900/40 pt-2 max-h-[100px] overflow-y-auto">
-                  <p className="text-[10px] text-green-700 uppercase tracking-wider">Recent Activity</p>
+                  <p className="text-[10px] text-green-700 uppercase tracking-wider">{t("commandStation.recentActivity")}</p>
                   {ag.logs.slice(0, 3).map((log) => (
                     <p key={log.id} className={`text-[10px] leading-snug ${log.level === "error" ? "text-red-400" : log.level === "warn" ? "text-amber-400" : log.level === "success" ? "text-green-500" : "text-green-600"}`}>
                       {log.level === "error" ? "ERR" : log.level === "warn" ? "WRN" : log.level === "success" ? "OK " : "INF"} {log.message}
@@ -613,8 +615,8 @@ const AgentCommandStation = () => {
 
         {/* Fullscreen footer */}
         <div className="shrink-0 flex items-center justify-between px-6 py-2 border-t border-green-900/60 bg-black/95 text-[10px] text-green-700">
-          <span>Auto-refresh: 5s | Press ESC to exit</span>
-          <span className="text-green-600">{new Date().toLocaleTimeString()} | {agents.filter((a) => a.active).length}/{agents.length} agents online</span>
+          <span>{t("commandStation.autoRefresh")}</span>
+          <span className="text-green-600">{new Date().toLocaleTimeString()} | {agents.filter((a) => a.active).length}/{agents.length} {t("commandStation.agentsOnline")}</span>
         </div>
       </div>
     );
@@ -646,17 +648,17 @@ const AgentCommandStation = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-muted/50 border-b border-border">
-                  <th className="px-4 py-3 text-left"><SortHeader field="name" label="Agent" /></th>
-                  <th className="px-4 py-3 text-left"><SortHeader field="model" label="Model" /></th>
-                  <th className="px-4 py-3 text-left"><SortHeader field="zone" label="Zone" /></th>
-                  <th className="px-4 py-3 text-center"><SortHeader field="active" label="Status" className="justify-center" /></th>
-                  <th className="px-4 py-3 text-right"><SortHeader field="tasksCompleted" label="Completed" className="justify-end" /></th>
-                  <th className="px-4 py-3 text-right"><SortHeader field="tasksFailed" label="Failed" className="justify-end" /></th>
-                  <th className="px-4 py-3 text-right"><SortHeader field="successRate" label="Success %" className="justify-end" /></th>
-                  <th className="px-4 py-3 text-right"><SortHeader field="costToday" label="Cost Today" className="justify-end" /></th>
-                  <th className="px-4 py-3 text-right"><SortHeader field="costMonth" label="Cost Month" className="justify-end" /></th>
-                  <th className="px-4 py-3 text-right"><SortHeader field="tokensUsed" label="Tokens" className="justify-end" /></th>
-                  <th className="px-4 py-3 text-right"><SortHeader field="avgResponseTime" label="Avg Time" className="justify-end" /></th>
+                  <th className="px-4 py-3 text-left"><SortHeader field="name" label={t("commandStation.columnAgent")} /></th>
+                  <th className="px-4 py-3 text-left"><SortHeader field="model" label={t("commandStation.columnModel")} /></th>
+                  <th className="px-4 py-3 text-left"><SortHeader field="zone" label={t("commandStation.columnZone")} /></th>
+                  <th className="px-4 py-3 text-center"><SortHeader field="active" label={t("commandStation.columnStatus")} className="justify-center" /></th>
+                  <th className="px-4 py-3 text-right"><SortHeader field="tasksCompleted" label={t("commandStation.columnCompleted")} className="justify-end" /></th>
+                  <th className="px-4 py-3 text-right"><SortHeader field="tasksFailed" label={t("commandStation.columnFailed")} className="justify-end" /></th>
+                  <th className="px-4 py-3 text-right"><SortHeader field="successRate" label={t("commandStation.columnSuccess")} className="justify-end" /></th>
+                  <th className="px-4 py-3 text-right"><SortHeader field="costToday" label={t("commandStation.columnCostToday")} className="justify-end" /></th>
+                  <th className="px-4 py-3 text-right"><SortHeader field="costMonth" label={t("commandStation.columnCostMonth")} className="justify-end" /></th>
+                  <th className="px-4 py-3 text-right"><SortHeader field="tokensUsed" label={t("commandStation.columnTokens")} className="justify-end" /></th>
+                  <th className="px-4 py-3 text-right"><SortHeader field="avgResponseTime" label={t("commandStation.columnAvgTime")} className="justify-end" /></th>
                 </tr>
               </thead>
               <tbody>
@@ -677,7 +679,7 @@ const AgentCommandStation = () => {
                       <td className="px-4 py-3 text-center">
                         <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${a.active ? "text-emerald-400" : "text-muted-foreground"}`}>
                           <span className={`h-2 w-2 rounded-full ${a.active ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
-                          {a.active ? "Active" : "Idle"}
+                          {a.active ? t("commandStation.statusActive") : t("commandStation.statusIdle")}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right font-medium text-foreground tabular-nums">{a.tasksCompleted.toLocaleString()}</td>
@@ -701,11 +703,11 @@ const AgentCommandStation = () => {
                   <td className="px-4 py-3 text-foreground" colSpan={2}>
                     <span className="flex items-center gap-1.5">
                       <Table2 className="h-4 w-4 text-primary" />
-                      Totals / Averages
+                      {t("commandStation.totalsAverages")}
                     </span>
                   </td>
                   <td className="px-4 py-3" />
-                  <td className="px-4 py-3 text-center text-xs text-muted-foreground">{agents.filter((a) => a.active).length} active</td>
+                  <td className="px-4 py-3 text-center text-xs text-muted-foreground">{agents.filter((a) => a.active).length} {t("commandStation.active")}</td>
                   <td className="px-4 py-3 text-right text-foreground tabular-nums">{totalCompleted.toLocaleString()}</td>
                   <td className="px-4 py-3 text-right tabular-nums">
                     <span className={totalFailed > 15 ? "text-red-400" : "text-muted-foreground"}>{totalFailed}</span>
@@ -727,10 +729,10 @@ const AgentCommandStation = () => {
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5 text-primary" />
-                <h3 className="text-sm font-bold text-foreground">Agent Comparison</h3>
+                <h3 className="text-sm font-bold text-foreground">{t("commandStation.agentComparison")}</h3>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground mr-1">Metric:</span>
+                <span className="text-xs text-muted-foreground mr-1">{t("commandStation.metric")}</span>
                 {(Object.keys(METRIC_LABELS) as CompareMetric[]).map((m) => (
                   <button
                     key={m}
@@ -806,8 +808,8 @@ const AgentCommandStation = () => {
         <div className="px-8 pt-8 pb-4 border-b border-border shrink-0">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold font-heading gradient-hero-text">Command Station</h1>
-              <p className="text-muted-foreground mt-1">Communicate with agents, issue instructions, and monitor activity in real time</p>
+              <h1 className="text-3xl font-bold font-heading gradient-hero-text">{t("commandStation.title")}</h1>
+              <p className="text-muted-foreground mt-1">{t("commandStation.subtitle")}</p>
             </div>
 
             <div className="flex items-center gap-3">
@@ -822,7 +824,7 @@ const AgentCommandStation = () => {
                   }`}
                 >
                   <Terminal className="h-4 w-4" />
-                  Command
+                  {t("commandStation.viewCommand")}
                 </button>
                 <button
                   onClick={() => setViewMode("compare")}
@@ -833,7 +835,7 @@ const AgentCommandStation = () => {
                   }`}
                 >
                   <Columns className="h-4 w-4" />
-                  Compare
+                  {t("commandStation.viewCompare")}
                 </button>
               </div>
 
@@ -845,7 +847,7 @@ const AgentCommandStation = () => {
                 className="gap-1.5 text-muted-foreground hover:text-foreground"
               >
                 <Fullscreen className="h-4 w-4" />
-                Agent Screen
+                {t("commandStation.agentScreen")}
               </Button>
 
               {/* Agent selector */}
@@ -909,9 +911,9 @@ const AgentCommandStation = () => {
 
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { label: "Success Rate", value: `${successRate}%`, icon: TrendingUp, color: "text-emerald-400" },
-                    { label: "Tasks Done", value: agent.tasksCompleted.toLocaleString(), icon: CheckCircle2, color: "text-primary" },
-                    { label: "Avg Speed", value: agent.avgResponseTime, icon: Clock, color: "text-cyan-400" },
+                    { label: t("commandStation.successRate"), value: `${successRate}%`, icon: TrendingUp, color: "text-emerald-400" },
+                    { label: t("commandStation.tasksDone"), value: agent.tasksCompleted.toLocaleString(), icon: CheckCircle2, color: "text-primary" },
+                    { label: t("commandStation.avgSpeed"), value: agent.avgResponseTime, icon: Clock, color: "text-cyan-400" },
                   ].map((s) => (
                     <div key={s.label} className="rounded-lg bg-muted/30 p-2 text-center">
                       <s.icon className={`h-3.5 w-3.5 mx-auto mb-1 ${s.color}`} />
@@ -943,18 +945,18 @@ const AgentCommandStation = () => {
                 <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 space-y-1">
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <DollarSign className="h-3.5 w-3.5 text-amber-400" />
-                    <span className="text-xs font-semibold text-amber-400">Usage Cost</span>
+                    <span className="text-xs font-semibold text-amber-400">{t("commandStation.usageCost")}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-muted-foreground">Today</span>
+                    <span className="text-[11px] text-muted-foreground">{t("commandStation.today")}</span>
                     <span className="text-sm font-bold text-foreground">${agent.costToday.toFixed(2)}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-muted-foreground">This Month</span>
+                    <span className="text-[11px] text-muted-foreground">{t("commandStation.thisMonth")}</span>
                     <span className="text-sm font-bold text-foreground">${agent.costMonth.toFixed(2)}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-muted-foreground">Tokens Used</span>
+                    <span className="text-[11px] text-muted-foreground">{t("commandStation.tokensUsed")}</span>
                     <span className="text-[11px] font-medium text-foreground">{(agent.tokensUsed / 1000).toFixed(1)}k</span>
                   </div>
                 </div>
@@ -965,8 +967,8 @@ const AgentCommandStation = () => {
                 {agent.messages.length === 0 && (
                   <div className="flex flex-col items-center justify-center h-full text-center py-12">
                     <MessageSquare className="h-8 w-8 text-muted-foreground/30 mb-3" />
-                    <p className="text-sm text-muted-foreground">Send a command to {agent.name}</p>
-                    <p className="text-xs text-muted-foreground/60 mt-1">e.g. "Give me a status report"</p>
+                    <p className="text-sm text-muted-foreground">{t("commandStation.sendCommand", { name: agent.name })}</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">{t("commandStation.commandHint")}</p>
                   </div>
                 )}
                 {agent.messages.map((msg) => (
@@ -999,7 +1001,7 @@ const AgentCommandStation = () => {
                     value={commandInput}
                     onChange={(e) => setCommandInput(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendCommand(); } }}
-                    placeholder={`Command ${agent.name}...`}
+                    placeholder={t("commandStation.commandPlaceholder", { name: agent.name })}
                     className="resize-none text-sm h-[68px] bg-background border-border"
                   />
                   <Button
@@ -1011,7 +1013,7 @@ const AgentCommandStation = () => {
                   </Button>
                 </div>
                 <div className="flex gap-1.5 mt-2 flex-wrap">
-                  {["Status report", "Pause task", "Prioritize urgent", "Clear queue"].map((quick) => (
+                  {[t("commandStation.quickStatus"), t("commandStation.quickPause"), t("commandStation.quickPrioritize"), t("commandStation.quickClear")].map((quick) => (
                     <button
                       key={quick}
                       onClick={() => { setCommandInput(quick); }}
@@ -1031,7 +1033,7 @@ const AgentCommandStation = () => {
                 <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10">
                   <div className="flex items-center gap-2">
                     <Eye className="h-4 w-4 text-emerald-400" />
-                    <span className="text-xs font-semibold text-emerald-400">Live Agent View — {agent.name}</span>
+                    <span className="text-xs font-semibold text-emerald-400">{t("commandStation.liveAgentView")} — {agent.name}</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded border ${agent.active ? "border-emerald-500/40 text-emerald-400 bg-emerald-500/10" : "border-muted/30 text-muted-foreground bg-muted/10"}`}>
                       {agent.active ? "● LIVE" : "○ OFFLINE"}
                     </span>
@@ -1084,8 +1086,8 @@ const AgentCommandStation = () => {
                 <div className="flex-1 overflow-hidden flex flex-col">
                   <div className="px-5 py-3 border-b border-border flex items-center gap-2">
                     <Terminal className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-semibold text-foreground">Activity Log</span>
-                    <Badge variant="outline" className="text-[10px] border-border text-muted-foreground">{agent.logs.length} events</Badge>
+                    <span className="text-sm font-semibold text-foreground">{t("commandStation.activityLog")}</span>
+                    <Badge variant="outline" className="text-[10px] border-border text-muted-foreground">{agent.logs.length} {t("commandStation.events")}</Badge>
                   </div>
                   <div className="flex-1 overflow-y-auto p-4 space-y-2">
                     {agent.logs.map((log) => {
