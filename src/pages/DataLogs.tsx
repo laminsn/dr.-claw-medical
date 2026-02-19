@@ -307,7 +307,7 @@ const DataLogs = () => {
     URL.revokeObjectURL(url);
     toast({
       title: t("dataLogs.logsExported"),
-      description: t("dataLogs.logsExportedDesc", { count: String(filteredLogs.length) }),
+      description: `${filteredLogs.length} logs exported successfully.`,
     });
   };
 
