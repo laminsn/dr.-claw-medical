@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { format, isPast, parseISO } from "date-fns";
 import {
   Bot,
   Activity,
@@ -28,7 +29,14 @@ import {
   User,
   Flag,
   Globe,
+  CalendarIcon,
+  MessageSquare,
+  Send,
+  Clock3,
 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -70,6 +78,14 @@ interface AgentState {
 
 type KanbanColumn = "backlog" | "todo" | "in_progress" | "review" | "done";
 
+interface TaskComment {
+  id: string;
+  author: string;
+  content: string;
+  timestamp: string;
+  avatarColor: string;
+}
+
 interface KanbanTask {
   id: string;
   title: string;
@@ -79,6 +95,8 @@ interface KanbanTask {
   zone: "clinical" | "operations" | "external";
   column: KanbanColumn;
   createdAt: string;
+  dueDate?: string;
+  comments: TaskComment[];
 }
 
 type ViewMode = "board" | "split";
@@ -166,26 +184,28 @@ const MOCK_AGENTS: AgentState[] = [
 
 const MOCK_TASKS: KanbanTask[] = [
   // Backlog
-  { id: "t1", title: "Prepare monthly patient satisfaction report", description: "Compile and analyze patient feedback data for January", agentId: "1", priority: "medium", zone: "clinical", column: "backlog", createdAt: "2d ago" },
-  { id: "t2", title: "Update insurance provider database", description: "Add new Cigna and Aetna plan codes for 2026", agentId: "1", priority: "low", zone: "clinical", column: "backlog", createdAt: "3d ago" },
-  { id: "t3", title: "Plan flu clinic outreach campaign", description: "Design multi-channel outreach for spring flu vaccinations", agentId: "2", priority: "medium", zone: "external", column: "backlog", createdAt: "1d ago" },
+  { id: "t1", title: "Prepare monthly patient satisfaction report", description: "Compile and analyze patient feedback data for January", agentId: "1", priority: "medium", zone: "clinical", column: "backlog", createdAt: "2d ago", dueDate: "2026-03-10", comments: [{ id: "c1", author: "Dr. Torres", content: "Please include NPS scores from the Q4 survey.", timestamp: "1d ago", avatarColor: "bg-purple-500/20 text-purple-400" }] },
+  { id: "t2", title: "Update insurance provider database", description: "Add new Cigna and Aetna plan codes for 2026", agentId: "1", priority: "low", zone: "clinical", column: "backlog", createdAt: "3d ago", comments: [] },
+  { id: "t3", title: "Plan flu clinic outreach campaign", description: "Design multi-channel outreach for spring flu vaccinations", agentId: "2", priority: "medium", zone: "external", column: "backlog", createdAt: "1d ago", dueDate: "2026-03-15", comments: [] },
   // To Do
-  { id: "t4", title: "Review pending referral letters", description: "12 referral letters awaiting review and signature", agentId: "1", priority: "high", zone: "clinical", column: "todo", createdAt: "1d ago" },
-  { id: "t5", title: "Draft social media calendar for March", description: "Create content calendar with health awareness themes", agentId: "2", priority: "medium", zone: "external", column: "todo", createdAt: "4h ago" },
-  { id: "t6", title: "Research NIH grant renewal requirements", description: "Compile documentation needed for R01 renewal application", agentId: "3", priority: "high", zone: "operations", column: "todo", createdAt: "6h ago" },
+  { id: "t4", title: "Review pending referral letters", description: "12 referral letters awaiting review and signature", agentId: "1", priority: "high", zone: "clinical", column: "todo", createdAt: "1d ago", dueDate: "2026-02-21", comments: [{ id: "c2", author: "Dr. Front Desk", content: "Referrals flagged for Cardiology and Neurology. Need sign-off today.", timestamp: "3h ago", avatarColor: "bg-red-500/20 text-red-400" }] },
+  { id: "t5", title: "Draft social media calendar for March", description: "Create content calendar with health awareness themes", agentId: "2", priority: "medium", zone: "external", column: "todo", createdAt: "4h ago", comments: [] },
+  { id: "t6", title: "Research NIH grant renewal requirements", description: "Compile documentation needed for R01 renewal application", agentId: "3", priority: "high", zone: "operations", column: "todo", createdAt: "6h ago", dueDate: "2026-02-19", comments: [{ id: "c3", author: "Grant Pro", content: "NIH portal updated their checklist. I'll cross-reference with our current docs.", timestamp: "2h ago", avatarColor: "bg-amber-500/20 text-amber-400" }] },
   // In Progress
-  { id: "t7", title: "Insurance verification — patient #4821", description: "Verifying coverage through Availity API for upcoming procedure", agentId: "1", priority: "high", zone: "clinical", column: "in_progress", createdAt: "30m ago" },
-  { id: "t8", title: "Q1 cardiovascular awareness campaign", description: "Writing copy for Heart Health Month across all channels", agentId: "2", priority: "high", zone: "external", column: "in_progress", createdAt: "2h ago" },
-  { id: "t9", title: "NIH R01 proposal budget revision", description: "Adjusting budget allocations per reviewer feedback", agentId: "3", priority: "medium", zone: "operations", column: "in_progress", createdAt: "1h ago" },
+  { id: "t7", title: "Insurance verification — patient #4821", description: "Verifying coverage through Availity API for upcoming procedure", agentId: "1", priority: "high", zone: "clinical", column: "in_progress", createdAt: "30m ago", comments: [] },
+  { id: "t8", title: "Q1 cardiovascular awareness campaign", description: "Writing copy for Heart Health Month across all channels", agentId: "2", priority: "high", zone: "external", column: "in_progress", createdAt: "2h ago", dueDate: "2026-02-28", comments: [{ id: "c4", author: "Marketing Maven", content: "First draft ready. Compliance review flagged the social post — will revise.", timestamp: "1h ago", avatarColor: "bg-blue-500/20 text-blue-400" }] },
+  { id: "t9", title: "NIH R01 proposal budget revision", description: "Adjusting budget allocations per reviewer feedback", agentId: "3", priority: "medium", zone: "operations", column: "in_progress", createdAt: "1h ago", comments: [] },
   // Review
-  { id: "t10", title: "Appointment reminder batch (14 patients)", description: "SMS and email reminders for next week's appointments", agentId: "1", priority: "medium", zone: "clinical", column: "review", createdAt: "45m ago" },
-  { id: "t11", title: "Blog post: Heart Health Month Tips", description: "850-word article on cardiovascular wellness, ready for compliance check", agentId: "2", priority: "low", zone: "external", column: "review", createdAt: "1h ago" },
-  { id: "t12", title: "PCORI funding opportunity analysis", description: "Research summary of Patient-Centered Outcomes Research funding", agentId: "3", priority: "medium", zone: "operations", column: "review", createdAt: "3h ago" },
+  { id: "t10", title: "Appointment reminder batch (14 patients)", description: "SMS and email reminders for next week's appointments", agentId: "1", priority: "medium", zone: "clinical", column: "review", createdAt: "45m ago", comments: [] },
+  { id: "t11", title: "Blog post: Heart Health Month Tips", description: "850-word article on cardiovascular wellness, ready for compliance check", agentId: "2", priority: "low", zone: "external", column: "review", createdAt: "1h ago", comments: [{ id: "c5", author: "Dr. Torres", content: "Looks good overall. Remove the statistic on line 3 — needs a citation.", timestamp: "30m ago", avatarColor: "bg-purple-500/20 text-purple-400" }] },
+  { id: "t12", title: "PCORI funding opportunity analysis", description: "Research summary of Patient-Centered Outcomes Research funding", agentId: "3", priority: "medium", zone: "operations", column: "review", createdAt: "3h ago", comments: [] },
   // Done
-  { id: "t13", title: "Lab result notification — J. Chen", description: "Patient notified of lab results via secure portal", agentId: "1", priority: "high", zone: "clinical", column: "done", createdAt: "1h ago" },
-  { id: "t14", title: "Email newsletter draft (850 words)", description: "February newsletter completed and sent to editor", agentId: "2", priority: "medium", zone: "external", column: "done", createdAt: "2h ago" },
-  { id: "t15", title: "NIH R01 proposal draft ($1.2M)", description: "Full proposal draft submitted for internal review", agentId: "3", priority: "high", zone: "operations", column: "done", createdAt: "4h ago" },
+  { id: "t13", title: "Lab result notification — J. Chen", description: "Patient notified of lab results via secure portal", agentId: "1", priority: "high", zone: "clinical", column: "done", createdAt: "1h ago", comments: [] },
+  { id: "t14", title: "Email newsletter draft (850 words)", description: "February newsletter completed and sent to editor", agentId: "2", priority: "medium", zone: "external", column: "done", createdAt: "2h ago", comments: [] },
+  { id: "t15", title: "NIH R01 proposal draft ($1.2M)", description: "Full proposal draft submitted for internal review", agentId: "3", priority: "high", zone: "operations", column: "done", createdAt: "4h ago", comments: [] },
 ];
+
+
 
 // ── Column Configuration ────────────────────────────────────────────────────
 const COLUMN_CONFIG: {
@@ -225,6 +245,34 @@ const LOG_LEVEL_STYLES = {
   error: "text-red-400",
   success: "text-emerald-400",
 };
+
+// ── CommentInput (isolated so it keeps its own state) ───────────────────────
+function CommentInput({ taskId, onAdd }: { taskId: string; onAdd: (taskId: string, content: string) => void }) {
+  const [text, setText] = useState("");
+  const handleSend = () => {
+    if (!text.trim()) return;
+    onAdd(taskId, text);
+    setText("");
+  };
+  return (
+    <div className="flex gap-2">
+      <input
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+        placeholder="Add a comment..."
+        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-white/20 focus:outline-none focus:border-cyan-500/40"
+      />
+      <button
+        onClick={handleSend}
+        disabled={!text.trim()}
+        className="px-3 py-2 rounded-lg bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/30 transition-colors disabled:opacity-30"
+      >
+        <Send className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
 
 // ── Component ───────────────────────────────────────────────────────────────
 const AgentCommandStation = () => {
@@ -334,6 +382,8 @@ const AgentCommandStation = () => {
         zone: data.zone ?? "clinical",
         column: data.column ?? "backlog",
         createdAt: "just now",
+        dueDate: data.dueDate,
+        comments: [],
       };
       setTasks((prev) => [...prev, newTask]);
     } else {
@@ -347,6 +397,28 @@ const AgentCommandStation = () => {
   const deleteTask = useCallback((taskId: string) => {
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
     setDeleteConfirm(null);
+  }, []);
+
+  const addComment = useCallback((taskId: string, content: string) => {
+    if (!content.trim()) return;
+    const newComment: TaskComment = {
+      id: `cm${Date.now()}`,
+      author: "You",
+      content: content.trim(),
+      timestamp: "just now",
+      avatarColor: "bg-cyan-500/20 text-cyan-400",
+    };
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === taskId ? { ...t, comments: [...t.comments, newComment] } : t
+      )
+    );
+    // Also update taskModal draft if open
+    setTaskModal((prev) => {
+      if (!prev.task || prev.task.id !== taskId) return prev;
+      const existing = (prev.task.comments as TaskComment[]) ?? [];
+      return { ...prev, task: { ...prev.task, comments: [...existing, newComment] } };
+    });
   }, []);
 
   // ── Fullscreen auto-refresh ─────────────────────────────────────────────
@@ -849,9 +921,12 @@ const AgentCommandStation = () => {
     if (!taskModal.open || !taskModal.task) return null;
     const isEdit = taskModal.mode === "edit";
     const draft = taskModal.task;
+    const draftComments = (draft.comments as TaskComment[]) ?? [];
 
-    const update = (field: string, value: string) =>
+    const update = (field: string, value: unknown) =>
       setTaskModal((prev) => ({ ...prev, task: { ...prev.task, [field]: value } }));
+
+    const selectedDate = draft.dueDate ? parseISO(draft.dueDate) : undefined;
 
     return (
       <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
@@ -859,9 +934,9 @@ const AgentCommandStation = () => {
         <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={closeModal} />
 
         {/* Modal */}
-        <div className="relative w-full max-w-lg rounded-2xl border border-cyan-500/30 bg-[hsl(220,20%,7%)] shadow-[0_0_60px_-10px_rgba(6,182,212,0.3)] overflow-hidden">
+        <div className="relative w-full max-w-lg rounded-2xl border border-cyan-500/30 bg-[hsl(220,20%,7%)] shadow-[0_0_60px_-10px_rgba(6,182,212,0.3)] overflow-hidden flex flex-col max-h-[90vh]">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-gradient-to-r from-cyan-500/10 to-blue-500/5">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-gradient-to-r from-cyan-500/10 to-blue-500/5 shrink-0">
             <div className="flex items-center gap-2">
               {isEdit ? (
                 <Pencil className="h-4 w-4 text-cyan-400" />
@@ -880,107 +955,186 @@ const AgentCommandStation = () => {
             </button>
           </div>
 
-          {/* Body */}
-          <div className="p-6 space-y-4">
-            {/* Title */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-white/50 flex items-center gap-1.5">
-                <Pencil className="h-3 w-3" /> Title
-              </label>
-              <input
-                ref={titleRef}
-                autoFocus
-                value={draft.title ?? ""}
-                onChange={(e) => update("title", e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && saveTask(draft)}
-                placeholder="Task title..."
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-cyan-500/40"
-              />
-            </div>
-
-            {/* Description */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-white/50">Description</label>
-              <textarea
-                value={draft.description ?? ""}
-                onChange={(e) => update("description", e.target.value)}
-                placeholder="What needs to be done..."
-                rows={3}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-cyan-500/40 resize-none"
-              />
-            </div>
-
-            {/* Row: Agent + Column */}
-            <div className="grid grid-cols-2 gap-3">
+          {/* Scrollable Body */}
+          <div className="overflow-y-auto flex-1">
+            <div className="p-6 space-y-4">
+              {/* Title */}
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-white/50 flex items-center gap-1.5">
-                  <User className="h-3 w-3" /> Assigned Agent
+                  <Pencil className="h-3 w-3" /> Title
                 </label>
-                <select
-                  value={draft.agentId ?? "1"}
-                  onChange={(e) => update("agentId", e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500/40"
-                >
-                  {agents.map((a) => (
-                    <option key={a.id} value={a.id} className="bg-[hsl(220,20%,10%)]">
-                      {a.name}
-                    </option>
-                  ))}
-                </select>
+                <input
+                  ref={titleRef}
+                  autoFocus
+                  value={draft.title ?? ""}
+                  onChange={(e) => update("title", e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && !isEdit && saveTask(draft)}
+                  placeholder="Task title..."
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-cyan-500/40"
+                />
               </div>
 
+              {/* Description */}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-white/50">Column</label>
-                <select
-                  value={draft.column ?? "backlog"}
-                  onChange={(e) => update("column", e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500/40"
-                >
-                  {COLUMN_CONFIG.map((c) => (
-                    <option key={c.id} value={c.id} className="bg-[hsl(220,20%,10%)]">
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
+                <label className="text-xs font-medium text-white/50">Description</label>
+                <textarea
+                  value={draft.description ?? ""}
+                  onChange={(e) => update("description", e.target.value)}
+                  placeholder="What needs to be done..."
+                  rows={3}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-cyan-500/40 resize-none"
+                />
               </div>
-            </div>
 
-            {/* Row: Priority + Zone */}
-            <div className="grid grid-cols-2 gap-3">
+              {/* Row: Agent + Column */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-white/50 flex items-center gap-1.5">
+                    <User className="h-3 w-3" /> Assigned Agent
+                  </label>
+                  <select
+                    value={draft.agentId ?? "1"}
+                    onChange={(e) => update("agentId", e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500/40"
+                  >
+                    {agents.map((a) => (
+                      <option key={a.id} value={a.id} className="bg-[hsl(220,20%,10%)]">
+                        {a.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-white/50">Column</label>
+                  <select
+                    value={draft.column ?? "backlog"}
+                    onChange={(e) => update("column", e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500/40"
+                  >
+                    {COLUMN_CONFIG.map((c) => (
+                      <option key={c.id} value={c.id} className="bg-[hsl(220,20%,10%)]">
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Row: Priority + Zone */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-white/50 flex items-center gap-1.5">
+                    <Flag className="h-3 w-3" /> Priority
+                  </label>
+                  <select
+                    value={draft.priority ?? "medium"}
+                    onChange={(e) => update("priority", e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500/40"
+                  >
+                    <option value="high" className="bg-[hsl(220,20%,10%)]">High</option>
+                    <option value="medium" className="bg-[hsl(220,20%,10%)]">Medium</option>
+                    <option value="low" className="bg-[hsl(220,20%,10%)]">Low</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-white/50 flex items-center gap-1.5">
+                    <Globe className="h-3 w-3" /> Zone
+                  </label>
+                  <select
+                    value={draft.zone ?? "clinical"}
+                    onChange={(e) => update("zone", e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500/40"
+                  >
+                    <option value="clinical" className="bg-[hsl(220,20%,10%)]">Clinical</option>
+                    <option value="operations" className="bg-[hsl(220,20%,10%)]">Operations</option>
+                    <option value="external" className="bg-[hsl(220,20%,10%)]">External</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Due Date */}
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-white/50 flex items-center gap-1.5">
-                  <Flag className="h-3 w-3" /> Priority
+                  <Clock3 className="h-3 w-3" /> Due Date
                 </label>
-                <select
-                  value={draft.priority ?? "medium"}
-                  onChange={(e) => update("priority", e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500/40"
-                >
-                  <option value="high" className="bg-[hsl(220,20%,10%)]">High</option>
-                  <option value="medium" className="bg-[hsl(220,20%,10%)]">Medium</option>
-                  <option value="low" className="bg-[hsl(220,20%,10%)]">Low</option>
-                </select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      className={cn(
+                        "w-full flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-left transition-colors hover:border-cyan-500/30 focus:outline-none",
+                        selectedDate ? "text-white" : "text-white/30"
+                      )}
+                    >
+                      <CalendarIcon className="h-3.5 w-3.5 text-white/30" />
+                      {selectedDate ? format(selectedDate, "MMM d, yyyy") : "Pick a due date..."}
+                      {selectedDate && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); update("dueDate", undefined); }}
+                          className="ml-auto p-0.5 rounded hover:bg-white/10 text-white/30 hover:text-white/60"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-[hsl(220,20%,9%)] border-cyan-500/20 z-[10000]" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={(d) => update("dueDate", d ? format(d, "yyyy-MM-dd") : undefined)}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto text-white")}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-white/50 flex items-center gap-1.5">
-                  <Globe className="h-3 w-3" /> Zone
-                </label>
-                <select
-                  value={draft.zone ?? "clinical"}
-                  onChange={(e) => update("zone", e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500/40"
-                >
-                  <option value="clinical" className="bg-[hsl(220,20%,10%)]">Clinical</option>
-                  <option value="operations" className="bg-[hsl(220,20%,10%)]">Operations</option>
-                  <option value="external" className="bg-[hsl(220,20%,10%)]">External</option>
-                </select>
-              </div>
+              {/* ── Activity / Comments (edit mode only) ─────────────────── */}
+              {isEdit && (
+                <div className="space-y-3 pt-2 border-t border-white/5">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="h-3.5 w-3.5 text-cyan-400/70" />
+                    <span className="text-xs font-semibold text-white/50 uppercase tracking-wider">
+                      Activity ({draftComments.length})
+                    </span>
+                  </div>
+
+                  {/* Comment thread */}
+                  <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                    {draftComments.length === 0 && (
+                      <p className="text-[11px] text-white/20 text-center py-4">
+                        No comments yet. Start the conversation.
+                      </p>
+                    )}
+                    {draftComments.map((c) => (
+                      <div key={c.id} className="flex gap-2.5">
+                        <div className={`h-6 w-6 rounded-full shrink-0 flex items-center justify-center text-[9px] font-bold ${c.avatarColor}`}>
+                          {c.author.charAt(0)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-[10px] font-semibold text-white/70">{c.author}</span>
+                            <span className="text-[9px] text-white/25">{c.timestamp}</span>
+                          </div>
+                          <p className="text-xs text-white/55 leading-relaxed bg-white/[0.03] rounded-lg px-2.5 py-1.5 border border-white/5">
+                            {c.content}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Add comment input */}
+                  <CommentInput taskId={draft.id!} onAdd={addComment} />
+                </div>
+              )}
             </div>
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between px-6 py-4 border-t border-white/5">
+          <div className="flex items-center justify-between px-6 py-4 border-t border-white/5 shrink-0">
             {isEdit ? (
               <button
                 onClick={() => { setDeleteConfirm(draft.id!); closeModal(); }}
@@ -1176,14 +1330,16 @@ const AgentCommandStation = () => {
                         draggable
                         onDragStart={(e) => handleDragStart(e, task.id)}
                         onDragEnd={handleDragEnd}
-                        className={`group relative rounded-xl border bg-card/50 p-3 cursor-grab active:cursor-grabbing transition-all duration-150 hover:bg-card/80 hover:border-border/70 hover:shadow-md ${
+                        className={`group relative rounded-xl border bg-card/50 p-3 cursor-grab active:cursor-grabbing transition-all duration-150 hover:bg-card/80 hover:shadow-md ${
                           draggedTaskId === task.id ? "opacity-40 scale-95" : "opacity-100"
                         } ${
-                          task.priority === "high"
-                            ? "border-red-500/20"
+                          task.dueDate && task.column !== "done" && isPast(parseISO(task.dueDate))
+                            ? "border-red-500/40 hover:border-red-500/60 shadow-[0_0_12px_-4px_rgba(239,68,68,0.3)]"
+                            : task.priority === "high"
+                            ? "border-red-500/20 hover:border-border/70"
                             : task.priority === "medium"
-                            ? "border-border/40"
-                            : "border-border/20"
+                            ? "border-border/40 hover:border-border/70"
+                            : "border-border/20 hover:border-border/70"
                         }`}
                       >
                         {/* Title row with drag handle, edit, and forward button */}
@@ -1255,6 +1411,14 @@ const AgentCommandStation = () => {
                             {task.zone}
                           </span>
 
+                          {/* Comments count */}
+                          {task.comments.length > 0 && (
+                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground/40">
+                              <MessageSquare className="h-2.5 w-2.5" />
+                              {task.comments.length}
+                            </div>
+                          )}
+
                           {/* Agent avatar */}
                           {agent && (
                             <div className="ml-auto flex items-center gap-1">
@@ -1270,8 +1434,25 @@ const AgentCommandStation = () => {
                           )}
                         </div>
 
-                        {/* Created at */}
-                        <p className="text-[9px] text-muted-foreground/25 mt-2 ml-6">{task.createdAt}</p>
+                        {/* Due date + Created at */}
+                        <div className="flex items-center justify-between mt-2 ml-6">
+                          <p className="text-[9px] text-muted-foreground/25">{task.createdAt}</p>
+                          {task.dueDate && (() => {
+                            const due = parseISO(task.dueDate);
+                            const overdue = task.column !== "done" && isPast(due);
+                            return (
+                              <div className={cn(
+                                "flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded border",
+                                overdue
+                                  ? "text-red-400 bg-red-500/15 border-red-500/30 animate-pulse"
+                                  : "text-white/30 bg-white/5 border-white/10"
+                              )}>
+                                <Clock3 className="h-2.5 w-2.5" />
+                                {overdue ? "Overdue · " : ""}{format(due, "MMM d")}
+                              </div>
+                            );
+                          })()}
+                        </div>
                       </div>
                     );
                   })}
