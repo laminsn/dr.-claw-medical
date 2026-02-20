@@ -384,6 +384,20 @@ const AgentOrgChart = () => {
     } catch { /* ignore */ }
   }, [departmentAccess]);
 
+  // Sync selectedAgent with context so edits/toggles reflect immediately
+  useEffect(() => {
+    if (selectedAgent) {
+      const updated = agents.find((a) => a.id === selectedAgent.id);
+      if (updated) {
+        setSelectedAgent(updated);
+      } else {
+        // Agent was deleted from context
+        setSelectedAgent(null);
+        setDetailOpen(false);
+      }
+    }
+  }, [agents]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Derived Data ────────────────────────────────────────────────────────
 
   const departments = Array.from(new Set(agents.map((a) => a.department)));
@@ -434,13 +448,6 @@ const AgentOrgChart = () => {
       return;
     }
     updateAgent(selectedAgent.id, {
-      name: editName.trim(),
-      role: editRole.trim(),
-      model: editModel,
-      skills: editSkills.split(",").map((s) => s.trim()).filter(Boolean),
-    });
-    setSelectedAgent({
-      ...selectedAgent,
       name: editName.trim(),
       role: editRole.trim(),
       model: editModel,
@@ -675,7 +682,8 @@ const AgentOrgChart = () => {
   const zoomOut = () => setZoom((z) => Math.max(z - 10, 60));
   const resetZoom = () => setZoom(100);
 
-  const expandAll = () => setExpandedDepts(new Set(departments));
+  const ALL_KNOWN_DEPARTMENTS = Object.keys(DEPARTMENT_ICONS);
+  const expandAll = () => setExpandedDepts(new Set(ALL_KNOWN_DEPARTMENTS));
   const collapseAll = () => setExpandedDepts(new Set());
 
   const bulkToggleDept = (deptName: string, activate: boolean) => {
@@ -872,9 +880,12 @@ const AgentOrgChart = () => {
         {/* Vertical connecting line from top */}
         <div className="absolute -top-4 left-5 w-px h-4 border-l border-border/50" />
 
-        <button
+        <div
+          role="button"
+          tabIndex={0}
           onClick={() => toggleDept(deptName)}
-          className="flex items-center gap-3 w-full text-left mb-2 group"
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleDept(deptName); } }}
+          className="flex items-center gap-3 w-full text-left mb-2 group cursor-pointer"
         >
           <div className="flex items-center gap-2 flex-1">
             {isExpanded ? (
@@ -896,7 +907,7 @@ const AgentOrgChart = () => {
             </Badge>
             {isRestricted && <Lock className="h-3.5 w-3.5 text-red-400/70" />}
             {/* Bulk toggle buttons */}
-            <span className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1" onClick={(e) => e.stopPropagation()}>
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
               <button
                 onClick={(e) => { e.stopPropagation(); bulkToggleDept(deptName, true); }}
                 className="p-1 rounded hover:bg-emerald-500/10 text-emerald-400"
@@ -918,7 +929,7 @@ const AgentOrgChart = () => {
               </Badge>
             )}
           </div>
-        </button>
+        </div>
 
         {isExpanded && (
           <div className="pl-4 space-y-2 relative">
@@ -1855,7 +1866,6 @@ const AgentOrgChart = () => {
                       variant="outline"
                       onClick={() => {
                         toggleAgentStatus(selectedAgent.id);
-                        setSelectedAgent({ ...selectedAgent, active: !selectedAgent.active });
                       }}
                       className="border-border text-foreground"
                     >
