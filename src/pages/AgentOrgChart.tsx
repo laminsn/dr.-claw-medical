@@ -587,14 +587,14 @@ const OrgChartCanvas = ({
       <MiniMap
         nodeStrokeColor={(n) => {
           if (n.type === "departmentGroup") return "transparent";
-          const d = n.data as OrgAgentNodeData;
+          const d = n.data as unknown as OrgAgentNodeData;
           if (d.zone === "clinical") return "#ef4444";
           if (d.zone === "operations") return "#f59e0b";
           return "#3b82f6";
         }}
         nodeColor={(n) => {
           if (n.type === "departmentGroup") return "transparent";
-          const d = n.data as OrgAgentNodeData;
+          const d = n.data as unknown as OrgAgentNodeData;
           if (d.zone === "clinical") return "rgba(239,68,68,0.3)";
           if (d.zone === "operations") return "rgba(245,158,11,0.3)";
           return "rgba(59,130,246,0.3)";
