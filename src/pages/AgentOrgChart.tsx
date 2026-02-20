@@ -51,6 +51,7 @@ import {
   Code,
   Linkedin,
   Sparkles,
+  Edit3,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
@@ -828,6 +829,14 @@ const AgentOrgChart = () => {
       "Sales Suite",
     ])
   );
+
+  // Edit agent form
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editRole, setEditRole] = useState("");
+  const [editModel, setEditModel] = useState("openai");
+  const [editSkills, setEditSkills] = useState("");
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
 
   // New agent form
   const [newName, setNewName] = useState("");
