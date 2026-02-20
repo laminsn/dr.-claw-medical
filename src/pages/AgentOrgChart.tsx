@@ -1,5 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  ReactFlow,
+  Background,
+  Controls,
+  MiniMap,
+  useNodesState,
+  useEdgesState,
+  useReactFlow,
+  ReactFlowProvider,
+  type Node,
+  type Edge,
+  type NodeTypes,
+  type EdgeTypes,
+  BackgroundVariant,
+  Panel,
+  MarkerType,
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 import {
   Bot,
   Users,
@@ -21,31 +39,13 @@ import {
   Settings,
   GitBranch,
   Search,
-  ZoomIn,
-  ZoomOut,
   List,
-  LayoutGrid,
   Trash2,
-  ArrowRight,
   Download,
-  Code,
-  Linkedin,
-  Sparkles,
-  ChevronsUpDown,
-  Power,
-  PowerOff,
-  Edit3,
-  Save,
-  AlertTriangle,
-  FileJson,
-  Activity,
-  DollarSign,
-  Clock,
-  Target,
-  BarChart3,
+  Workflow,
+  Maximize2,
+  LayoutGrid,
   RefreshCw,
-  Rocket,
-  Handshake,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
@@ -60,12 +60,19 @@ import {
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAgents, type MyAgent } from "@/hooks/useAgents";
+import OrgAgentNodeComponent, {
+  type OrgAgentNodeData,
+} from "@/components/command-station/OrgAgentNode";
+import DepartmentGroupNode, {
+  type DepartmentGroupNodeData,
+} from "@/components/command-station/DepartmentGroupNode";
+import HierarchyEdge from "@/components/command-station/HierarchyEdge";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
 type AgentZone = "clinical" | "operations" | "external";
 type AccessLevel = "all-staff" | "department-only" | "admin-only";
-type ViewMode = "tree" | "list";
+type ViewMode = "graph" | "list";
 
 interface TemplateAgent {
   name: string;
@@ -92,7 +99,17 @@ interface DepartmentAccess {
 
 // ── Zone Styling ────────────────────────────────────────────────────────────
 
-const ZONE_STYLES: Record<AgentZone, { border: string; bg: string; text: string; dot: string; gradient: string; line: string }> = {
+const ZONE_STYLES: Record<
+  AgentZone,
+  {
+    border: string;
+    bg: string;
+    text: string;
+    dot: string;
+    gradient: string;
+    line: string;
+  }
+> = {
   clinical: {
     border: "border-red-500/40",
     bg: "bg-red-500/10",
@@ -134,7 +151,7 @@ const MODEL_OPTIONS = [
 ];
 
 const DEPARTMENT_ICONS: Record<string, string> = {
-  "Executive": "crown",
+  Executive: "crown",
   "Clinical Operations": "shield",
   "Marketing & Growth": "zap",
   "Finance & Accounting": "brain",
@@ -146,7 +163,7 @@ const DEPARTMENT_ICONS: Record<string, string> = {
   "Intelligence & Analytics": "sparkles",
 };
 
-// ── Default Capabilities for new agents ─────────────────────────────────────
+// ── Default Capabilities ─────────────────────────────────────────────────
 
 const DEFAULT_AGENT_CAPABILITIES = {
   phiProtection: true,
@@ -168,7 +185,8 @@ const DEPARTMENT_TEMPLATES: DepartmentTemplate[] = [
     id: "tpl-clinical",
     name: "Clinical Operations",
     icon: "shield",
-    description: "Front desk, coordinator, insurance, and patient follow-up agents for clinical workflows.",
+    description:
+      "Front desk, coordinator, insurance, and patient follow-up agents for clinical workflows.",
     agents: [
       { name: "Dr. Front Desk", role: "Front Desk Lead", zone: "clinical", active: true, model: "openai", skills: ["Patient Triage", "Scheduling", "Insurance Verification"], level: "department-head" },
       { name: "Clinical Coordinator", role: "Clinical Coordinator", zone: "clinical", active: true, model: "openai", skills: ["Care Coordination", "Follow-Up Scheduling"], level: "worker" },
@@ -180,7 +198,8 @@ const DEPARTMENT_TEMPLATES: DepartmentTemplate[] = [
     id: "tpl-marketing",
     name: "Marketing & Growth",
     icon: "zap",
-    description: "CMO, copywriter, content engine, and social media agents for marketing campaigns.",
+    description:
+      "CMO, copywriter, content engine, and social media agents for marketing campaigns.",
     agents: [
       { name: "Marketing Maven", role: "Chief Marketing Officer", zone: "external", active: true, model: "claude", skills: ["Campaign Strategy", "Brand Management", "Analytics"], level: "department-head" },
       { name: "CopySmith", role: "Copywriter", zone: "external", active: true, model: "claude", skills: ["Ad Copy", "Blog Writing", "Email Sequences"], level: "worker" },
@@ -192,7 +211,8 @@ const DEPARTMENT_TEMPLATES: DepartmentTemplate[] = [
     id: "tpl-finance",
     name: "Finance & Accounting",
     icon: "brain",
-    description: "CFO, financial analyst, accountant, and grant writer agents for fiscal management.",
+    description:
+      "CFO, financial analyst, accountant, and grant writer agents for fiscal management.",
     agents: [
       { name: "Grant Pro", role: "Chief Financial Officer", zone: "operations", active: true, model: "claude", skills: ["Financial Modeling", "Grant Writing", "Budget Oversight"], level: "department-head" },
       { name: "Forecast AI", role: "Financial Analyst", zone: "operations", active: true, model: "gemini", skills: ["Revenue Forecasting", "Expense Tracking", "KPI Dashboards"], level: "worker" },
@@ -204,7 +224,8 @@ const DEPARTMENT_TEMPLATES: DepartmentTemplate[] = [
     id: "tpl-hr",
     name: "Human Resources",
     icon: "users",
-    description: "CHRO, HR coordinator, training manager, and payroll agents for people operations.",
+    description:
+      "CHRO, HR coordinator, training manager, and payroll agents for people operations.",
     agents: [
       { name: "HR Prime", role: "Chief HR Officer", zone: "operations", active: true, model: "claude", skills: ["Policy Management", "Culture Strategy", "Conflict Resolution"], level: "department-head" },
       { name: "HR Coordinator", role: "HR Coordinator", zone: "operations", active: true, model: "openai", skills: ["Onboarding", "Benefits Admin", "PTO Tracking"], level: "worker" },
@@ -216,7 +237,8 @@ const DEPARTMENT_TEMPLATES: DepartmentTemplate[] = [
     id: "tpl-rnd",
     name: "Research & Development",
     icon: "git-branch",
-    description: "CAIO, researcher, data analyst, and lab analyst agents for innovation and discovery.",
+    description:
+      "CAIO, researcher, data analyst, and lab analyst agents for innovation and discovery.",
     agents: [
       { name: "Research Lead", role: "Chief AI Innovation Officer", zone: "operations", active: true, model: "claude", skills: ["Research Direction", "Innovation Strategy", "Publication Review"], level: "department-head" },
       { name: "Scholar AI", role: "Researcher", zone: "operations", active: true, model: "claude", skills: ["Literature Review", "Hypothesis Generation", "Study Design"], level: "worker" },
@@ -228,7 +250,8 @@ const DEPARTMENT_TEMPLATES: DepartmentTemplate[] = [
     id: "tpl-it",
     name: "IT & Security",
     icon: "settings",
-    description: "CIO, security analyst, system admin, and compliance officer agents for infrastructure.",
+    description:
+      "CIO, security analyst, system admin, and compliance officer agents for infrastructure.",
     agents: [
       { name: "Sys Architect", role: "Chief Information Officer", zone: "operations", active: true, model: "claude", skills: ["Infrastructure Planning", "Vendor Management", "Tech Roadmap"], level: "department-head" },
       { name: "Sentinel", role: "Security Analyst", zone: "operations", active: true, model: "openai", skills: ["Threat Detection", "Vulnerability Assessment", "Incident Response"], level: "worker" },
@@ -329,19 +352,22 @@ const INITIAL_ACCESS: DepartmentAccess[] = [
 
 function getDeptIcon(iconKey: string) {
   switch (iconKey) {
-    case "crown": return <Crown className="h-5 w-5" />;
-    case "shield": return <Shield className="h-5 w-5" />;
-    case "zap": return <Zap className="h-5 w-5" />;
-    case "brain": return <Brain className="h-5 w-5" />;
-    case "users": return <Users className="h-5 w-5" />;
-    case "git-branch": return <GitBranch className="h-5 w-5" />;
-    case "settings": return <Settings className="h-5 w-5" />;
-    case "code": return <Code className="h-5 w-5" />;
-    case "linkedin": return <Linkedin className="h-5 w-5" />;
-    case "sparkles": return <Sparkles className="h-5 w-5" />;
-    case "rocket": return <Rocket className="h-5 w-5" />;
-    case "handshake": return <Handshake className="h-5 w-5" />;
-    default: return <Building2 className="h-5 w-5" />;
+    case "crown":
+      return <Crown className="h-5 w-5" />;
+    case "shield":
+      return <Shield className="h-5 w-5" />;
+    case "zap":
+      return <Zap className="h-5 w-5" />;
+    case "brain":
+      return <Brain className="h-5 w-5" />;
+    case "users":
+      return <Users className="h-5 w-5" />;
+    case "git-branch":
+      return <GitBranch className="h-5 w-5" />;
+    case "settings":
+      return <Settings className="h-5 w-5" />;
+    default:
+      return <Building2 className="h-5 w-5" />;
   }
 }
 
@@ -364,62 +390,444 @@ function loadDeptAccess(): DepartmentAccess[] {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return INITIAL_ACCESS;
 }
 
+// ── Node & Edge Types for React Flow ────────────────────────────────────────
+
+const nodeTypes: NodeTypes = {
+  orgAgent: OrgAgentNodeComponent,
+  departmentGroup: DepartmentGroupNode,
+};
+
+const edgeTypes: EdgeTypes = {
+  hierarchy: HierarchyEdge,
+};
+
+// ── Build hierarchy graph with department groups ────────────────────────────
+
+function buildOrgGraph(
+  agents: MyAgent[],
+  onSelect: (id: string) => void
+): { nodes: Node[]; edges: Edge[] } {
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+
+  const ceo = agents.find((a) => a.level === "ceo");
+  const departments = Array.from(
+    new Set(
+      agents
+        .filter((a) => a.department !== "Executive")
+        .map((a) => a.department)
+    )
+  );
+
+  // Layout constants
+  const deptSpacing = 380;
+  const workerSpacing = 270;
+  const ceoY = 0;
+  const headY = 260;
+  const workerY = headY + 260;
+  const groupPadding = 40;
+  const groupTopPadding = 70;
+  const nodeHeight = 140;
+
+  const totalWidth = (departments.length - 1) * deptSpacing;
+  const startX = -totalWidth / 2;
+
+  // CEO node
+  if (ceo) {
+    const ceoChildCount = agents.filter(
+      (a) => a.level === "department-head"
+    ).length;
+    nodes.push({
+      id: ceo.id,
+      type: "orgAgent",
+      position: { x: -160, y: ceoY },
+      data: {
+        name: ceo.name,
+        role: ceo.role,
+        department: ceo.department,
+        zone: ceo.zone,
+        model: ceo.model,
+        level: ceo.level,
+        active: ceo.active,
+        skills: ceo.skills,
+        tasksToday: ceo.tasksToday,
+        successRate: ceo.successRate,
+        childCount: ceoChildCount,
+        onSelect,
+      } satisfies OrgAgentNodeData,
+    });
+  }
+
+  // Departments
+  departments.forEach((dept, deptIdx) => {
+    const deptAgents = agents.filter((a) => a.department === dept);
+    const head = deptAgents.find((a) => a.level === "department-head");
+    const workers = deptAgents.filter((a) => a.level === "worker");
+
+    const deptX = startX + deptIdx * deptSpacing;
+
+    // Determine the primary zone for this department
+    const primaryZone: AgentZone = head?.zone || "operations";
+
+    // Calculate department group dimensions
+    const workerTotalWidth =
+      workers.length > 0
+        ? (workers.length - 1) * workerSpacing + 240
+        : 280;
+    const groupWidth = Math.max(workerTotalWidth + groupPadding * 2, 340);
+    const groupHeight =
+      workers.length > 0
+        ? groupTopPadding + nodeHeight + 260 + nodeHeight + groupPadding
+        : groupTopPadding + nodeHeight + groupPadding;
+
+    const groupX = deptX - groupWidth / 2 + 135;
+    const groupY = headY - groupTopPadding;
+
+    // Department group background node
+    nodes.push({
+      id: `dept-group-${dept}`,
+      type: "departmentGroup",
+      position: { x: groupX, y: groupY },
+      data: {
+        label: dept,
+        zone: primaryZone,
+        agentCount: deptAgents.length,
+        activeCount: deptAgents.filter((a) => a.active).length,
+      } satisfies DepartmentGroupNodeData,
+      style: { width: groupWidth, height: groupHeight },
+      selectable: false,
+      draggable: false,
+      zIndex: -1,
+    });
+
+    // Department head node
+    if (head) {
+      nodes.push({
+        id: head.id,
+        type: "orgAgent",
+        position: { x: deptX, y: headY },
+        data: {
+          name: head.name,
+          role: head.role,
+          department: head.department,
+          zone: head.zone,
+          model: head.model,
+          level: head.level,
+          active: head.active,
+          skills: head.skills,
+          tasksToday: head.tasksToday,
+          successRate: head.successRate,
+          childCount: workers.length,
+          onSelect,
+        } satisfies OrgAgentNodeData,
+      });
+
+      // Edge from CEO to head
+      if (ceo) {
+        edges.push({
+          id: `edge-${ceo.id}-${head.id}`,
+          source: ceo.id,
+          target: head.id,
+          type: "hierarchy",
+          animated: head.active,
+          data: {
+            zone: head.zone,
+            sourceLevel: "ceo",
+            targetLevel: "department-head",
+          },
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            width: 16,
+            height: 16,
+          },
+        });
+      }
+
+      // Workers under this head
+      const workerTotalW = (workers.length - 1) * workerSpacing;
+      const workerStartX = deptX - workerTotalW / 2;
+
+      workers.forEach((worker, wIdx) => {
+        const workerX = workerStartX + wIdx * workerSpacing;
+
+        nodes.push({
+          id: worker.id,
+          type: "orgAgent",
+          position: { x: workerX, y: workerY },
+          data: {
+            name: worker.name,
+            role: worker.role,
+            department: worker.department,
+            zone: worker.zone,
+            model: worker.model,
+            level: worker.level,
+            active: worker.active,
+            skills: worker.skills,
+            tasksToday: worker.tasksToday,
+            successRate: worker.successRate,
+            onSelect,
+          } satisfies OrgAgentNodeData,
+        });
+
+        edges.push({
+          id: `edge-${head.id}-${worker.id}`,
+          source: head.id,
+          target: worker.id,
+          type: "hierarchy",
+          animated: worker.active,
+          data: {
+            zone: worker.zone,
+            sourceLevel: "department-head",
+            targetLevel: "worker",
+          },
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            width: 12,
+            height: 12,
+          },
+        });
+      });
+    }
+  });
+
+  return { nodes, edges };
+}
+
 // ═════════════════════════════════════════════════════════════════════════════
-// Component
+// Inner Component (needs ReactFlowProvider)
+// ═════════════════════════════════════════════════════════════════════════════
+
+const OrgChartCanvas = ({
+  agents,
+  handleNodeSelect,
+}: {
+  agents: MyAgent[];
+  handleNodeSelect: (id: string) => void;
+}) => {
+  const { fitView } = useReactFlow();
+
+  const { nodes: graphNodes, edges: graphEdges } = useMemo(
+    () => buildOrgGraph(agents, handleNodeSelect),
+    [agents, handleNodeSelect]
+  );
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(graphNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(graphEdges);
+
+  // Sync when agents change
+  useEffect(() => {
+    const { nodes: newNodes, edges: newEdges } = buildOrgGraph(
+      agents,
+      handleNodeSelect
+    );
+    setNodes(newNodes);
+    setEdges(newEdges);
+  }, [agents, handleNodeSelect, setNodes, setEdges]);
+
+  const handleFitView = useCallback(() => {
+    fitView({ padding: 0.25, duration: 500 });
+  }, [fitView]);
+
+  return (
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      nodeTypes={nodeTypes}
+      edgeTypes={edgeTypes}
+      fitView
+      fitViewOptions={{ padding: 0.25 }}
+      minZoom={0.1}
+      maxZoom={2}
+      defaultEdgeOptions={{
+        type: "hierarchy",
+      }}
+      proOptions={{ hideAttribution: true }}
+      className="org-chart-flow"
+    >
+      <Background
+        variant={BackgroundVariant.Dots}
+        gap={24}
+        size={1}
+        color="rgba(100, 150, 255, 0.06)"
+      />
+      <Controls
+        className="!bg-card/90 !backdrop-blur-xl !border-border !rounded-xl !shadow-2xl"
+        showInteractive={false}
+      />
+      <MiniMap
+        nodeStrokeColor={(n) => {
+          if (n.type === "departmentGroup") return "transparent";
+          const d = n.data as unknown as OrgAgentNodeData;
+          if (d.zone === "clinical") return "#ef4444";
+          if (d.zone === "operations") return "#f59e0b";
+          return "#3b82f6";
+        }}
+        nodeColor={(n) => {
+          if (n.type === "departmentGroup") return "transparent";
+          const d = n.data as unknown as OrgAgentNodeData;
+          if (d.zone === "clinical") return "rgba(239,68,68,0.3)";
+          if (d.zone === "operations") return "rgba(245,158,11,0.3)";
+          return "rgba(59,130,246,0.3)";
+        }}
+        maskColor="rgba(0,0,0,0.75)"
+        className="!bg-card/90 !backdrop-blur-xl !border-border !rounded-xl"
+        pannable
+        zoomable
+      />
+
+      {/* Canvas Toolbar Panel */}
+      <Panel position="top-right" className="mr-4 mt-4">
+        <div className="flex items-center gap-1.5 bg-card/90 backdrop-blur-xl border border-border rounded-xl p-1.5 shadow-2xl">
+          <button
+            onClick={handleFitView}
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all"
+            title="Fit to view"
+          >
+            <Maximize2 className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => {
+              const { nodes: newNodes, edges: newEdges } = buildOrgGraph(
+                agents,
+                handleNodeSelect
+              );
+              setNodes(newNodes);
+              setEdges(newEdges);
+              setTimeout(() => fitView({ padding: 0.25, duration: 500 }), 50);
+            }}
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all"
+            title="Reset layout"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </button>
+        </div>
+      </Panel>
+
+      {/* Legend Panel */}
+      <Panel position="bottom-left" className="ml-4 mb-4">
+        <div className="bg-card/90 backdrop-blur-xl border border-border rounded-xl p-3.5 space-y-2.5 shadow-2xl">
+          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+            Zones
+          </span>
+          <div className="flex items-center gap-3">
+            {(["clinical", "operations", "external"] as AgentZone[]).map(
+              (zone) => (
+                <div key={zone} className="flex items-center gap-1.5">
+                  <div
+                    className={`w-2.5 h-2.5 rounded-full ${ZONE_STYLES[zone].dot}`}
+                  />
+                  <span
+                    className={`text-[10px] font-medium ${ZONE_STYLES[zone].text}`}
+                  >
+                    {ZONE_LABELS[zone]}
+                  </span>
+                </div>
+              )
+            )}
+          </div>
+          <div className="flex items-center gap-4 pt-1.5 border-t border-border/50">
+            <div className="flex items-center gap-1.5">
+              <span className="flex h-2.5 w-2.5 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400" />
+              </span>
+              <span className="text-[10px] text-muted-foreground">Active</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-gray-500" />
+              <span className="text-[10px] text-muted-foreground">
+                Inactive
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 pt-1.5 border-t border-border/50">
+            <div className="flex items-center gap-1.5">
+              <Crown className="h-3 w-3 text-amber-400" />
+              <span className="text-[10px] text-muted-foreground">CEO</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Building2 className="h-3 w-3 text-violet-400" />
+              <span className="text-[10px] text-muted-foreground">Dept Head</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Bot className="h-3 w-3 text-white/40" />
+              <span className="text-[10px] text-muted-foreground">Worker</span>
+            </div>
+          </div>
+        </div>
+      </Panel>
+    </ReactFlow>
+  );
+};
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Main Component
 // ═════════════════════════════════════════════════════════════════════════════
 
 const AgentOrgChart = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
-  const { agents: allAgents, addAgent: addAgentToContext, updateAgent, deleteAgent: deleteAgentFromContext } = useAgents();
+  const {
+    agents: allAgents,
+    addAgent: addAgentToContext,
+    updateAgent,
+    deleteAgent: deleteAgentFromContext,
+  } = useAgents();
 
-  // Org chart shows only agents with a department assigned (and not archived)
   const agents = allAgents.filter((a) => a.department && !a.archived);
 
   // ── State ───────────────────────────────────────────────────────────────
-  const [activeTab, setActiveTab] = useState<"org-chart" | "templates" | "access-control">("org-chart");
-  const [departmentAccess, setDepartmentAccess] = useState<DepartmentAccess[]>(loadDeptAccess);
-  const [viewMode, setViewMode] = useState<ViewMode>("tree");
-  const [zoom, setZoom] = useState(100);
+  const [activeTab, setActiveTab] = useState<
+    "org-chart" | "templates" | "access-control"
+  >("org-chart");
+  const [departmentAccess, setDepartmentAccess] =
+    useState<DepartmentAccess[]>(loadDeptAccess);
+  const [viewMode, setViewMode] = useState<ViewMode>("graph");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedAgent, setSelectedAgent] = useState<MyAgent | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [addAgentOpen, setAddAgentOpen] = useState(false);
-  const [moveAgentId, setMoveAgentId] = useState<string | null>(null);
-  const [dragAgentId, setDragAgentId] = useState<string | null>(null);
-  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
-  const [expandedDepts, setExpandedDepts] = useState<Set<string>>(new Set([
-    "Executive", "Clinical Operations", "Marketing & Growth",
-    "Finance & Accounting", "Human Resources", "Research & Development", "IT & Security",
-    "Development & Integration", "Clawbots", "Intelligence & Analytics",
-  ]));
+  const [expandedDepts, setExpandedDepts] = useState<Set<string>>(
+    new Set([
+      "Executive",
+      "Clinical Operations",
+      "Marketing & Growth",
+      "Finance & Accounting",
+      "Human Resources",
+      "Research & Development",
+      "IT & Security",
+    ])
+  );
 
-  // Detail dialog editing state
-  const [isEditing, setIsEditing] = useState(false);
-  const [editName, setEditName] = useState("");
-  const [editRole, setEditRole] = useState("");
-  const [editModel, setEditModel] = useState("");
-  const [editSkills, setEditSkills] = useState("");
-  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
-
-  // New agent form state
+  // New agent form
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("");
   const [newZone, setNewZone] = useState<AgentZone>("operations");
   const [newModel, setNewModel] = useState("openai");
   const [newSkills, setNewSkills] = useState("");
   const [newDepartment, setNewDepartment] = useState("Clinical Operations");
-  const [newLevel, setNewLevel] = useState<"department-head" | "worker">("worker");
+  const [newLevel, setNewLevel] = useState<"department-head" | "worker">(
+    "worker"
+  );
 
-  // Persist department access to localStorage
+  // Persist department access
   useEffect(() => {
     try {
-      localStorage.setItem(DEPT_ACCESS_KEY, JSON.stringify(departmentAccess));
-    } catch { /* ignore */ }
+      localStorage.setItem(
+        DEPT_ACCESS_KEY,
+        JSON.stringify(departmentAccess)
+      );
+    } catch {
+      /* ignore */
+    }
   }, [departmentAccess]);
 
   // Sync selectedAgent with context so edits/toggles reflect immediately
@@ -449,10 +857,24 @@ const AgentOrgChart = () => {
       )
     : agents;
 
-  const getAgentsByDept = (dept: string) => filteredAgents.filter((a) => a.department === dept);
-  const getDeptHead = (dept: string) => agents.find((a) => a.department === dept && a.level === "department-head");
-  const getDeptWorkers = (dept: string) => filteredAgents.filter((a) => a.department === dept && a.level === "worker");
+  const getAgentsByDept = (dept: string) =>
+    filteredAgents.filter((a) => a.department === dept);
+  const getDeptHead = (dept: string) =>
+    agents.find((a) => a.department === dept && a.level === "department-head");
   const getCeo = () => agents.find((a) => a.level === "ceo");
+
+  // ── React Flow Graph ────────────────────────────────────────────────────
+
+  const handleNodeSelect = useCallback(
+    (nodeId: string) => {
+      const agent = agents.find((a) => a.id === nodeId);
+      if (agent) {
+        setSelectedAgent(agent);
+        setDetailOpen(true);
+      }
+    },
+    [agents]
+  );
 
   // ── Handlers ────────────────────────────────────────────────────────────
 
@@ -499,113 +921,41 @@ const AgentOrgChart = () => {
     const agent = agents.find((a) => a.id === agentId);
     if (!agent) return;
     if (agent.level === "ceo") {
-      toast({ title: "Cannot remove CEO", description: "The top-level agent cannot be removed." });
+      toast({
+        title: "Cannot remove CEO",
+        description: "The top-level agent cannot be removed.",
+      });
       return;
     }
     deleteAgentFromContext(agentId);
     setDetailOpen(false);
     setSelectedAgent(null);
-    setConfirmRemoveId(null);
-    toast({ title: "Agent Removed", description: `${agent.name} has been removed from the org chart.` });
-  };
-
-  const startMoveAgent = (agentId: string) => {
-    setMoveAgentId(agentId);
-    setDetailOpen(false);
-    toast({ title: "Move Mode", description: "Click on a department head or the CEO to reassign this agent." });
-  };
-
-  const completeMove = (targetDept: string, targetParentId: string) => {
-    if (!moveAgentId) return;
-    const agent = agents.find((a) => a.id === moveAgentId);
-    if (!agent) return;
-    updateAgent(moveAgentId, { department: targetDept, parentId: targetParentId });
-    toast({ title: "Agent Moved", description: `${agent.name} reassigned to ${targetDept}.` });
-    setMoveAgentId(null);
-  };
-
-  const cancelMove = () => {
-    setMoveAgentId(null);
-  };
-
-  // ── Drag & Drop Handlers ────────────────────────────────────────────────
-
-  const handleDragStart = (e: React.DragEvent, agentId: string) => {
-    const agent = agents.find((a) => a.id === agentId);
-    if (!agent || agent.level === "ceo") {
-      e.preventDefault();
-      return;
-    }
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", agentId);
-    setDragAgentId(agentId);
-  };
-
-  const handleDragEnd = () => {
-    setDragAgentId(null);
-    setDropTargetId(null);
-  };
-
-  const handleDragOver = (e: React.DragEvent, targetId: string) => {
-    if (!dragAgentId || dragAgentId === targetId) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    setDropTargetId(targetId);
-  };
-
-  const handleDragLeave = () => {
-    setDropTargetId(null);
-  };
-
-  const handleDropOnAgent = (e: React.DragEvent, targetAgent: MyAgent) => {
-    e.preventDefault();
-    const dragId = e.dataTransfer.getData("text/plain");
-    if (!dragId || dragId === targetAgent.id) return;
-    const dragged = agents.find((a) => a.id === dragId);
-    if (!dragged) return;
-
-    if (targetAgent.level === "ceo") {
-      // Dropping onto CEO promotes to department-head of dragged agent's current department
-      updateAgent(dragId, { parentId: targetAgent.id, level: "department-head" });
-      toast({ title: "Agent Moved", description: `${dragged.name} promoted to department head under ${targetAgent.name}.` });
-    } else if (targetAgent.level === "department-head") {
-      // Dropping onto a department head reassigns to that department
-      updateAgent(dragId, { department: targetAgent.department, parentId: targetAgent.id, level: "worker" });
-      toast({ title: "Agent Moved", description: `${dragged.name} reassigned to ${targetAgent.department}.` });
-    }
-
-    setDragAgentId(null);
-    setDropTargetId(null);
-  };
-
-  const handleDropOnDepartment = (e: React.DragEvent, deptName: string) => {
-    e.preventDefault();
-    const dragId = e.dataTransfer.getData("text/plain");
-    if (!dragId) return;
-    const dragged = agents.find((a) => a.id === dragId);
-    if (!dragged || dragged.department === deptName) return;
-    const deptHead = getDeptHead(deptName);
-    const parentId = deptHead?.id ?? getCeo()?.id ?? null;
-    updateAgent(dragId, { department: deptName, parentId, level: "worker" });
-    toast({ title: "Agent Moved", description: `${dragged.name} reassigned to ${deptName}.` });
-    setDragAgentId(null);
-    setDropTargetId(null);
-
-    // Auto-expand the target department
-    setExpandedDepts((prev) => new Set([...prev, deptName]));
+    toast({
+      title: "Agent Removed",
+      description: `${agent.name} has been removed from the org chart.`,
+    });
   };
 
   const handleAddAgent = () => {
     if (!newName.trim() || !newRole.trim()) {
-      toast({ title: "Missing Fields", description: "Name and role are required." });
+      toast({
+        title: "Missing Fields",
+        description: "Name and role are required.",
+      });
       return;
     }
     const deptHead = getDeptHead(newDepartment);
-    const parentId = newLevel === "department-head" ? (getCeo()?.id ?? null) : (deptHead?.id ?? null);
+    const parentId =
+      newLevel === "department-head"
+        ? getCeo()?.id ?? null
+        : deptHead?.id ?? null;
     const agent: MyAgent = {
       id: generateId(),
       name: newName.trim(),
-      skills: newSkills.split(",").map((s) => s.trim()).filter(Boolean),
+      skills: newSkills
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
       model: newModel,
       active: true,
       capabilities: { ...DEFAULT_AGENT_CAPABILITIES },
@@ -618,14 +968,17 @@ const AgentOrgChart = () => {
       costToday: 0,
       costMonth: 0,
       tokensUsed: 0,
-      avgResponseTime: "—",
+      avgResponseTime: "---",
       role: newRole.trim(),
       department: newDepartment,
       level: newLevel,
       parentId,
     };
     addAgentToContext(agent);
-    toast({ title: "Agent Created", description: `${agent.name} added to ${newDepartment}.` });
+    toast({
+      title: "Agent Created",
+      description: `${agent.name} added to ${newDepartment}.`,
+    });
     setAddAgentOpen(false);
     resetAddForm();
   };
@@ -644,7 +997,10 @@ const AgentOrgChart = () => {
     const deptName = template.name;
     const existingInDept = agents.filter((a) => a.department === deptName);
     if (existingInDept.length > 0) {
-      toast({ title: "Department Exists", description: `${deptName} already has agents. Remove them first or add agents manually.` });
+      toast({
+        title: "Department Exists",
+        description: `${deptName} already has agents. Remove them first or add agents manually.`,
+      });
       return;
     }
 
@@ -678,7 +1034,7 @@ const AgentOrgChart = () => {
         costToday: 0,
         costMonth: 0,
         tokensUsed: 0,
-        avgResponseTime: "—",
+        avgResponseTime: "---",
         role: tplAgent.role,
         department: deptName,
         level: tplAgent.level,
@@ -688,12 +1044,13 @@ const AgentOrgChart = () => {
       createdCount++;
     }
 
-    // Ensure department access entry exists
     if (!departmentAccess.find((d) => d.departmentName === deptName)) {
-      setDepartmentAccess((prev) => [...prev, { departmentName: deptName, accessLevel: "all-staff" }]);
+      setDepartmentAccess((prev) => [
+        ...prev,
+        { departmentName: deptName, accessLevel: "all-staff" },
+      ]);
     }
 
-    // Expand the new department
     setExpandedDepts((prev) => new Set([...prev, deptName]));
 
     toast({
@@ -704,9 +1061,14 @@ const AgentOrgChart = () => {
 
   const updateAccess = (deptName: string, level: AccessLevel) => {
     setDepartmentAccess((prev) =>
-      prev.map((d) => (d.departmentName === deptName ? { ...d, accessLevel: level } : d))
+      prev.map((d) =>
+        d.departmentName === deptName ? { ...d, accessLevel: level } : d
+      )
     );
-    toast({ title: "Access Updated", description: `${deptName} set to ${level.replace("-", " ")}.` });
+    toast({
+      title: "Access Updated",
+      description: `${deptName} set to ${level.replace("-", " ")}.`,
+    });
   };
 
   const toggleAgentStatus = (agentId: string) => {
@@ -716,288 +1078,28 @@ const AgentOrgChart = () => {
     }
   };
 
-  const zoomIn = () => setZoom((z) => Math.min(z + 10, 150));
-  const zoomOut = () => setZoom((z) => Math.max(z - 10, 60));
-  const resetZoom = () => setZoom(100);
-
-  const ALL_KNOWN_DEPARTMENTS = Object.keys(DEPARTMENT_ICONS);
-  const expandAll = () => setExpandedDepts(new Set(ALL_KNOWN_DEPARTMENTS));
-  const collapseAll = () => setExpandedDepts(new Set());
-
-  const bulkToggleDept = (deptName: string, activate: boolean) => {
-    const deptAgents = agents.filter((a) => a.department === deptName);
-    deptAgents.forEach((a) => updateAgent(a.id, { active: activate }));
-    toast({
-      title: activate ? "Department Activated" : "Department Deactivated",
-      description: `${deptAgents.length} agent${deptAgents.length !== 1 ? "s" : ""} in ${deptName} ${activate ? "activated" : "deactivated"}.`,
-    });
-  };
-
-  const exportOrgChart = () => {
-    const exportData = {
-      exportedAt: new Date().toISOString(),
-      totalAgents: agents.length,
-      departments: departments.map((dept) => ({
-        name: dept,
-        agents: agents.filter((a) => a.department === dept).map((a) => ({
-          id: a.id,
-          name: a.name,
-          role: a.role,
-          level: a.level,
-          zone: a.zone,
-          model: a.model,
-          active: a.active,
-          skills: a.skills,
-          successRate: a.successRate,
-          costMonth: a.costMonth,
-        })),
-      })),
-    };
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `dr-claw-org-chart-${new Date().toISOString().split("T")[0]}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-    toast({ title: "Exported", description: "Org chart data exported as JSON." });
-  };
-
   // ── Sub-Components ──────────────────────────────────────────────────────
 
   const AccessBadge = ({ level }: { level: AccessLevel }) => {
     const config: Record<AccessLevel, { label: string; color: string }> = {
-      "all-staff": { label: "All Staff", color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
-      "department-only": { label: "Dept Only", color: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
-      "admin-only": { label: "Admin Only", color: "bg-red-500/15 text-red-400 border-red-500/30" },
+      "all-staff": {
+        label: "All Staff",
+        color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+      },
+      "department-only": {
+        label: "Dept Only",
+        color: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+      },
+      "admin-only": {
+        label: "Admin Only",
+        color: "bg-red-500/15 text-red-400 border-red-500/30",
+      },
     };
     const c = config[level];
-    return <Badge variant="outline" className={c.color}>{c.label}</Badge>;
-  };
-
-  // ── Agent Node ──────────────────────────────────────────────────────────
-
-  const AgentNode = ({ agent, indentLevel = 0 }: { agent: MyAgent; indentLevel?: number }) => {
-    const zs = ZONE_STYLES[agent.zone];
-    const isMoving = moveAgentId === agent.id;
-    const isMoveTarget = moveAgentId !== null && moveAgentId !== agent.id && (agent.level === "department-head" || agent.level === "ceo");
-    const isDragging = dragAgentId === agent.id;
-    const isDropTarget = dropTargetId === agent.id && dragAgentId !== agent.id && (agent.level === "department-head" || agent.level === "ceo");
-    const isDraggable = agent.level !== "ceo";
-
     return (
-      <div
-        draggable={isDraggable}
-        onDragStart={(e) => handleDragStart(e, agent.id)}
-        onDragEnd={handleDragEnd}
-        onDragOver={(e) => {
-          if (agent.level === "department-head" || agent.level === "ceo") {
-            handleDragOver(e, agent.id);
-          }
-        }}
-        onDragLeave={handleDragLeave}
-        onDrop={(e) => {
-          if (agent.level === "department-head" || agent.level === "ceo") {
-            handleDropOnAgent(e, agent);
-          }
-        }}
-        className={`relative flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 cursor-pointer group
-          ${isMoving || isDragging ? "ring-2 ring-violet-500 opacity-60" : ""}
-          ${isMoveTarget || isDropTarget ? "ring-2 ring-emerald-500 bg-emerald-500/10 scale-[1.02]" : ""}
-          ${isDraggable ? "cursor-grab active:cursor-grabbing" : ""}
-          bg-gradient-to-r ${zs.gradient} ${zs.border} hover:border-opacity-70
-          hover:shadow-lg hover:shadow-black/20`}
-        style={{ marginLeft: `${indentLevel * 28}px` }}
-        onClick={() => {
-          if (isMoveTarget && moveAgentId) {
-            completeMove(agent.department, agent.id);
-          } else if (!moveAgentId && !dragAgentId) {
-            openAgentDetail(agent);
-          }
-        }}
-      >
-        {/* Connecting line indicator */}
-        {indentLevel > 0 && (
-          <div className={`absolute -left-4 top-1/2 w-4 h-px border-t ${zs.line}`} />
-        )}
-
-        {/* Status ping dot */}
-        <div className="relative flex-shrink-0">
-          <div className={`w-10 h-10 rounded-lg ${zs.bg} flex items-center justify-center`}>
-            {agent.level === "ceo" ? (
-              <Crown className={`h-5 w-5 ${zs.text}`} />
-            ) : agent.level === "department-head" ? (
-              <Building2 className={`h-5 w-5 ${zs.text}`} />
-            ) : (
-              <Bot className={`h-5 w-5 ${zs.text}`} />
-            )}
-          </div>
-          {agent.active && (
-            <span className="absolute -top-1 -right-1 flex h-3 w-3">
-              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${zs.dot} opacity-75`} />
-              <span className={`relative inline-flex rounded-full h-3 w-3 ${zs.dot}`} />
-            </span>
-          )}
-          {!agent.active && (
-            <span className="absolute -top-1 -right-1 flex h-3 w-3">
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-gray-500" />
-            </span>
-          )}
-        </div>
-
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-foreground truncate">{agent.name}</span>
-            {agent.level === "ceo" && (
-              <Badge variant="outline" className="bg-amber-500/15 text-amber-400 border-amber-500/30 text-[10px] px-1.5 py-0">
-                CEO
-              </Badge>
-            )}
-            {agent.level === "department-head" && (
-              <Badge variant="outline" className="bg-violet-500/15 text-violet-400 border-violet-500/30 text-[10px] px-1.5 py-0">
-                HEAD
-              </Badge>
-            )}
-          </div>
-          <div className="text-xs text-muted-foreground truncate">{agent.role}</div>
-        </div>
-
-        {/* Meta */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <Badge variant="outline" className={`${ZONE_STYLES[agent.zone].text} ${ZONE_STYLES[agent.zone].bg} border-0 text-[10px] px-1.5 py-0`}>
-            {ZONE_LABELS[agent.zone]}
-          </Badge>
-          <span className={`text-[10px] ${getModelColor(agent.model)}`}>
-            {getModelLabel(agent.model).split(" ").pop()}
-          </span>
-        </div>
-
-        {/* Move target indicator */}
-        {isMoveTarget && (
-          <div className="absolute inset-0 rounded-xl flex items-center justify-center bg-emerald-500/5 pointer-events-none">
-            <ArrowRight className="h-4 w-4 text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // ── Department Section (Tree View) ────────────────────────────────────
-
-  const DepartmentSection = ({ deptName }: { deptName: string }) => {
-    const deptAgents = getAgentsByDept(deptName);
-    const head = deptAgents.find((a) => a.level === "department-head");
-    const workers = deptAgents.filter((a) => a.level === "worker");
-    const isExpanded = expandedDepts.has(deptName);
-    const iconKey = DEPARTMENT_ICONS[deptName] ?? "building";
-    const accessEntry = departmentAccess.find((d) => d.departmentName === deptName);
-    const isRestricted = accessEntry?.accessLevel === "admin-only";
-    const isDeptDropTarget = dropTargetId === `dept-${deptName}` && dragAgentId !== null;
-
-    if (deptName === "Executive") return null; // CEO rendered separately
-
-    return (
-      <div
-        className={`relative transition-all duration-200 ${isDeptDropTarget ? "ring-2 ring-emerald-500/60 rounded-xl bg-emerald-500/5 p-2 -m-2" : ""}`}
-        onDragOver={(e) => {
-          if (dragAgentId) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = "move";
-            setDropTargetId(`dept-${deptName}`);
-          }
-        }}
-        onDragLeave={(e) => {
-          // Only clear if leaving the department container entirely
-          if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-            setDropTargetId(null);
-          }
-        }}
-        onDrop={(e) => handleDropOnDepartment(e, deptName)}
-      >
-        {/* Vertical connecting line from top */}
-        <div className="absolute -top-4 left-5 w-px h-4 border-l border-border/50" />
-
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => toggleDept(deptName)}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleDept(deptName); } }}
-          className="flex items-center gap-3 w-full text-left mb-2 group cursor-pointer"
-        >
-          <div className="flex items-center gap-2 flex-1">
-            {isExpanded ? (
-              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform" />
-            ) : (
-              <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform" />
-            )}
-            <div className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center">
-              {getDeptIcon(iconKey)}
-            </div>
-            <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-              {deptName}
-            </span>
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-border text-muted-foreground">
-              {deptAgents.length}
-            </Badge>
-            <Badge variant="outline" className="text-[10px] px-1 py-0 border-emerald-500/30 text-emerald-400">
-              {deptAgents.filter((a) => a.active).length} active
-            </Badge>
-            {isRestricted && <Lock className="h-3.5 w-3.5 text-red-400/70" />}
-            {/* Bulk toggle buttons */}
-            <span className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-              <button
-                onClick={(e) => { e.stopPropagation(); bulkToggleDept(deptName, true); }}
-                className="p-1 rounded hover:bg-emerald-500/10 text-emerald-400"
-                title="Activate all agents"
-              >
-                <Power className="h-3 w-3" />
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); bulkToggleDept(deptName, false); }}
-                className="p-1 rounded hover:bg-red-500/10 text-red-400"
-                title="Deactivate all agents"
-              >
-                <PowerOff className="h-3 w-3" />
-              </button>
-            </span>
-            {isDeptDropTarget && (
-              <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/40 text-[10px] animate-pulse">
-                Drop here
-              </Badge>
-            )}
-          </div>
-        </div>
-
-        {isExpanded && (
-          <div className="pl-4 space-y-2 relative">
-            {/* Vertical line connecting children */}
-            {(workers.length > 0 || head) && (
-              <div className="absolute left-[21px] top-0 bottom-2 w-px border-l border-border/40" />
-            )}
-
-            {head && (
-              <div className="relative">
-                <div className="absolute -left-[7px] top-1/2 w-3 h-px border-t border-border/40" />
-                <AgentNode agent={head} indentLevel={0} />
-              </div>
-            )}
-
-            {workers.length > 0 && (
-              <div className="pl-6 space-y-2 relative">
-                {/* Vertical line for worker level */}
-                <div className="absolute left-[21px] top-0 bottom-2 w-px border-l border-border/30" />
-                {workers.map((worker) => (
-                  <div key={worker.id} className="relative">
-                    <div className="absolute -left-[7px] top-1/2 w-3 h-px border-t border-border/30" />
-                    <AgentNode agent={worker} indentLevel={0} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      <Badge variant="outline" className={c.color}>
+        {c.label}
+      </Badge>
     );
   };
 
@@ -1005,56 +1107,55 @@ const AgentOrgChart = () => {
 
   const ListRow = ({ agent }: { agent: MyAgent }) => {
     const zs = ZONE_STYLES[agent.zone];
-    const isDraggable = agent.level !== "ceo";
-    const isDragging = dragAgentId === agent.id;
-    const isDropTarget = dropTargetId === agent.id && dragAgentId !== agent.id && (agent.level === "department-head" || agent.level === "ceo");
     return (
       <div
-        draggable={isDraggable}
-        onDragStart={(e) => handleDragStart(e, agent.id)}
-        onDragEnd={handleDragEnd}
-        onDragOver={(e) => {
-          if (agent.level === "department-head" || agent.level === "ceo") {
-            handleDragOver(e, agent.id);
-          }
-        }}
-        onDragLeave={handleDragLeave}
-        onDrop={(e) => {
-          if (agent.level === "department-head" || agent.level === "ceo") {
-            handleDropOnAgent(e, agent);
-          }
-        }}
-        className={`flex items-center gap-4 p-3 rounded-lg border ${zs.border} bg-card/30 hover:bg-card/50 transition-all
-          ${isDraggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"}
-          ${isDragging ? "opacity-50 ring-2 ring-violet-500" : ""}
-          ${isDropTarget ? "ring-2 ring-emerald-500 bg-emerald-500/10 scale-[1.01]" : ""}`}
-        onClick={() => {
-          if (!dragAgentId) openAgentDetail(agent);
-        }}
+        className={`flex items-center gap-4 p-3 rounded-lg border ${zs.border} bg-card/30 hover:bg-card/50 transition-all cursor-pointer`}
+        onClick={() => openAgentDetail(agent)}
       >
         <div className="relative flex-shrink-0">
-          <div className={`w-8 h-8 rounded-lg ${zs.bg} flex items-center justify-center`}>
+          <div
+            className={`w-8 h-8 rounded-lg ${zs.bg} flex items-center justify-center`}
+          >
             <Bot className={`h-4 w-4 ${zs.text}`} />
           </div>
           {agent.active && (
             <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
-              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${zs.dot} opacity-75`} />
-              <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${zs.dot}`} />
+              <span
+                className={`animate-ping absolute inline-flex h-full w-full rounded-full ${zs.dot} opacity-75`}
+              />
+              <span
+                className={`relative inline-flex rounded-full h-2.5 w-2.5 ${zs.dot}`}
+              />
             </span>
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <span className="text-sm font-medium text-foreground">{agent.name}</span>
-          <span className="text-xs text-muted-foreground ml-2">{agent.role}</span>
+          <span className="text-sm font-medium text-foreground">
+            {agent.name}
+          </span>
+          <span className="text-xs text-muted-foreground ml-2">
+            {agent.role}
+          </span>
         </div>
-        <span className="text-xs text-muted-foreground hidden sm:block">{agent.department}</span>
-        <Badge variant="outline" className={`${zs.text} ${zs.bg} border-0 text-[10px]`}>
+        <span className="text-xs text-muted-foreground hidden sm:block">
+          {agent.department}
+        </span>
+        <Badge
+          variant="outline"
+          className={`${zs.text} ${zs.bg} border-0 text-[10px]`}
+        >
           {ZONE_LABELS[agent.zone]}
         </Badge>
-        <span className={`text-[10px] ${getModelColor(agent.model)} hidden md:block`}>
+        <span
+          className={`text-[10px] ${getModelColor(agent.model)} hidden md:block`}
+        >
           {getModelLabel(agent.model)}
         </span>
-        <div className={`w-2 h-2 rounded-full ${agent.active ? zs.dot : "bg-gray-500"}`} />
+        <div
+          className={`w-2 h-2 rounded-full ${
+            agent.active ? zs.dot : "bg-gray-500"
+          }`}
+        />
       </div>
     );
   };
@@ -1067,9 +1168,8 @@ const AgentOrgChart = () => {
     <div className="flex min-h-screen bg-background">
       <DashboardSidebar />
 
-      <main className="flex-1 overflow-y-auto">
-        <div className="p-8 max-w-7xl mx-auto">
-
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <div className="p-8 max-w-7xl mx-auto w-full shrink-0">
           {/* ── Header ─────────────────────────────────────────────────── */}
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-1">
@@ -1081,7 +1181,8 @@ const AgentOrgChart = () => {
                   Agent Org Chart
                 </h1>
                 <p className="text-muted-foreground text-sm">
-                  Visualize, manage, and configure your AI agent hierarchy across all departments.
+                  Visualize, manage, and configure your AI agent hierarchy
+                  across all departments.
                 </p>
               </div>
             </div>
@@ -1090,28 +1191,67 @@ const AgentOrgChart = () => {
           {/* ── Stats Strip ────────────────────────────────────────────── */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
             {[
-              { label: "Total Agents", value: agents.length, icon: Bot, color: "text-violet-400" },
-              { label: "Departments", value: departments.length, icon: Building2, color: "text-blue-400" },
-              { label: "Active", value: agents.filter((a) => a.active).length, icon: Zap, color: "text-emerald-400" },
-              { label: "Inactive", value: agents.filter((a) => !a.active).length, icon: EyeOff, color: "text-gray-400" },
+              {
+                label: "Total Agents",
+                value: agents.length,
+                icon: Bot,
+                color: "text-violet-400",
+              },
+              {
+                label: "Departments",
+                value: departments.length,
+                icon: Building2,
+                color: "text-blue-400",
+              },
+              {
+                label: "Active",
+                value: agents.filter((a) => a.active).length,
+                icon: Zap,
+                color: "text-emerald-400",
+              },
+              {
+                label: "Inactive",
+                value: agents.filter((a) => !a.active).length,
+                icon: EyeOff,
+                color: "text-gray-400",
+              },
             ].map((stat) => (
-              <div key={stat.label} className="glass-card rounded-xl p-4 border border-border">
+              <div
+                key={stat.label}
+                className="glass-card rounded-xl p-4 border border-border"
+              >
                 <div className="flex items-center gap-2 mb-1">
                   <stat.icon className={`h-4 w-4 ${stat.color}`} />
-                  <span className="text-xs text-muted-foreground">{stat.label}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {stat.label}
+                  </span>
                 </div>
-                <span className="text-2xl font-bold text-foreground">{stat.value}</span>
+                <span className="text-2xl font-bold text-foreground">
+                  {stat.value}
+                </span>
               </div>
             ))}
           </div>
 
           {/* ── Tabs ───────────────────────────────────────────────────── */}
           <div className="flex items-center gap-1 mb-8 bg-card/50 border border-border rounded-xl p-1 w-fit">
-            {([
-              { key: "org-chart" as const, label: "Org Chart", icon: Network },
-              { key: "templates" as const, label: "Templates", icon: Download },
-              { key: "access-control" as const, label: "Access Control", icon: Shield },
-            ]).map((tab) => (
+            {[
+              {
+                key: "org-chart" as const,
+                label: "Org Chart",
+                icon: Network,
+              },
+              {
+                key: "templates" as const,
+                label: "Templates",
+                icon: Download,
+              },
+              {
+                key: "access-control" as const,
+                label: "Access Control",
+                icon: Shield,
+              },
+            ].map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
@@ -1128,291 +1268,137 @@ const AgentOrgChart = () => {
               </button>
             ))}
           </div>
+        </div>
 
-          {/* ═══════════════════════════════════════════════════════════════
-              TAB 1 — ORG CHART
-          ═══════════════════════════════════════════════════════════════ */}
-          {activeTab === "org-chart" && (
-            <div>
-              {/* Toolbar */}
-              <div className="flex flex-wrap items-center gap-3 mb-6">
-                <div className="relative flex-1 min-w-[200px] max-w-sm">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search agents, roles, departments..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 bg-card/50 border-border"
-                  />
-                </div>
-
-                <div className="flex items-center gap-1 bg-card/50 border border-border rounded-lg p-1">
-                  <button
-                    onClick={() => setViewMode("tree")}
-                    className={`p-2 rounded-md transition-all ${
-                      viewMode === "tree"
-                        ? "gradient-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    <LayoutGrid className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => setViewMode("list")}
-                    className={`p-2 rounded-md transition-all ${
-                      viewMode === "list"
-                        ? "gradient-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    <List className="h-4 w-4" />
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-1 bg-card/50 border border-border rounded-lg p-1">
-                  <button onClick={zoomOut} className="p-2 rounded-md text-muted-foreground hover:text-foreground transition-colors">
-                    <ZoomOut className="h-4 w-4" />
-                  </button>
-                  <span className="text-xs text-muted-foreground px-2 min-w-[40px] text-center">{zoom}%</span>
-                  <button onClick={zoomIn} className="p-2 rounded-md text-muted-foreground hover:text-foreground transition-colors">
-                    <ZoomIn className="h-4 w-4" />
-                  </button>
-                  <button onClick={resetZoom} className="p-2 rounded-md text-xs text-muted-foreground hover:text-foreground transition-colors">
-                    Reset
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-1 bg-card/50 border border-border rounded-lg p-1">
-                  <button
-                    onClick={expandAll}
-                    className="p-2 rounded-md text-muted-foreground hover:text-foreground transition-colors"
-                    title="Expand All"
-                  >
-                    <ChevronsUpDown className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={collapseAll}
-                    className="p-2 rounded-md text-xs text-muted-foreground hover:text-foreground transition-colors"
-                    title="Collapse All"
-                  >
-                    Collapse
-                  </button>
-                </div>
-
-                <Button
-                  onClick={exportOrgChart}
-                  variant="outline"
-                  size="sm"
-                  className="border-border text-muted-foreground hover:text-foreground"
-                  title="Export org chart as JSON"
-                >
-                  <FileJson className="h-4 w-4 mr-1" />
-                  Export
-                </Button>
-
-                <Button
-                  onClick={() => setAddAgentOpen(true)}
-                  className="gradient-primary text-primary-foreground shadow-glow-sm"
-                  size="sm"
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Agent
-                </Button>
-
-                {moveAgentId && (
-                  <Button onClick={cancelMove} variant="outline" size="sm" className="border-red-500/30 text-red-400 hover:bg-red-500/10">
-                    <X className="h-4 w-4 mr-1" />
-                    Cancel Move
-                  </Button>
-                )}
+        {/* ═══════════════════════════════════════════════════════════════
+            TAB 1 — ORG CHART
+        ═══════════════════════════════════════════════════════════════ */}
+        {activeTab === "org-chart" && (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Toolbar */}
+            <div className="flex flex-wrap items-center gap-3 px-8 pb-4">
+              <div className="relative flex-1 min-w-[200px] max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search agents, roles, departments..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 bg-card/50 border-border"
+                />
               </div>
 
-              {/* Move mode banner */}
-              {moveAgentId && (
-                <div className="mb-4 p-3 rounded-xl border border-violet-500/30 bg-violet-500/5 flex items-center gap-3">
-                  <ArrowRight className="h-5 w-5 text-violet-400" />
-                  <div>
-                    <span className="text-sm font-medium text-violet-300">Move Mode Active</span>
-                    <span className="text-xs text-muted-foreground ml-2">
-                      Click on a department head or the CEO to reassign{" "}
-                      <strong className="text-foreground">
-                        {agents.find((a) => a.id === moveAgentId)?.name}
-                      </strong>
-                      .
-                    </span>
-                  </div>
-                </div>
-              )}
+              <div className="flex items-center gap-1 bg-card/50 border border-border rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode("graph")}
+                  className={`p-2 rounded-md transition-all ${
+                    viewMode === "graph"
+                      ? "gradient-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Workflow className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`p-2 rounded-md transition-all ${
+                    viewMode === "list"
+                      ? "gradient-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <List className="h-4 w-4" />
+                </button>
+              </div>
 
-              {/* Drag hint banner */}
-              {dragAgentId && (
-                <div className="mb-4 p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 flex items-center gap-3 animate-pulse">
-                  <ArrowRight className="h-5 w-5 text-emerald-400" />
-                  <div>
-                    <span className="text-sm font-medium text-emerald-300">Dragging Agent</span>
-                    <span className="text-xs text-muted-foreground ml-2">
-                      Drop onto a department head, CEO, or department section to reassign{" "}
-                      <strong className="text-foreground">
-                        {agents.find((a) => a.id === dragAgentId)?.name}
-                      </strong>
-                      .
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Chart Area */}
-              <div
-                className="glass-card rounded-2xl border border-border p-6 overflow-auto"
-                style={{ transform: `scale(${zoom / 100})`, transformOrigin: "top left" }}
+              <Button
+                onClick={() => setAddAgentOpen(true)}
+                className="gradient-primary text-primary-foreground shadow-glow-sm"
+                size="sm"
               >
-                {agents.length === 0 ? (
-                  /* Empty state */
-                  <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-card border border-border flex items-center justify-center mb-4">
-                      <Network className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">No Agents in Org Chart</h3>
-                    <p className="text-sm text-muted-foreground max-w-md mb-6">
-                      Your organization chart is empty. Add agents manually or use the Templates tab to deploy pre-configured departments with agents.
-                    </p>
-                    <div className="flex gap-3">
-                      <Button
-                        onClick={() => setAddAgentOpen(true)}
-                        className="gradient-primary text-primary-foreground shadow-glow-sm"
-                        size="sm"
-                      >
-                        <Plus className="h-4 w-4 mr-1" /> Add Agent
-                      </Button>
-                      <Button
-                        onClick={() => setActiveTab("templates")}
-                        variant="outline"
-                        size="sm"
-                        className="border-border text-foreground"
-                      >
-                        <Download className="h-4 w-4 mr-1" /> Browse Templates
-                      </Button>
-                    </div>
-                  </div>
-                ) : viewMode === "tree" ? (
-                  <div className="space-y-6">
-                    {/* CEO */}
-                    {(() => {
-                      const ceo = getCeo();
-                      if (!ceo) return (
-                        <div className="max-w-lg mx-auto mb-2 p-4 rounded-xl border border-dashed border-amber-500/30 bg-amber-500/5 text-center">
-                          <AlertTriangle className="h-5 w-5 text-amber-400 mx-auto mb-2" />
-                          <p className="text-sm text-amber-400 font-medium">No CEO Agent</p>
-                          <p className="text-xs text-muted-foreground mt-1">Assign a CEO-level agent to anchor the org chart hierarchy.</p>
-                        </div>
-                      );
-                      return (
-                        <div className="max-w-lg mx-auto mb-2">
-                          <AgentNode agent={ceo} />
-                        </div>
-                      );
-                    })()}
-
-                    {/* Connector from CEO */}
-                    {getCeo() && (
-                      <div className="flex justify-center">
-                        <div className="w-px h-6 border-l-2 border-dashed border-border/50" />
-                      </div>
-                    )}
-
-                    {/* Department Columns */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                      {departments
-                        .filter((d) => d !== "Executive")
-                        .map((dept) => (
-                          <div key={dept} className="glass-card rounded-xl border border-border/50 p-4 card-hover">
-                            <DepartmentSection deptName={dept} />
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                ) : (
-                  /* List View */
-                  <div className="space-y-2">
-                    {departments.map((dept) => {
-                      const deptAgentsFiltered = getAgentsByDept(dept);
-                      if (deptAgentsFiltered.length === 0 && searchQuery) return null;
-                      return (
-                        <div key={dept}>
-                          <button
-                            onClick={() => toggleDept(dept)}
-                            className="flex items-center gap-2 mb-2 group"
-                          >
-                            {expandedDepts.has(dept) ? (
-                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                            )}
-                            <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-                              {dept}
-                            </span>
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-border text-muted-foreground">
-                              {deptAgentsFiltered.length}
-                            </Badge>
-                          </button>
-                          {expandedDepts.has(dept) && (
-                            <div className="space-y-1.5 ml-6 mb-4">
-                              {deptAgentsFiltered.map((agent) => (
-                                <ListRow key={agent.id} agent={agent} />
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Zone Legend */}
-              <div className="flex flex-wrap items-center gap-4 mt-4 text-xs text-muted-foreground">
-                <span className="font-medium">Zones:</span>
-                {(["clinical", "operations", "external"] as AgentZone[]).map((zone) => (
-                  <div key={zone} className="flex items-center gap-1.5">
-                    <div className={`w-3 h-3 rounded-full ${ZONE_STYLES[zone].dot}`} />
-                    <span className={ZONE_STYLES[zone].text}>{ZONE_LABELS[zone]}</span>
-                  </div>
-                ))}
-                <span className="mx-2">|</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="flex h-3 w-3 relative">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-400" />
-                  </span>
-                  <span>Active</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-gray-500" />
-                  <span>Inactive</span>
-                </div>
-                <span className="mx-2">|</span>
-                <span className="text-muted-foreground/60 italic">Drag agents to reorganize</span>
-              </div>
+                <Plus className="h-4 w-4 mr-1" />
+                Add Agent
+              </Button>
             </div>
-          )}
 
-          {/* ═══════════════════════════════════════════════════════════════
-              TAB 2 — TEMPLATES
-          ═══════════════════════════════════════════════════════════════ */}
-          {activeTab === "templates" && (
-            <div>
+            {/* Chart Area */}
+            {viewMode === "graph" ? (
+              <div className="flex-1 relative">
+                <ReactFlowProvider>
+                  <OrgChartCanvas
+                    agents={agents}
+                    handleNodeSelect={handleNodeSelect}
+                  />
+                </ReactFlowProvider>
+              </div>
+            ) : (
+              /* List View */
+              <div className="flex-1 overflow-y-auto px-8 pb-8">
+                <div className="max-w-7xl mx-auto space-y-2">
+                  {departments.map((dept) => {
+                    const deptAgentsFiltered = getAgentsByDept(dept);
+                    if (deptAgentsFiltered.length === 0 && searchQuery)
+                      return null;
+                    return (
+                      <div key={dept}>
+                        <button
+                          onClick={() => toggleDept(dept)}
+                          className="flex items-center gap-2 mb-2 group"
+                        >
+                          {expandedDepts.has(dept) ? (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          )}
+                          <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                            {dept}
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] px-1.5 py-0 border-border text-muted-foreground"
+                          >
+                            {deptAgentsFiltered.length}
+                          </Badge>
+                        </button>
+                        {expandedDepts.has(dept) && (
+                          <div className="space-y-1.5 ml-6 mb-4">
+                            {deptAgentsFiltered.map((agent) => (
+                              <ListRow key={agent.id} agent={agent} />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════
+            TAB 2 — TEMPLATES
+        ═══════════════════════════════════════════════════════════════ */}
+        {activeTab === "templates" && (
+          <div className="flex-1 overflow-y-auto px-8 pb-8">
+            <div className="max-w-7xl mx-auto">
               <div className="mb-6">
-                <h2 className="font-display text-xl font-bold text-foreground mb-1">Department Templates</h2>
+                <h2 className="font-display text-xl font-bold text-foreground mb-1">
+                  Department Templates
+                </h2>
                 <p className="text-sm text-muted-foreground">
-                  Select a pre-built template to instantly populate a department with configured agents. All agents will be created with proper zones, skills, and models.
+                  Select a pre-built template to instantly populate a department
+                  with configured agents.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {DEPARTMENT_TEMPLATES.map((template) => {
-                  const existsAlready = agents.some((a) => a.department === template.name);
-                  const headAgent = template.agents.find((a) => a.level === "department-head");
-                  const workerAgents = template.agents.filter((a) => a.level === "worker");
+                  const existsAlready = agents.some(
+                    (a) => a.department === template.name
+                  );
+                  const headAgent = template.agents.find(
+                    (a) => a.level === "department-head"
+                  );
                   const primaryZone = headAgent?.zone ?? "operations";
                   const zs = ZONE_STYLES[primaryZone];
 
@@ -1421,71 +1407,116 @@ const AgentOrgChart = () => {
                       key={template.id}
                       className={`glass-card rounded-xl border ${zs.border} p-5 card-hover transition-all duration-300`}
                     >
-                      {/* Template Header */}
                       <div className="flex items-center gap-3 mb-4">
-                        <div className={`w-10 h-10 rounded-xl ${zs.bg} flex items-center justify-center`}>
+                        <div
+                          className={`w-10 h-10 rounded-xl ${zs.bg} flex items-center justify-center`}
+                        >
                           {getDeptIcon(template.icon)}
                         </div>
                         <div className="flex-1">
-                          <h3 className="text-sm font-semibold text-foreground">{template.name}</h3>
-                          <p className="text-xs text-muted-foreground">{template.agents.length} agents</p>
+                          <h3 className="text-sm font-semibold text-foreground">
+                            {template.name}
+                          </h3>
+                          <p className="text-xs text-muted-foreground">
+                            {template.agents.length} agents
+                          </p>
                         </div>
-                        <Badge variant="outline" className={`${zs.text} ${zs.bg} border-0 text-[10px]`}>
+                        <Badge
+                          variant="outline"
+                          className={`${zs.text} ${zs.bg} border-0 text-[10px]`}
+                        >
                           {ZONE_LABELS[primaryZone]}
                         </Badge>
                       </div>
 
-                      {/* Description */}
                       <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
                         {template.description}
                       </p>
 
-                      {/* Agent Preview */}
                       <div className="space-y-2 mb-4">
                         {template.agents.map((agent, idx) => (
                           <div
                             key={idx}
                             className={`flex items-center gap-2 p-2 rounded-lg border ${ZONE_STYLES[agent.zone].border} bg-card/30`}
                           >
-                            <div className={`w-6 h-6 rounded-md ${ZONE_STYLES[agent.zone].bg} flex items-center justify-center`}>
+                            <div
+                              className={`w-6 h-6 rounded-md ${ZONE_STYLES[agent.zone].bg} flex items-center justify-center`}
+                            >
                               {agent.level === "department-head" ? (
-                                <Crown className={`h-3 w-3 ${ZONE_STYLES[agent.zone].text}`} />
+                                <Crown
+                                  className={`h-3 w-3 ${ZONE_STYLES[agent.zone].text}`}
+                                />
                               ) : (
-                                <Bot className={`h-3 w-3 ${ZONE_STYLES[agent.zone].text}`} />
+                                <Bot
+                                  className={`h-3 w-3 ${ZONE_STYLES[agent.zone].text}`}
+                                />
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <span className="text-xs font-medium text-foreground">{agent.name}</span>
-                              <span className="text-[10px] text-muted-foreground ml-1.5">{agent.role}</span>
+                              <span className="text-xs font-medium text-foreground">
+                                {agent.name}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground ml-1.5">
+                                {agent.role}
+                              </span>
                             </div>
-                            <span className={`text-[10px] ${getModelColor(agent.model)}`}>
+                            <span
+                              className={`text-[10px] ${getModelColor(agent.model)}`}
+                            >
                               {getModelLabel(agent.model).split(" ").pop()}
                             </span>
                           </div>
                         ))}
                       </div>
 
-                      {/* Skills Preview */}
                       <div className="flex flex-wrap gap-1 mb-4">
-                        {Array.from(new Set(template.agents.flatMap((a) => a.skills))).slice(0, 5).map((skill) => (
-                          <Badge key={skill} variant="outline" className="text-[9px] px-1.5 py-0 border-border text-muted-foreground">
-                            {skill}
-                          </Badge>
-                        ))}
-                        {Array.from(new Set(template.agents.flatMap((a) => a.skills))).length > 5 && (
-                          <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-border text-muted-foreground">
-                            +{Array.from(new Set(template.agents.flatMap((a) => a.skills))).length - 5} more
+                        {Array.from(
+                          new Set(template.agents.flatMap((a) => a.skills))
+                        )
+                          .slice(0, 5)
+                          .map((skill) => (
+                            <Badge
+                              key={skill}
+                              variant="outline"
+                              className="text-[9px] px-1.5 py-0 border-border text-muted-foreground"
+                            >
+                              {skill}
+                            </Badge>
+                          ))}
+                        {Array.from(
+                          new Set(template.agents.flatMap((a) => a.skills))
+                        ).length > 5 && (
+                          <Badge
+                            variant="outline"
+                            className="text-[9px] px-1.5 py-0 border-border text-muted-foreground"
+                          >
+                            +
+                            {Array.from(
+                              new Set(
+                                template.agents.flatMap((a) => a.skills)
+                              )
+                            ).length - 5}{" "}
+                            more
                           </Badge>
                         )}
                       </div>
 
-                      {/* Apply Button */}
                       {existsAlready ? (
                         <div className="flex items-center gap-2 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
                           <Check className="h-4 w-4 text-emerald-400" />
-                          <span className="text-xs text-emerald-400 font-medium">Department Active</span>
-                          <Badge variant="outline" className="text-[10px] ml-auto border-emerald-500/30 text-emerald-400">
-                            {agents.filter((a) => a.department === template.name).length} agents
+                          <span className="text-xs text-emerald-400 font-medium">
+                            Department Active
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] ml-auto border-emerald-500/30 text-emerald-400"
+                          >
+                            {
+                              agents.filter(
+                                (a) => a.department === template.name
+                              ).length
+                            }{" "}
+                            agents
                           </Badge>
                         </div>
                       ) : (
@@ -1495,7 +1526,10 @@ const AgentOrgChart = () => {
                           size="sm"
                         >
                           <Download className="h-4 w-4 mr-2" />
-                          Apply Template — Create {template.agents.length} Agents
+                          Apply Template --- Create {
+                            template.agents.length
+                          }{" "}
+                          Agents
                         </Button>
                       )}
                     </div>
@@ -1510,9 +1544,16 @@ const AgentOrgChart = () => {
                     <Zap className="h-5 w-5 text-violet-400" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-foreground">Quick-Start: Deploy All Templates</h3>
+                    <h3 className="text-sm font-semibold text-foreground">
+                      Quick-Start: Deploy All Templates
+                    </h3>
                     <p className="text-xs text-muted-foreground">
-                      Create all departments at once with {DEPARTMENT_TEMPLATES.reduce((acc, t) => acc + t.agents.length, 0)} pre-configured agents.
+                      Create all departments at once with{" "}
+                      {DEPARTMENT_TEMPLATES.reduce(
+                        (acc, t) => acc + t.agents.length,
+                        0
+                      )}{" "}
+                      pre-configured agents.
                     </p>
                   </div>
                 </div>
@@ -1520,14 +1561,20 @@ const AgentOrgChart = () => {
                   onClick={() => {
                     let totalCreated = 0;
                     DEPARTMENT_TEMPLATES.forEach((template) => {
-                      const existsAlready = agents.some((a) => a.department === template.name);
+                      const existsAlready = agents.some(
+                        (a) => a.department === template.name
+                      );
                       if (!existsAlready) {
                         applyTemplate(template);
                         totalCreated += template.agents.length;
                       }
                     });
                     if (totalCreated === 0) {
-                      toast({ title: "All Deployed", description: "All department templates are already active." });
+                      toast({
+                        title: "All Deployed",
+                        description:
+                          "All department templates are already active.",
+                      });
                     }
                   }}
                   variant="outline"
@@ -1538,40 +1585,87 @@ const AgentOrgChart = () => {
                 </Button>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* ═══════════════════════════════════════════════════════════════
-              TAB 3 — ACCESS CONTROL
-          ═══════════════════════════════════════════════════════════════ */}
-          {activeTab === "access-control" && (
-            <div>
+        {/* ═══════════════════════════════════════════════════════════════
+            TAB 3 — ACCESS CONTROL
+        ═══════════════════════════════════════════════════════════════ */}
+        {activeTab === "access-control" && (
+          <div className="flex-1 overflow-y-auto px-8 pb-8">
+            <div className="max-w-7xl mx-auto">
               <div className="mb-6">
-                <h2 className="font-display text-xl font-bold text-foreground mb-1">Department Access Control</h2>
+                <h2 className="font-display text-xl font-bold text-foreground mb-1">
+                  Department Access Control
+                </h2>
                 <p className="text-sm text-muted-foreground">
-                  Set per-department visibility levels to control who can view and manage each department's agents.
+                  Set per-department visibility levels to control who can view
+                  and manage each department's agents.
                 </p>
               </div>
 
               {/* Access Summary */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                {(["all-staff", "department-only", "admin-only"] as AccessLevel[]).map((level) => {
-                  const count = departmentAccess.filter((d) => d.accessLevel === level).length;
-                  const config: Record<AccessLevel, { label: string; icon: typeof Eye; color: string; bg: string }> = {
-                    "all-staff": { label: "All Staff", icon: Eye, color: "text-emerald-400", bg: "bg-emerald-500/10" },
-                    "department-only": { label: "Department Only", icon: Users, color: "text-amber-400", bg: "bg-amber-500/10" },
-                    "admin-only": { label: "Admin Only", icon: Lock, color: "text-red-400", bg: "bg-red-500/10" },
+                {(
+                  [
+                    "all-staff",
+                    "department-only",
+                    "admin-only",
+                  ] as AccessLevel[]
+                ).map((level) => {
+                  const count = departmentAccess.filter(
+                    (d) => d.accessLevel === level
+                  ).length;
+                  const config: Record<
+                    AccessLevel,
+                    {
+                      label: string;
+                      icon: typeof Eye;
+                      color: string;
+                      bg: string;
+                    }
+                  > = {
+                    "all-staff": {
+                      label: "All Staff",
+                      icon: Eye,
+                      color: "text-emerald-400",
+                      bg: "bg-emerald-500/10",
+                    },
+                    "department-only": {
+                      label: "Department Only",
+                      icon: Users,
+                      color: "text-amber-400",
+                      bg: "bg-amber-500/10",
+                    },
+                    "admin-only": {
+                      label: "Admin Only",
+                      icon: Lock,
+                      color: "text-red-400",
+                      bg: "bg-red-500/10",
+                    },
                   };
                   const c = config[level];
                   return (
-                    <div key={level} className="glass-card rounded-xl border border-border p-4">
+                    <div
+                      key={level}
+                      className="glass-card rounded-xl border border-border p-4"
+                    >
                       <div className="flex items-center gap-2 mb-2">
-                        <div className={`w-8 h-8 rounded-lg ${c.bg} flex items-center justify-center`}>
+                        <div
+                          className={`w-8 h-8 rounded-lg ${c.bg} flex items-center justify-center`}
+                        >
                           <c.icon className={`h-4 w-4 ${c.color}`} />
                         </div>
-                        <span className="text-sm font-medium text-foreground">{c.label}</span>
+                        <span className="text-sm font-medium text-foreground">
+                          {c.label}
+                        </span>
                       </div>
-                      <span className="text-2xl font-bold text-foreground">{count}</span>
-                      <span className="text-xs text-muted-foreground ml-1">departments</span>
+                      <span className="text-2xl font-bold text-foreground">
+                        {count}
+                      </span>
+                      <span className="text-xs text-muted-foreground ml-1">
+                        departments
+                      </span>
                     </div>
                   );
                 })}
@@ -1580,33 +1674,50 @@ const AgentOrgChart = () => {
               {/* Department List */}
               <div className="space-y-3">
                 {departmentAccess.map((dept) => {
-                  const deptAgents = agents.filter((a) => a.department === dept.departmentName);
-                  const iconKey = DEPARTMENT_ICONS[dept.departmentName] ?? "building";
+                  const deptAgents = agents.filter(
+                    (a) => a.department === dept.departmentName
+                  );
+                  const iconKey =
+                    DEPARTMENT_ICONS[dept.departmentName] ?? "building";
                   return (
                     <div
                       key={dept.departmentName}
                       className="glass-card rounded-xl border border-border p-5 card-hover"
                     >
                       <div className="flex items-center gap-4">
-                        {/* Dept Info */}
                         <div className="w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center flex-shrink-0">
                           {getDeptIcon(iconKey)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-foreground">{dept.departmentName}</span>
-                            {dept.accessLevel === "admin-only" && <Lock className="h-3.5 w-3.5 text-red-400" />}
-                            {dept.accessLevel === "department-only" && <Shield className="h-3.5 w-3.5 text-amber-400" />}
-                            {dept.accessLevel === "all-staff" && <Unlock className="h-3.5 w-3.5 text-emerald-400" />}
+                            <span className="text-sm font-semibold text-foreground">
+                              {dept.departmentName}
+                            </span>
+                            {dept.accessLevel === "admin-only" && (
+                              <Lock className="h-3.5 w-3.5 text-red-400" />
+                            )}
+                            {dept.accessLevel === "department-only" && (
+                              <Shield className="h-3.5 w-3.5 text-amber-400" />
+                            )}
+                            {dept.accessLevel === "all-staff" && (
+                              <Unlock className="h-3.5 w-3.5 text-emerald-400" />
+                            )}
                           </div>
                           <span className="text-xs text-muted-foreground">
-                            {deptAgents.length} agent{deptAgents.length !== 1 ? "s" : ""} &middot; {deptAgents.filter((a) => a.active).length} active
+                            {deptAgents.length} agent
+                            {deptAgents.length !== 1 ? "s" : ""} &middot;{" "}
+                            {deptAgents.filter((a) => a.active).length} active
                           </span>
                         </div>
 
-                        {/* Access Toggle */}
                         <div className="flex items-center gap-1 bg-card/50 border border-border rounded-lg p-1">
-                          {(["all-staff", "department-only", "admin-only"] as AccessLevel[]).map((level) => {
+                          {(
+                            [
+                              "all-staff",
+                              "department-only",
+                              "admin-only",
+                            ] as AccessLevel[]
+                          ).map((level) => {
                             const labels: Record<AccessLevel, string> = {
                               "all-staff": "All Staff",
                               "department-only": "Dept Only",
@@ -1614,16 +1725,22 @@ const AgentOrgChart = () => {
                             };
                             const isActive = dept.accessLevel === level;
                             const colors: Record<AccessLevel, string> = {
-                              "all-staff": "bg-emerald-500/20 text-emerald-400",
-                              "department-only": "bg-amber-500/20 text-amber-400",
+                              "all-staff":
+                                "bg-emerald-500/20 text-emerald-400",
+                              "department-only":
+                                "bg-amber-500/20 text-amber-400",
                               "admin-only": "bg-red-500/20 text-red-400",
                             };
                             return (
                               <button
                                 key={level}
-                                onClick={() => updateAccess(dept.departmentName, level)}
+                                onClick={() =>
+                                  updateAccess(dept.departmentName, level)
+                                }
                                 className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                                  isActive ? colors[level] : "text-muted-foreground hover:text-foreground"
+                                  isActive
+                                    ? colors[level]
+                                    : "text-muted-foreground hover:text-foreground"
                                 }`}
                               >
                                 {labels[level]}
@@ -1632,7 +1749,6 @@ const AgentOrgChart = () => {
                           })}
                         </div>
 
-                        {/* Current badge */}
                         <AccessBadge level={dept.accessLevel} />
                       </div>
                     </div>
@@ -1645,27 +1761,45 @@ const AgentOrgChart = () => {
                 <div className="flex items-start gap-3">
                   <Shield className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
                   <div>
-                    <h4 className="text-sm font-medium text-foreground mb-1">Access Control Policy</h4>
+                    <h4 className="text-sm font-medium text-foreground mb-1">
+                      Access Control Policy
+                    </h4>
                     <ul className="text-xs text-muted-foreground space-y-1">
                       <li className="flex items-center gap-2">
                         <Eye className="h-3 w-3 text-emerald-400 flex-shrink-0" />
-                        <span><strong className="text-emerald-400">All Staff</strong> — Every team member can view and interact with this department's agents.</span>
+                        <span>
+                          <strong className="text-emerald-400">
+                            All Staff
+                          </strong>{" "}
+                          --- Every team member can view and interact with this
+                          department's agents.
+                        </span>
                       </li>
                       <li className="flex items-center gap-2">
                         <Users className="h-3 w-3 text-amber-400 flex-shrink-0" />
-                        <span><strong className="text-amber-400">Department Only</strong> — Only members assigned to this department can view its agents.</span>
+                        <span>
+                          <strong className="text-amber-400">
+                            Department Only
+                          </strong>{" "}
+                          --- Only members assigned to this department can view
+                          its agents.
+                        </span>
                       </li>
                       <li className="flex items-center gap-2">
                         <Lock className="h-3 w-3 text-red-400 flex-shrink-0" />
-                        <span><strong className="text-red-400">Admin Only</strong> — Only administrators and owners have access. Restricted from all other users.</span>
+                        <span>
+                          <strong className="text-red-400">Admin Only</strong>{" "}
+                          --- Only administrators and owners have access.
+                          Restricted from all other users.
+                        </span>
                       </li>
                     </ul>
                   </div>
                 </div>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </main>
 
       {/* ═══════════════════════════════════════════════════════════════════
@@ -1679,11 +1813,17 @@ const AgentOrgChart = () => {
             <DialogTitle className="flex items-center gap-2 text-foreground">
               {selectedAgent && (
                 <>
-                  <div className={`w-8 h-8 rounded-lg ${ZONE_STYLES[selectedAgent.zone].bg} flex items-center justify-center`}>
+                  <div
+                    className={`w-8 h-8 rounded-lg ${ZONE_STYLES[selectedAgent.zone].bg} flex items-center justify-center`}
+                  >
                     {selectedAgent.level === "ceo" ? (
-                      <Crown className={`h-4 w-4 ${ZONE_STYLES[selectedAgent.zone].text}`} />
+                      <Crown
+                        className={`h-4 w-4 ${ZONE_STYLES[selectedAgent.zone].text}`}
+                      />
                     ) : (
-                      <Bot className={`h-4 w-4 ${ZONE_STYLES[selectedAgent.zone].text}`} />
+                      <Bot
+                        className={`h-4 w-4 ${ZONE_STYLES[selectedAgent.zone].text}`}
+                      />
                     )}
                   </div>
                   {isEditing ? (
@@ -1711,39 +1851,20 @@ const AgentOrgChart = () => {
           </DialogHeader>
           {selectedAgent && (
             <div className="space-y-4">
-              {/* Performance Metrics */}
-              <div className="grid grid-cols-4 gap-2">
-                {[
-                  { label: "Tasks Today", value: selectedAgent.tasksToday, icon: Activity, color: "text-blue-400" },
-                  { label: "Success Rate", value: `${selectedAgent.successRate}%`, icon: Target, color: "text-emerald-400" },
-                  { label: "Cost Today", value: `$${selectedAgent.costToday.toFixed(2)}`, icon: DollarSign, color: "text-amber-400" },
-                  { label: "Tokens", value: selectedAgent.tokensUsed > 0 ? `${(selectedAgent.tokensUsed / 1000).toFixed(0)}K` : "0", icon: BarChart3, color: "text-violet-400" },
-                ].map((metric) => (
-                  <div key={metric.label} className="rounded-lg border border-border/50 bg-card/30 p-2 text-center">
-                    <metric.icon className={`h-3.5 w-3.5 ${metric.color} mx-auto mb-1`} />
-                    <div className="text-sm font-bold text-foreground">{metric.value}</div>
-                    <div className="text-[9px] text-muted-foreground leading-tight">{metric.label}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Role & Department */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs text-muted-foreground">Role</Label>
-                  {isEditing ? (
-                    <Input
-                      value={editRole}
-                      onChange={(e) => setEditRole(e.target.value)}
-                      className="mt-1 h-8 text-sm bg-card/50 border-border"
-                    />
-                  ) : (
-                    <p className="text-sm text-foreground">{selectedAgent.role}</p>
-                  )}
+                  <p className="text-sm text-foreground">
+                    {selectedAgent.role}
+                  </p>
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground">Department</Label>
-                  <p className="text-sm text-foreground">{selectedAgent.department}</p>
+                  <Label className="text-xs text-muted-foreground">
+                    Department
+                  </Label>
+                  <p className="text-sm text-foreground">
+                    {selectedAgent.department}
+                  </p>
                 </div>
               </div>
 
@@ -1751,197 +1872,123 @@ const AgentOrgChart = () => {
                 <div>
                   <Label className="text-xs text-muted-foreground">Zone</Label>
                   <div className="mt-1">
-                    <Badge variant="outline" className={`${ZONE_STYLES[selectedAgent.zone].text} ${ZONE_STYLES[selectedAgent.zone].bg} border-0`}>
+                    <Badge
+                      variant="outline"
+                      className={`${ZONE_STYLES[selectedAgent.zone].text} ${ZONE_STYLES[selectedAgent.zone].bg} border-0`}
+                    >
                       {ZONE_LABELS[selectedAgent.zone]}
                     </Badge>
                   </div>
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground">Model</Label>
-                  {isEditing ? (
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {MODEL_OPTIONS.map((model) => (
-                        <button
-                          key={model.id}
-                          onClick={() => setEditModel(model.id)}
-                          className={`px-2 py-1 rounded text-[10px] font-medium transition-all border ${
-                            editModel === model.id
-                              ? `${model.color} bg-card border-border`
-                              : "border-border/50 text-muted-foreground hover:text-foreground"
-                          }`}
-                        >
-                          {model.label.split(" ").pop()}
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className={`text-sm ${getModelColor(selectedAgent.model)}`}>
-                      {getModelLabel(selectedAgent.model)}
-                    </p>
-                  )}
+                  <Label className="text-xs text-muted-foreground">
+                    Model
+                  </Label>
+                  <p
+                    className={`text-sm ${getModelColor(selectedAgent.model)}`}
+                  >
+                    {getModelLabel(selectedAgent.model)}
+                  </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-xs text-muted-foreground">Status</Label>
+                  <Label className="text-xs text-muted-foreground">
+                    Status
+                  </Label>
                   <div className="flex items-center gap-2 mt-1">
-                    <div className={`w-2.5 h-2.5 rounded-full ${selectedAgent.active ? ZONE_STYLES[selectedAgent.zone].dot : "bg-gray-500"}`} />
-                    <span className={`text-sm ${selectedAgent.active ? "text-emerald-400" : "text-gray-400"}`}>
+                    <div
+                      className={`w-2.5 h-2.5 rounded-full ${
+                        selectedAgent.active
+                          ? ZONE_STYLES[selectedAgent.zone].dot
+                          : "bg-gray-500"
+                      }`}
+                    />
+                    <span
+                      className={`text-sm ${
+                        selectedAgent.active
+                          ? "text-emerald-400"
+                          : "text-gray-400"
+                      }`}
+                    >
                       {selectedAgent.active ? "Active" : "Inactive"}
                     </span>
                   </div>
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground">Level</Label>
-                  <p className="text-sm text-foreground capitalize">{selectedAgent.level.replace("-", " ")}</p>
+                  <Label className="text-xs text-muted-foreground">
+                    Level
+                  </Label>
+                  <p className="text-sm text-foreground capitalize">
+                    {selectedAgent.level.replace("-", " ")}
+                  </p>
                 </div>
               </div>
 
-              {/* Extra metrics row */}
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Avg Response</Label>
-                  <div className="flex items-center gap-1 mt-1">
-                    <Clock className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-sm text-foreground">{selectedAgent.avgResponseTime}</span>
-                  </div>
+              {/* Metrics */}
+              <div className="grid grid-cols-3 gap-3 p-3 rounded-lg bg-card/50 border border-border">
+                <div className="text-center">
+                  <p className="text-lg font-bold text-foreground">{selectedAgent.tasksToday}</p>
+                  <p className="text-[10px] text-muted-foreground">Tasks Today</p>
                 </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Cost/Month</Label>
-                  <div className="flex items-center gap-1 mt-1">
-                    <DollarSign className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-sm text-foreground">${selectedAgent.costMonth.toFixed(2)}</span>
-                  </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-emerald-400">{selectedAgent.successRate}%</p>
+                  <p className="text-[10px] text-muted-foreground">Success Rate</p>
                 </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Total Tasks</Label>
-                  <div className="flex items-center gap-1 mt-1">
-                    <Activity className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-sm text-foreground">{selectedAgent.taskCount}</span>
-                  </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-foreground">{selectedAgent.avgResponseTime}</p>
+                  <p className="text-[10px] text-muted-foreground">Avg Response</p>
                 </div>
               </div>
 
-              {/* Skills */}
               <div>
                 <Label className="text-xs text-muted-foreground">Skills</Label>
-                {isEditing ? (
-                  <Input
-                    value={editSkills}
-                    onChange={(e) => setEditSkills(e.target.value)}
-                    placeholder="Comma-separated skills"
-                    className="mt-1 h-8 text-sm bg-card/50 border-border"
-                  />
-                ) : (
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {selectedAgent.skills.map((skill) => (
-                      <Badge key={skill} variant="outline" className="text-[10px] border-border text-foreground">
-                        {skill}
-                      </Badge>
-                    ))}
-                    {selectedAgent.skills.length === 0 && (
-                      <span className="text-xs text-muted-foreground italic">No skills assigned</span>
-                    )}
-                  </div>
-                )}
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {selectedAgent.skills.map((skill) => (
+                    <Badge
+                      key={skill}
+                      variant="outline"
+                      className="text-[10px] border-border text-foreground"
+                    >
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
               </div>
 
-              {/* Removal Confirmation */}
-              {confirmRemoveId === selectedAgent.id && (
-                <div className="p-3 rounded-xl border border-red-500/30 bg-red-500/5">
-                  <div className="flex items-center gap-2 mb-2">
-                    <AlertTriangle className="h-4 w-4 text-red-400" />
-                    <span className="text-sm font-medium text-red-400">Confirm Removal</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Are you sure you want to remove <strong className="text-foreground">{selectedAgent.name}</strong> from the org chart? This action cannot be undone.
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => removeAgent(selectedAgent.id)}
-                      className="bg-red-600 hover:bg-red-700 text-white"
-                    >
-                      <Trash2 className="h-3.5 w-3.5 mr-1" /> Yes, Remove
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setConfirmRemoveId(null)}
-                      className="border-border text-foreground"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Actions */}
               <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
-                {isEditing ? (
-                  <>
-                    <Button
-                      size="sm"
-                      onClick={saveEdit}
-                      className="gradient-primary text-primary-foreground shadow-glow-sm"
-                    >
-                      <Save className="h-3.5 w-3.5 mr-1" /> Save Changes
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setIsEditing(false)}
-                      className="border-border text-foreground"
-                    >
-                      <X className="h-3.5 w-3.5 mr-1" /> Cancel
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        toggleAgentStatus(selectedAgent.id);
-                      }}
-                      className="border-border text-foreground"
-                    >
-                      {selectedAgent.active ? (
-                        <><PowerOff className="h-3.5 w-3.5 mr-1" /> Deactivate</>
-                      ) : (
-                        <><Power className="h-3.5 w-3.5 mr-1" /> Activate</>
-                      )}
-                    </Button>
-                    {selectedAgent.level !== "ceo" && (
-                      <>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => startEditing(selectedAgent)}
-                          className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
-                        >
-                          <Edit3 className="h-3.5 w-3.5 mr-1" /> Edit
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => startMoveAgent(selectedAgent.id)}
-                          className="border-violet-500/30 text-violet-400 hover:bg-violet-500/10"
-                        >
-                          <ArrowRight className="h-3.5 w-3.5 mr-1" /> Move
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setConfirmRemoveId(selectedAgent.id)}
-                          className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                        >
-                          <Trash2 className="h-3.5 w-3.5 mr-1" /> Remove
-                        </Button>
-                      </>
-                    )}
-                  </>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    toggleAgentStatus(selectedAgent.id);
+                    setSelectedAgent({
+                      ...selectedAgent,
+                      active: !selectedAgent.active,
+                    });
+                  }}
+                  className="border-border text-foreground"
+                >
+                  {selectedAgent.active ? (
+                    <>
+                      <EyeOff className="h-3.5 w-3.5 mr-1" /> Deactivate
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="h-3.5 w-3.5 mr-1" /> Activate
+                    </>
+                  )}
+                </Button>
+                {selectedAgent.level !== "ceo" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => removeAgent(selectedAgent.id)}
+                    className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-1" /> Remove
+                  </Button>
                 )}
               </div>
             </div>
@@ -1950,7 +1997,13 @@ const AgentOrgChart = () => {
       </Dialog>
 
       {/* Add Agent Dialog */}
-      <Dialog open={addAgentOpen} onOpenChange={(open) => { setAddAgentOpen(open); if (!open) resetAddForm(); }}>
+      <Dialog
+        open={addAgentOpen}
+        onOpenChange={(open) => {
+          setAddAgentOpen(open);
+          if (!open) resetAddForm();
+        }}
+      >
         <DialogContent className="bg-card border-border max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-foreground">
@@ -1959,9 +2012,10 @@ const AgentOrgChart = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            {/* Name */}
             <div>
-              <Label className="text-xs text-muted-foreground">Agent Name</Label>
+              <Label className="text-xs text-muted-foreground">
+                Agent Name
+              </Label>
               <Input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
@@ -1970,9 +2024,10 @@ const AgentOrgChart = () => {
               />
             </div>
 
-            {/* Role */}
             <div>
-              <Label className="text-xs text-muted-foreground">Role / Title</Label>
+              <Label className="text-xs text-muted-foreground">
+                Role / Title
+              </Label>
               <Input
                 value={newRole}
                 onChange={(e) => setNewRole(e.target.value)}
@@ -1981,15 +2036,18 @@ const AgentOrgChart = () => {
               />
             </div>
 
-            {/* Department */}
             <div>
-              <Label className="text-xs text-muted-foreground">Department</Label>
+              <Label className="text-xs text-muted-foreground">
+                Department
+              </Label>
               <div className="grid grid-cols-2 gap-2 mt-1">
                 {[
-                  "Clinical Operations", "Marketing & Growth", "Finance & Accounting",
-                  "Human Resources", "Research & Development", "IT & Security",
-                  "Development & Integration", "Clawbots", "Intelligence & Analytics",
-                  "Marketing Suite", "Sales Suite",
+                  "Clinical Operations",
+                  "Marketing & Growth",
+                  "Finance & Accounting",
+                  "Human Resources",
+                  "Research & Development",
+                  "IT & Security",
                 ].map((dept) => (
                   <button
                     key={dept}
@@ -2006,14 +2064,17 @@ const AgentOrgChart = () => {
               </div>
             </div>
 
-            {/* Level */}
             <div>
               <Label className="text-xs text-muted-foreground">Level</Label>
               <div className="flex gap-2 mt-1">
-                {([
-                  { key: "department-head" as const, label: "Department Head", icon: Building2 },
+                {[
+                  {
+                    key: "department-head" as const,
+                    label: "Department Head",
+                    icon: Building2,
+                  },
                   { key: "worker" as const, label: "Worker", icon: Bot },
-                ]).map((lvl) => (
+                ].map((lvl) => (
                   <button
                     key={lvl.key}
                     onClick={() => setNewLevel(lvl.key)}
@@ -2030,30 +2091,30 @@ const AgentOrgChart = () => {
               </div>
             </div>
 
-            {/* Zone */}
             <div>
               <Label className="text-xs text-muted-foreground">Zone</Label>
               <div className="flex gap-2 mt-1">
-                {(["clinical", "operations", "external"] as AgentZone[]).map((zone) => {
-                  const zs = ZONE_STYLES[zone];
-                  return (
-                    <button
-                      key={zone}
-                      onClick={() => setNewZone(zone)}
-                      className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
-                        newZone === zone
-                          ? `${zs.bg} ${zs.text} ${zs.border}`
-                          : "border-border text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {ZONE_LABELS[zone]}
-                    </button>
-                  );
-                })}
+                {(["clinical", "operations", "external"] as AgentZone[]).map(
+                  (zone) => {
+                    const zs = ZONE_STYLES[zone];
+                    return (
+                      <button
+                        key={zone}
+                        onClick={() => setNewZone(zone)}
+                        className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
+                          newZone === zone
+                            ? `${zs.bg} ${zs.text} ${zs.border}`
+                            : "border-border text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {ZONE_LABELS[zone]}
+                      </button>
+                    );
+                  }
+                )}
               </div>
             </div>
 
-            {/* Model */}
             <div>
               <Label className="text-xs text-muted-foreground">Model</Label>
               <div className="flex flex-wrap gap-2 mt-1">
@@ -2073,9 +2134,10 @@ const AgentOrgChart = () => {
               </div>
             </div>
 
-            {/* Skills */}
             <div>
-              <Label className="text-xs text-muted-foreground">Skills (comma-separated)</Label>
+              <Label className="text-xs text-muted-foreground">
+                Skills (comma-separated)
+              </Label>
               <Input
                 value={newSkills}
                 onChange={(e) => setNewSkills(e.target.value)}
@@ -2084,7 +2146,6 @@ const AgentOrgChart = () => {
               />
             </div>
 
-            {/* Create Button */}
             <Button
               onClick={handleAddAgent}
               className="w-full gradient-primary text-primary-foreground shadow-glow-sm"
