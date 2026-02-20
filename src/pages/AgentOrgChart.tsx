@@ -46,6 +46,11 @@ import {
   Maximize2,
   LayoutGrid,
   RefreshCw,
+  Rocket,
+  Handshake,
+  Code,
+  Linkedin,
+  Sparkles,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
@@ -161,6 +166,8 @@ const DEPARTMENT_ICONS: Record<string, string> = {
   "Development & Integration": "code",
   "Clawbots": "linkedin",
   "Intelligence & Analytics": "sparkles",
+  "Marketing Suite": "rocket",
+  "Sales Suite": "handshake",
 };
 
 // ── Default Capabilities ─────────────────────────────────────────────────
@@ -366,6 +373,16 @@ function getDeptIcon(iconKey: string) {
       return <GitBranch className="h-5 w-5" />;
     case "settings":
       return <Settings className="h-5 w-5" />;
+    case "code":
+      return <Code className="h-5 w-5" />;
+    case "linkedin":
+      return <Linkedin className="h-5 w-5" />;
+    case "sparkles":
+      return <Sparkles className="h-5 w-5" />;
+    case "rocket":
+      return <Rocket className="h-5 w-5" />;
+    case "handshake":
+      return <Handshake className="h-5 w-5" />;
     default:
       return <Building2 className="h-5 w-5" />;
   }
@@ -804,6 +821,11 @@ const AgentOrgChart = () => {
       "Human Resources",
       "Research & Development",
       "IT & Security",
+      "Development & Integration",
+      "Clawbots",
+      "Intelligence & Analytics",
+      "Marketing Suite",
+      "Sales Suite",
     ])
   );
 
@@ -2048,6 +2070,11 @@ const AgentOrgChart = () => {
                   "Human Resources",
                   "Research & Development",
                   "IT & Security",
+                  "Development & Integration",
+                  "Clawbots",
+                  "Intelligence & Analytics",
+                  "Marketing Suite",
+                  "Sales Suite",
                 ].map((dept) => (
                   <button
                     key={dept}
