@@ -1,71 +1,29 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ReactFlow,
-  Background,
-  Controls,
-  MiniMap,
-  useNodesState,
-  useEdgesState,
-  addEdge,
-  type Connection,
-  type Node,
-  type Edge,
-  type NodeTypes,
-  BackgroundVariant,
-  Panel,
-  MarkerType,
-} from "@xyflow/react";
-import "@xyflow/react/dist/style.css";
-import {
   Bot,
-  Send,
-  Terminal,
-  Eye,
   Activity,
   Cpu,
-  MessageSquare,
   Clock,
   CheckCircle2,
   AlertTriangle,
   Zap,
-  Maximize2,
   Minimize2,
-  RefreshCw,
   DollarSign,
-  TrendingUp,
-  Radio,
-  ChevronDown,
-  BarChart3,
-  Columns,
-  Table2,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   Fullscreen,
   MonitorPlay,
   LayoutGrid,
-  Rows3,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Workflow,
+  GripVertical,
+  Eye,
+  Circle,
+  CircleDot,
+  ArrowRight,
+  LayoutList,
+  Filter,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import AgentNodeComponent, {
-  type AgentNodeData,
-} from "@/components/command-station/AgentNode";
-import CommandPanelNodeComponent, {
-  type CommandPanelNodeData,
-} from "@/components/command-station/CommandPanelNode";
-import MetricsPanelNodeComponent, {
-  type MetricsPanelNodeData,
-} from "@/components/command-station/MetricsPanelNode";
-import LogsPanelNodeComponent, {
-  type LogsPanelNodeData,
-} from "@/components/command-station/LogsPanelNode";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface AgentMessage {
@@ -102,7 +60,20 @@ interface AgentState {
   messages: AgentMessage[];
 }
 
-type ViewMode = "canvas" | "split" | "fullscreen";
+type KanbanColumn = "backlog" | "todo" | "in_progress" | "review" | "done";
+
+interface KanbanTask {
+  id: string;
+  title: string;
+  description: string;
+  agentId: string;
+  priority: "high" | "medium" | "low";
+  zone: "clinical" | "operations" | "external";
+  column: KanbanColumn;
+  createdAt: string;
+}
+
+type ViewMode = "board" | "split";
 
 // ── Mock Data ───────────────────────────────────────────────────────────────
 const MOCK_AGENTS: AgentState[] = [
@@ -185,153 +156,50 @@ const MOCK_AGENTS: AgentState[] = [
   },
 ];
 
+const MOCK_TASKS: KanbanTask[] = [
+  // Backlog
+  { id: "t1", title: "Prepare monthly patient satisfaction report", description: "Compile and analyze patient feedback data for January", agentId: "1", priority: "medium", zone: "clinical", column: "backlog", createdAt: "2d ago" },
+  { id: "t2", title: "Update insurance provider database", description: "Add new Cigna and Aetna plan codes for 2026", agentId: "1", priority: "low", zone: "clinical", column: "backlog", createdAt: "3d ago" },
+  { id: "t3", title: "Plan flu clinic outreach campaign", description: "Design multi-channel outreach for spring flu vaccinations", agentId: "2", priority: "medium", zone: "external", column: "backlog", createdAt: "1d ago" },
+  // To Do
+  { id: "t4", title: "Review pending referral letters", description: "12 referral letters awaiting review and signature", agentId: "1", priority: "high", zone: "clinical", column: "todo", createdAt: "1d ago" },
+  { id: "t5", title: "Draft social media calendar for March", description: "Create content calendar with health awareness themes", agentId: "2", priority: "medium", zone: "external", column: "todo", createdAt: "4h ago" },
+  { id: "t6", title: "Research NIH grant renewal requirements", description: "Compile documentation needed for R01 renewal application", agentId: "3", priority: "high", zone: "operations", column: "todo", createdAt: "6h ago" },
+  // In Progress
+  { id: "t7", title: "Insurance verification — patient #4821", description: "Verifying coverage through Availity API for upcoming procedure", agentId: "1", priority: "high", zone: "clinical", column: "in_progress", createdAt: "30m ago" },
+  { id: "t8", title: "Q1 cardiovascular awareness campaign", description: "Writing copy for Heart Health Month across all channels", agentId: "2", priority: "high", zone: "external", column: "in_progress", createdAt: "2h ago" },
+  { id: "t9", title: "NIH R01 proposal budget revision", description: "Adjusting budget allocations per reviewer feedback", agentId: "3", priority: "medium", zone: "operations", column: "in_progress", createdAt: "1h ago" },
+  // Review
+  { id: "t10", title: "Appointment reminder batch (14 patients)", description: "SMS and email reminders for next week's appointments", agentId: "1", priority: "medium", zone: "clinical", column: "review", createdAt: "45m ago" },
+  { id: "t11", title: "Blog post: Heart Health Month Tips", description: "850-word article on cardiovascular wellness, ready for compliance check", agentId: "2", priority: "low", zone: "external", column: "review", createdAt: "1h ago" },
+  { id: "t12", title: "PCORI funding opportunity analysis", description: "Research summary of Patient-Centered Outcomes Research funding", agentId: "3", priority: "medium", zone: "operations", column: "review", createdAt: "3h ago" },
+  // Done
+  { id: "t13", title: "Lab result notification — J. Chen", description: "Patient notified of lab results via secure portal", agentId: "1", priority: "high", zone: "clinical", column: "done", createdAt: "1h ago" },
+  { id: "t14", title: "Email newsletter draft (850 words)", description: "February newsletter completed and sent to editor", agentId: "2", priority: "medium", zone: "external", column: "done", createdAt: "2h ago" },
+  { id: "t15", title: "NIH R01 proposal draft ($1.2M)", description: "Full proposal draft submitted for internal review", agentId: "3", priority: "high", zone: "operations", column: "done", createdAt: "4h ago" },
+];
+
+// ── Column Configuration ────────────────────────────────────────────────────
+const COLUMN_CONFIG: {
+  id: KanbanColumn;
+  label: string;
+  colorClass: string;
+  bgClass: string;
+  borderClass: string;
+  Icon: React.ComponentType<{ className?: string }>;
+}[] = [
+  { id: "backlog", label: "Backlog", colorClass: "text-slate-400", bgClass: "bg-slate-400/10", borderClass: "border-slate-400/40", Icon: Circle },
+  { id: "todo", label: "To Do", colorClass: "text-blue-400", bgClass: "bg-blue-400/10", borderClass: "border-blue-400/40", Icon: CircleDot },
+  { id: "in_progress", label: "In Progress", colorClass: "text-amber-400", bgClass: "bg-amber-400/10", borderClass: "border-amber-400/40", Icon: Clock },
+  { id: "review", label: "Review", colorClass: "text-purple-400", bgClass: "bg-purple-400/10", borderClass: "border-purple-400/40", Icon: Eye },
+  { id: "done", label: "Done", colorClass: "text-emerald-400", bgClass: "bg-emerald-400/10", borderClass: "border-emerald-400/40", Icon: CheckCircle2 },
+];
+
+const COLUMN_ORDER: KanbanColumn[] = ["backlog", "todo", "in_progress", "review", "done"];
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 const clamp = (v: number, min: number, max: number) =>
   Math.max(min, Math.min(max, v));
-
-const generateAgentReply = (agent: AgentState, cmd: string): string => {
-  const lower = cmd.toLowerCase();
-  if (lower.includes("status") || lower.includes("what are you"))
-    return `Acknowledged. I'm currently ${agent.currentTask.toLowerCase()}. All systems nominal.`;
-  if (lower.includes("pause") || lower.includes("stop"))
-    return `Understood. Pausing current task and queuing remaining work. I'll resume when you give the command.`;
-  if (lower.includes("priority") || lower.includes("focus"))
-    return `Reprioritizing task queue. Bringing high-urgency items to front. Estimated completion of current task: 3 minutes.`;
-  if (lower.includes("report") || lower.includes("summary"))
-    return `Summary for today: ${agent.tasksCompleted} tasks completed, ${agent.tasksFailed} flagged for review. Cost so far: $${agent.costToday.toFixed(2)}. Avg response: ${agent.avgResponseTime}.`;
-  return `Command received: "${cmd}". Processing and updating task queue accordingly. I'll notify you when complete.`;
-};
-
-// ── Node Types ──────────────────────────────────────────────────────────────
-const nodeTypes: NodeTypes = {
-  agentNode: AgentNodeComponent,
-  commandPanel: CommandPanelNodeComponent,
-  metricsPanel: MetricsPanelNodeComponent,
-  logsPanel: LogsPanelNodeComponent,
-};
-
-// ── Canvas Layout Positions ─────────────────────────────────────────────────
-function buildNodesAndEdges(
-  agents: AgentState[],
-  selectedAgentId: string,
-  onSelectAgent: (id: string) => void,
-  onSendCommand: (agentId: string, cmd: string) => void
-): { nodes: Node[]; edges: Edge[] } {
-  const nodes: Node[] = [];
-  const edges: Edge[] = [];
-
-  // Place agent nodes in a column
-  agents.forEach((agent, i) => {
-    nodes.push({
-      id: `agent-${agent.id}`,
-      type: "agentNode",
-      position: { x: 80, y: i * 380 },
-      data: {
-        ...agent,
-        onSelect: (nid: string) => {
-          const aid = nid.replace("agent-", "");
-          onSelectAgent(aid);
-        },
-      } satisfies AgentNodeData,
-    });
-  });
-
-  // Metrics panel (top right)
-  nodes.push({
-    id: "metrics-panel",
-    type: "metricsPanel",
-    position: { x: 500, y: 0 },
-    data: {
-      agents: agents.map((a) => ({
-        id: a.id,
-        name: a.name,
-        active: a.active,
-        tasksCompleted: a.tasksCompleted,
-        tasksFailed: a.tasksFailed,
-        tokensUsed: a.tokensUsed,
-        costToday: a.costToday,
-        costMonth: a.costMonth,
-        zone: a.zone,
-      })),
-    } satisfies MetricsPanelNodeData,
-  });
-
-  // Command panel (middle right)
-  const selectedAgent = agents.find((a) => a.id === selectedAgentId) || agents[0];
-  nodes.push({
-    id: "command-panel",
-    type: "commandPanel",
-    position: { x: 500, y: 380 },
-    data: {
-      agentName: selectedAgent.name,
-      agentId: selectedAgent.id,
-      messages: selectedAgent.messages,
-      onSendCommand,
-    } satisfies CommandPanelNodeData,
-  });
-
-  // Logs panel (bottom right)
-  nodes.push({
-    id: "logs-panel",
-    type: "logsPanel",
-    position: { x: 920, y: 200 },
-    data: {
-      agentName: selectedAgent.name,
-      logs: selectedAgent.logs,
-    } satisfies LogsPanelNodeData,
-  });
-
-  // Edges from selected agent to command panel
-  edges.push({
-    id: `edge-agent-cmd`,
-    source: `agent-${selectedAgentId}`,
-    target: "command-panel",
-    sourceHandle: "right",
-    targetHandle: undefined,
-    animated: true,
-    style: { stroke: "rgb(6, 182, 212)", strokeWidth: 2 },
-    markerEnd: { type: MarkerType.ArrowClosed, color: "rgb(6, 182, 212)" },
-  });
-
-  // Edges from selected agent to logs panel
-  edges.push({
-    id: `edge-agent-logs`,
-    source: `agent-${selectedAgentId}`,
-    target: "logs-panel",
-    animated: true,
-    style: { stroke: "rgb(16, 185, 129)", strokeWidth: 1.5 },
-    markerEnd: { type: MarkerType.ArrowClosed, color: "rgb(16, 185, 129)" },
-  });
-
-  // Edges from all agents to metrics
-  agents.forEach((agent) => {
-    edges.push({
-      id: `edge-metrics-${agent.id}`,
-      source: `agent-${agent.id}`,
-      target: "metrics-panel",
-      sourceHandle: "right",
-      targetHandle: undefined,
-      style: {
-        stroke: "rgba(139, 92, 246, 0.3)",
-        strokeWidth: 1,
-        strokeDasharray: "5,5",
-      },
-    });
-  });
-
-  // Connection edges between agents (data flow)
-  for (let i = 0; i < agents.length - 1; i++) {
-    edges.push({
-      id: `edge-flow-${agents[i].id}-${agents[i + 1].id}`,
-      source: `agent-${agents[i].id}`,
-      target: `agent-${agents[i + 1].id}`,
-      style: { stroke: "rgba(255,255,255,0.08)", strokeWidth: 1 },
-      animated: false,
-    });
-  }
-
-  return { nodes, edges };
-}
 
 // ── Fullscreen Tasks Mock ───────────────────────────────────────────────────
 const FULLSCREEN_TASKS = [
@@ -354,10 +222,8 @@ const LOG_LEVEL_STYLES = {
 const AgentCommandStation = () => {
   const { t } = useTranslation();
   const [agents, setAgents] = useState<AgentState[]>(MOCK_AGENTS);
-  const [selectedAgentId, setSelectedAgentId] = useState("1");
-  const [viewMode, setViewMode] = useState<ViewMode>("canvas");
+  const [viewMode, setViewMode] = useState<ViewMode>("board");
   const [fullscreenMode, setFullscreenMode] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // Multi-screen state
   const [splitScreenIds, setSplitScreenIds] = useState<string[]>(["1", "2"]);
@@ -366,65 +232,59 @@ const AgentCommandStation = () => {
   const [fsTasks, setFsTasks] = useState(FULLSCREEN_TASKS.map((t) => ({ ...t })));
   const [fsTick, setFsTick] = useState(0);
 
-  const selectedAgent = agents.find((a) => a.id === selectedAgentId) || agents[0];
+  // Kanban board state
+  const [tasks, setTasks] = useState<KanbanTask[]>(MOCK_TASKS);
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<KanbanColumn | null>(null);
+  const [agentFilter, setAgentFilter] = useState<string>("all");
 
-  // ── Send command handler ────────────────────────────────────────────────
-  const handleSendCommand = useCallback(
-    (agentId: string, command: string) => {
-      const agent = agents.find((a) => a.id === agentId);
-      if (!agent) return;
+  // ── Drag-and-drop handlers ──────────────────────────────────────────────
+  const handleDragStart = useCallback((e: React.DragEvent, taskId: string) => {
+    setDraggedTaskId(taskId);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", taskId);
+  }, []);
 
-      const newMsg: AgentMessage = {
-        id: String(Date.now()),
-        from: "commander",
-        content: command,
-        timestamp: "just now",
-      };
+  const handleDragOver = useCallback((e: React.DragEvent, column: KanbanColumn) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverColumn(column);
+  }, []);
 
-      const agentReply: AgentMessage = {
-        id: String(Date.now() + 1),
-        from: "agent",
-        content: generateAgentReply(agent, command),
-        timestamp: "just now",
-      };
+  const handleDragLeave = useCallback(() => {
+    setDragOverColumn(null);
+  }, []);
 
-      setAgents((prev) =>
-        prev.map((a) =>
-          a.id === agentId
-            ? { ...a, messages: [...a.messages, newMsg, agentReply] }
-            : a
+  const handleDrop = useCallback((e: React.DragEvent, targetColumn: KanbanColumn) => {
+    e.preventDefault();
+    if (draggedTaskId) {
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === draggedTaskId ? { ...t, column: targetColumn } : t
         )
       );
-    },
-    [agents]
-  );
+    }
+    setDraggedTaskId(null);
+    setDragOverColumn(null);
+  }, [draggedTaskId]);
 
-  // ── Build React Flow graph ──────────────────────────────────────────────
-  const { nodes: initialNodes, edges: initialEdges } = useMemo(
-    () =>
-      buildNodesAndEdges(agents, selectedAgentId, setSelectedAgentId, handleSendCommand),
-    [agents, selectedAgentId, handleSendCommand]
-  );
+  const handleDragEnd = useCallback(() => {
+    setDraggedTaskId(null);
+    setDragOverColumn(null);
+  }, []);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-
-  // Sync nodes/edges when agents or selection changes
-  useEffect(() => {
-    const { nodes: newNodes, edges: newEdges } = buildNodesAndEdges(
-      agents,
-      selectedAgentId,
-      setSelectedAgentId,
-      handleSendCommand
+  const moveTaskForward = useCallback((taskId: string) => {
+    setTasks((prev) =>
+      prev.map((t) => {
+        if (t.id !== taskId) return t;
+        const currentIdx = COLUMN_ORDER.indexOf(t.column);
+        if (currentIdx < COLUMN_ORDER.length - 1) {
+          return { ...t, column: COLUMN_ORDER[currentIdx + 1] };
+        }
+        return t;
+      })
     );
-    setNodes(newNodes);
-    setEdges(newEdges);
-  }, [agents, selectedAgentId, handleSendCommand, setNodes, setEdges]);
-
-  const onConnect = useCallback(
-    (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
-    [setEdges]
-  );
+  }, []);
 
   // ── Fullscreen auto-refresh ─────────────────────────────────────────────
   useEffect(() => {
@@ -473,7 +333,7 @@ const AgentCommandStation = () => {
     return () => window.removeEventListener("keydown", handler);
   }, [fullscreenMode]);
 
-  // ── Canvas auto-refresh (gentle metric fluctuation) ─────────────────────
+  // ── Metric auto-refresh (gentle fluctuation) ───────────────────────────
   useEffect(() => {
     if (fullscreenMode) return;
     const interval = setInterval(() => {
@@ -920,7 +780,223 @@ const AgentCommandStation = () => {
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ── MAIN CANVAS VIEW ────────────────────────────────────────────────────
+  // ── TASK BOARD VIEW ───────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+  const renderTaskBoard = () => {
+    const filteredTasks =
+      agentFilter === "all"
+        ? tasks
+        : tasks.filter((t) => t.agentId === agentFilter);
+
+    const getAgentForTask = (agentId: string) =>
+      agents.find((a) => a.id === agentId);
+
+    const getColumnTasks = (column: KanbanColumn) =>
+      filteredTasks.filter((t) => t.column === column);
+
+    return (
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Filter & Stats Bar */}
+        <div className="px-6 py-3 border-b border-border bg-card/30 flex items-center gap-4 shrink-0 overflow-x-auto">
+          <div className="flex items-center gap-2 shrink-0">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs font-medium text-muted-foreground">Agent:</span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setAgentFilter("all")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                  agentFilter === "all"
+                    ? "bg-primary/15 text-primary border border-primary/30"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/40 border border-transparent"
+                }`}
+              >
+                All
+              </button>
+              {agents.map((a) => (
+                <button
+                  key={a.id}
+                  onClick={() => setAgentFilter(a.id)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                    agentFilter === a.id
+                      ? "bg-primary/15 text-primary border border-primary/30"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/40 border border-transparent"
+                  }`}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      a.active ? "bg-emerald-500" : "bg-muted-foreground/40"
+                    }`}
+                  />
+                  {a.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="ml-auto flex items-center gap-4 text-xs text-muted-foreground shrink-0">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-amber-400" />
+              {getColumnTasks("in_progress").length} in progress
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-purple-400" />
+              {getColumnTasks("review").length} in review
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              {getColumnTasks("done").length} done
+            </span>
+            <span className="text-muted-foreground/40">|</span>
+            <span>{filteredTasks.length} total</span>
+          </div>
+        </div>
+
+        {/* Kanban Columns */}
+        <div className="flex-1 flex gap-4 p-6 overflow-x-auto min-h-0">
+          {COLUMN_CONFIG.map((col) => {
+            const ColIcon = col.Icon;
+            const columnTasks = getColumnTasks(col.id);
+            const isDragOver = dragOverColumn === col.id;
+
+            return (
+              <div
+                key={col.id}
+                className="flex-shrink-0 w-[280px] flex flex-col min-h-0"
+              >
+                {/* Column header */}
+                <div className="flex items-center gap-2 mb-3 px-1">
+                  <ColIcon className={`h-4 w-4 ${col.colorClass}`} />
+                  <span className={`text-sm font-semibold ${col.colorClass}`}>
+                    {col.label}
+                  </span>
+                  <Badge
+                    variant="secondary"
+                    className="text-[10px] px-1.5 py-0 h-5"
+                  >
+                    {columnTasks.length}
+                  </Badge>
+                </div>
+
+                {/* Drop zone */}
+                <div
+                  onDragOver={(e) => handleDragOver(e, col.id)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, col.id)}
+                  className={`flex-1 rounded-xl p-2 space-y-2 overflow-y-auto transition-all duration-200 ${
+                    isDragOver
+                      ? `${col.bgClass} border-2 border-dashed ${col.borderClass}`
+                      : "bg-muted/10 border border-border/30"
+                  }`}
+                >
+                  {columnTasks.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/30">
+                      <ColIcon className="h-8 w-8 mb-2" />
+                      <span className="text-xs">No tasks</span>
+                    </div>
+                  ) : (
+                    columnTasks.map((task) => {
+                      const agent = getAgentForTask(task.agentId);
+                      const isDragging = draggedTaskId === task.id;
+                      const nextColIdx =
+                        COLUMN_ORDER.indexOf(task.column) + 1;
+                      const canMoveForward =
+                        nextColIdx < COLUMN_ORDER.length;
+
+                      return (
+                        <div
+                          key={task.id}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, task.id)}
+                          onDragEnd={handleDragEnd}
+                          className={`group bg-card border border-border rounded-xl p-3 cursor-grab active:cursor-grabbing transition-all duration-200 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 ${
+                            isDragging ? "opacity-30 scale-95" : ""
+                          }`}
+                        >
+                          {/* Title row with drag handle and forward button */}
+                          <div className="flex items-start gap-2">
+                            <GripVertical className="h-4 w-4 text-muted-foreground/20 mt-0.5 shrink-0 group-hover:text-muted-foreground/50 transition-colors" />
+                            <p className="text-sm font-medium text-foreground leading-snug flex-1">
+                              {task.title}
+                            </p>
+                            {canMoveForward && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  moveTaskForward(task.id);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-muted/60 transition-all shrink-0"
+                                title={`Move to ${COLUMN_CONFIG[nextColIdx]?.label}`}
+                              >
+                                <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Description */}
+                          <p className="text-xs text-muted-foreground/70 mt-1.5 ml-6 line-clamp-2 leading-relaxed">
+                            {task.description}
+                          </p>
+
+                          {/* Agent assignment */}
+                          <div className="flex items-center justify-between mt-3 ml-6">
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className={`h-1.5 w-1.5 rounded-full ${
+                                  agent?.active
+                                    ? "bg-emerald-500"
+                                    : "bg-muted-foreground/40"
+                                }`}
+                              />
+                              <span className="text-[11px] text-muted-foreground">
+                                {agent?.name || "Unassigned"}
+                              </span>
+                            </div>
+                            <span
+                              className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${
+                                task.priority === "high"
+                                  ? "text-red-400 bg-red-500/10 border-red-500/20"
+                                  : task.priority === "medium"
+                                  ? "text-amber-400 bg-amber-500/10 border-amber-500/20"
+                                  : "text-slate-400 bg-slate-500/10 border-slate-500/20"
+                              }`}
+                            >
+                              {task.priority}
+                            </span>
+                          </div>
+
+                          {/* Zone + timestamp */}
+                          <div className="flex items-center justify-between mt-2 ml-6">
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] py-0 h-4 ${
+                                task.zone === "clinical"
+                                  ? "text-red-400 bg-red-500/10 border-red-500/30"
+                                  : task.zone === "operations"
+                                  ? "text-amber-400 bg-amber-500/10 border-amber-500/30"
+                                  : "text-blue-400 bg-blue-500/10 border-blue-500/30"
+                              }`}
+                            >
+                              {task.zone}
+                            </Badge>
+                            <span className="text-[10px] text-muted-foreground/50">
+                              {task.createdAt}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ── MAIN LAYOUT ────────────────────────────────────────────────────────
   // ═══════════════════════════════════════════════════════════════════════════
   return (
     <div className="flex min-h-screen bg-background">
@@ -943,15 +1019,15 @@ const AgentCommandStation = () => {
               {/* View toggles */}
               <div className="flex items-center rounded-xl border border-border bg-card overflow-hidden">
                 <button
-                  onClick={() => setViewMode("canvas")}
+                  onClick={() => setViewMode("board")}
                   className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium transition-colors ${
-                    viewMode === "canvas"
+                    viewMode === "board"
                       ? "bg-primary/15 text-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
                   }`}
                 >
-                  <Workflow className="h-4 w-4" />
-                  Canvas
+                  <LayoutList className="h-4 w-4" />
+                  Task Board
                 </button>
                 <button
                   onClick={() => setViewMode("split")}
@@ -976,43 +1052,6 @@ const AgentCommandStation = () => {
                 <Fullscreen className="h-4 w-4" />
                 {t("commandStation.agentScreen")}
               </Button>
-
-              {/* Agent selector for canvas mode */}
-              {viewMode === "canvas" && (
-                <div className="flex items-center gap-2">
-                  {agents.map((a) => (
-                    <button
-                      key={a.id}
-                      onClick={() => setSelectedAgentId(a.id)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-colors ${
-                        selectedAgentId === a.id
-                          ? "border-primary/40 bg-primary/10"
-                          : "border-border bg-card hover:border-primary/20"
-                      }`}
-                    >
-                      <span className="relative flex h-2 w-2">
-                        {a.active && (
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                        )}
-                        <span
-                          className={`relative inline-flex rounded-full h-2 w-2 ${
-                            a.active ? "bg-green-500" : "bg-muted-foreground/40"
-                          }`}
-                        />
-                      </span>
-                      <span
-                        className={`text-xs font-medium ${
-                          selectedAgentId === a.id
-                            ? "text-foreground"
-                            : "text-muted-foreground"
-                        }`}
-                      >
-                        {a.name}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -1020,115 +1059,8 @@ const AgentCommandStation = () => {
         {/* ── SPLIT VIEW ─────────────────────────────────────────── */}
         {viewMode === "split" && renderSplitScreen()}
 
-        {/* ── CANVAS VIEW ────────────────────────────────────────── */}
-        {viewMode === "canvas" && (
-          <div className="flex-1 relative">
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              nodeTypes={nodeTypes}
-              fitView
-              fitViewOptions={{ padding: 0.2 }}
-              minZoom={0.3}
-              maxZoom={1.5}
-              defaultEdgeOptions={{
-                type: "smoothstep",
-                animated: false,
-              }}
-              proOptions={{ hideAttribution: true }}
-              className="command-station-flow"
-            >
-              <Background
-                variant={BackgroundVariant.Dots}
-                gap={20}
-                size={1}
-                color="rgba(100, 150, 255, 0.08)"
-              />
-              <Controls
-                className="!bg-card/80 !border-border !rounded-xl !shadow-lg"
-                showInteractive={false}
-              />
-              <MiniMap
-                nodeStrokeColor={(n) => {
-                  if (n.type === "agentNode") {
-                    const d = n.data as AgentNodeData;
-                    if (d.zone === "clinical") return "#ef4444";
-                    if (d.zone === "operations") return "#f59e0b";
-                    return "#3b82f6";
-                  }
-                  if (n.type === "commandPanel") return "#06b6d4";
-                  if (n.type === "metricsPanel") return "#8b5cf6";
-                  if (n.type === "logsPanel") return "#10b981";
-                  return "#666";
-                }}
-                nodeColor={(n) => {
-                  if (n.type === "agentNode") {
-                    const d = n.data as AgentNodeData;
-                    if (d.zone === "clinical") return "rgba(239,68,68,0.2)";
-                    if (d.zone === "operations") return "rgba(245,158,11,0.2)";
-                    return "rgba(59,130,246,0.2)";
-                  }
-                  return "rgba(100,100,100,0.2)";
-                }}
-                maskColor="rgba(0,0,0,0.7)"
-                className="!bg-card/80 !border-border !rounded-xl"
-              />
-
-              {/* Floating status panel */}
-              <Panel position="top-right" className="mr-4 mt-4">
-                <div className="bg-card/90 backdrop-blur-xl border border-border rounded-xl p-3 space-y-2 min-w-[180px]">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Activity className="h-4 w-4 text-primary" />
-                    <span className="text-xs font-semibold text-foreground">
-                      Fleet Status
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="text-center p-1.5 rounded bg-muted/30">
-                      <p className="text-xs font-bold text-emerald-400">
-                        {agents.filter((a) => a.active).length}
-                      </p>
-                      <p className="text-[9px] text-muted-foreground">Online</p>
-                    </div>
-                    <div className="text-center p-1.5 rounded bg-muted/30">
-                      <p className="text-xs font-bold text-muted-foreground">
-                        {agents.filter((a) => !a.active).length}
-                      </p>
-                      <p className="text-[9px] text-muted-foreground">
-                        Offline
-                      </p>
-                    </div>
-                    <div className="text-center p-1.5 rounded bg-muted/30">
-                      <p className="text-xs font-bold text-amber-400 tabular-nums">
-                        $
-                        {agents
-                          .reduce((s, a) => s + a.costToday, 0)
-                          .toFixed(2)}
-                      </p>
-                      <p className="text-[9px] text-muted-foreground">
-                        Cost Today
-                      </p>
-                    </div>
-                    <div className="text-center p-1.5 rounded bg-muted/30">
-                      <p className="text-xs font-bold text-cyan-400 tabular-nums">
-                        {(
-                          agents.reduce((s, a) => s + a.tokensUsed, 0) / 1000
-                        ).toFixed(0)}
-                        k
-                      </p>
-                      <p className="text-[9px] text-muted-foreground">
-                        Tokens
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </Panel>
-            </ReactFlow>
-          </div>
-        )}
+        {/* ── TASK BOARD VIEW ──────────────────────────────────────── */}
+        {viewMode === "board" && renderTaskBoard()}
       </main>
     </div>
   );
