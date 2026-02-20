@@ -14,6 +14,7 @@ export default function PricingSection() {
       features: [
         t("home.pricing.starterF1"), t("home.pricing.starterF2"), t("home.pricing.starterF3"),
         t("home.pricing.starterF4"), t("home.pricing.starterF5"), t("home.pricing.starterF6"),
+        t("home.pricing.starterF7"), t("home.pricing.starterF8"),
       ],
       cta: t("home.pricing.starterCta"),
       highlighted: false,
@@ -27,7 +28,8 @@ export default function PricingSection() {
       features: [
         t("home.pricing.proF1"), t("home.pricing.proF2"), t("home.pricing.proF3"),
         t("home.pricing.proF4"), t("home.pricing.proF5"), t("home.pricing.proF6"),
-        t("home.pricing.proF7"), t("home.pricing.proF8"),
+        t("home.pricing.proF7"), t("home.pricing.proF8"), t("home.pricing.proF9"),
+        t("home.pricing.proF10"),
       ],
       cta: t("home.pricing.proCta"),
       highlighted: true,
@@ -40,7 +42,8 @@ export default function PricingSection() {
       features: [
         t("home.pricing.advF1"), t("home.pricing.advF2"), t("home.pricing.advF3"),
         t("home.pricing.advF4"), t("home.pricing.advF5"), t("home.pricing.advF6"),
-        t("home.pricing.advF7"),
+        t("home.pricing.advF7"), t("home.pricing.advF8"), t("home.pricing.advF9"),
+        t("home.pricing.advF10"),
       ],
       cta: t("home.pricing.advCta"),
       highlighted: false,
@@ -53,7 +56,7 @@ export default function PricingSection() {
       features: [
         t("home.pricing.entF1"), t("home.pricing.entF2"), t("home.pricing.entF3"),
         t("home.pricing.entF4"), t("home.pricing.entF5"), t("home.pricing.entF6"),
-        t("home.pricing.entF7"),
+        t("home.pricing.entF7"), t("home.pricing.entF8"),
       ],
       cta: t("home.pricing.entCta"),
       highlighted: false,
@@ -74,6 +77,9 @@ export default function PricingSection() {
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             {t("home.pricing.subtitle")}
+          </p>
+          <p className="text-sm text-blue-400/80 mt-3">
+            {t("home.pricing.trialNote")}
           </p>
         </div>
 

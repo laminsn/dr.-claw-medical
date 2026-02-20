@@ -93,10 +93,12 @@ const BillingManagement = () => {
       period: t("billing.perMonth"),
       description: t("billing.starterDesc"),
       features: [
-        { text: t("billing.threeAiAgents"), included: true },
-        { text: t("billing.fiveThousandApiCalls"), included: true },
-        { text: t("billing.basicSkills"), included: true },
-        { text: t("billing.emailSupport"), included: true },
+        { text: t("billing.fiveAiAgents"), included: true },
+        { text: t("billing.tenKApiCalls"), included: true },
+        { text: t("billing.thirtyPlusSkills"), included: true },
+        { text: t("billing.fifteenPlusTemplates"), included: true },
+        { text: t("billing.trainingTaskMgmt"), included: true },
+        { text: t("billing.basicVoiceHipaa"), included: true },
         { text: t("billing.phiMonitoring"), included: false },
         { text: t("billing.customIntegrations"), included: false },
       ],
@@ -110,12 +112,14 @@ const BillingManagement = () => {
       period: t("billing.perMonth"),
       description: t("billing.professionalDesc"),
       features: [
-        { text: t("billing.fifteenAiAgents"), included: true },
-        { text: t("billing.fiftyThousandApiCalls"), included: true },
-        { text: t("billing.allSkills"), included: true },
-        { text: t("billing.prioritySupport"), included: true },
-        { text: t("billing.phiMonitoring"), included: true },
-        { text: t("billing.customIntegrations"), included: false },
+        { text: t("billing.twentyFiveAgents"), included: true },
+        { text: t("billing.hundredKApiCalls"), included: true },
+        { text: t("billing.sixtyPlusSkillsMultiLlm"), included: true },
+        { text: t("billing.fullVoiceIntegrations"), included: true },
+        { text: t("billing.phiMonitoringBaa"), included: true },
+        { text: t("billing.workflowAnalytics"), included: true },
+        { text: t("billing.tenTeamSeats"), included: true },
+        { text: t("billing.customIntegrationsWhiteLabel"), included: false },
       ],
       isCurrent: true,
       isPopular: true,
@@ -128,28 +132,32 @@ const BillingManagement = () => {
       description: t("billing.enterpriseDesc"),
       features: [
         { text: t("billing.unlimitedAgents"), included: true },
-        { text: t("billing.fiveHundredThousandApiCalls"), included: true },
-        { text: t("billing.customSkills"), included: true },
-        { text: t("billing.dedicatedSupport"), included: true },
-        { text: t("billing.hipaaBaa"), included: true },
-        { text: t("billing.customIntegrations"), included: true },
+        { text: t("billing.fiveHundredKApiCalls"), included: true },
+        { text: t("billing.hundredPlusSkillsSuites"), included: true },
+        { text: t("billing.customIntegrationsAllLlms"), included: true },
+        { text: t("billing.hipaaBaaCommandStation"), included: true },
+        { text: t("billing.whiteLabelApiPortal"), included: true },
+        { text: t("billing.fiftyTeamSeats"), included: true },
+        { text: t("billing.dedicatedAccountManager"), included: true },
       ],
       isCurrent: false,
       isPopular: false,
       ctaLabel: t("billing.upgrade"),
     },
     {
-      name: t("billing.custom"),
+      name: t("billing.enterprisePlus"),
       price: t("billing.contact"),
       period: " " + t("billing.sales"),
-      description: t("billing.customDesc"),
+      description: t("billing.enterprisePlusDesc"),
       features: [
         { text: t("billing.everythingInEnterprise"), included: true },
+        { text: t("billing.unlimitedApiStorage"), included: true },
         { text: t("billing.onPremiseDeployment"), included: true },
         { text: t("billing.customSla"), included: true },
-        { text: t("billing.customDevelopment"), included: true },
-        { text: t("billing.dedicatedAccountManager"), included: true },
-        { text: t("billing.whiteLabelOptions"), included: true },
+        { text: t("billing.customDevSso"), included: true },
+        { text: t("billing.unlimitedTeamSeats"), included: true },
+        { text: t("billing.twentyFourSevenSupport"), included: true },
+        { text: t("billing.customTrainingOnboarding"), included: true },
       ],
       isCurrent: false,
       isPopular: false,
@@ -187,7 +195,7 @@ const BillingManagement = () => {
 
   const handlePlanAction = (plan: Plan) => {
     if (plan.isCurrent) return;
-    if (plan.name === t("billing.custom")) {
+    if (plan.name === t("billing.enterprisePlus")) {
       toast({
         title: t("billing.contactSales"),
         description: t("billing.contactSalesDesc"),
@@ -290,6 +298,9 @@ const BillingManagement = () => {
             <p className="text-muted-foreground mt-1">
               {t("billing.subtitle")}
             </p>
+            <p className="text-sm text-blue-400/80 mt-2">
+              {t("billing.valueProposition")}
+            </p>
           </div>
 
           {/* ── Current Plan Banner ────────────────────── */}
@@ -332,16 +343,16 @@ const BillingManagement = () => {
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">{t("billing.agents")}</span>
-                      <span className="text-foreground font-medium">12 / 15</span>
+                      <span className="text-foreground font-medium">12 / 25</span>
                     </div>
-                    <Progress value={80} className="h-2" />
+                    <Progress value={48} className="h-2" />
                   </div>
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">{t("billing.apiCalls")}</span>
-                      <span className="text-foreground font-medium">28,500 / 50,000</span>
+                      <span className="text-foreground font-medium">28,500 / 100,000</span>
                     </div>
-                    <Progress value={57} className="h-2" />
+                    <Progress value={29} className="h-2" />
                   </div>
                 </div>
               </div>
@@ -428,15 +439,15 @@ const BillingManagement = () => {
                     className={`w-full ${
                       plan.isCurrent
                         ? "bg-white/10 text-muted-foreground cursor-default hover:bg-white/10"
-                        : plan.name === t("billing.custom")
+                        : plan.name === t("billing.enterprisePlus")
                           ? "border-white/[0.06] hover:bg-white/5"
                           : "gradient-primary text-white shadow-glow-sm hover:opacity-90 transition-opacity"
                     }`}
-                    variant={plan.isCurrent ? "secondary" : plan.name === t("billing.custom") ? "outline" : "default"}
+                    variant={plan.isCurrent ? "secondary" : plan.name === t("billing.enterprisePlus") ? "outline" : "default"}
                     disabled={plan.isCurrent}
                     onClick={() => handlePlanAction(plan)}
                   >
-                    {plan.name === t("billing.custom") && <Phone className="h-4 w-4 mr-2" />}
+                    {plan.name === t("billing.enterprisePlus") && <Phone className="h-4 w-4 mr-2" />}
                     {plan.ctaLabel}
                   </Button>
                 </div>
@@ -464,9 +475,9 @@ const BillingManagement = () => {
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>{t("billing.usage")}</span>
-                    <span>28,500 / 50,000</span>
+                    <span>28,500 / 100,000</span>
                   </div>
-                  <Progress value={57} className="h-1.5" />
+                  <Progress value={29} className="h-1.5" />
                 </div>
               </div>
 
@@ -484,9 +495,9 @@ const BillingManagement = () => {
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>{t("billing.usage")}</span>
-                    <span>12 / 15</span>
+                    <span>12 / 25</span>
                   </div>
-                  <Progress value={80} className="h-1.5" />
+                  <Progress value={48} className="h-1.5" />
                 </div>
               </div>
 
@@ -504,9 +515,9 @@ const BillingManagement = () => {
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>{t("billing.usage")}</span>
-                    <span>4.2 GB / 10 GB</span>
+                    <span>4.2 GB / 25 GB</span>
                   </div>
-                  <Progress value={42} className="h-1.5" />
+                  <Progress value={17} className="h-1.5" />
                 </div>
               </div>
 
@@ -524,9 +535,9 @@ const BillingManagement = () => {
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>{t("billing.usage")}</span>
-                    <span>8 / 20</span>
+                    <span>8 / 10</span>
                   </div>
-                  <Progress value={40} className="h-1.5" />
+                  <Progress value={80} className="h-1.5" />
                 </div>
               </div>
             </div>
