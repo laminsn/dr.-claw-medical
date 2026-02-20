@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { isPast, parseISO } from "date-fns";
+import { containsPhi, redactPhi, sanitizeInput } from "@/lib/security";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 export type KanbanColumn = "backlog" | "todo" | "in_progress" | "review" | "done";
@@ -53,23 +54,30 @@ export function useKanbanTasks() {
   const loadTasks = useCallback(async () => {
     if (!user) return;
     try {
-      const [tasksRes, commentsRes] = await Promise.all([
-        supabase
-          .from("kanban_tasks")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("task_comments")
-          .select("*")
-          .order("created_at", { ascending: true }),
-      ]);
+      // First fetch user's tasks
+      const tasksRes = await supabase
+        .from("kanban_tasks")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
 
       if (tasksRes.error) throw tasksRes.error;
-      if (commentsRes.error) throw commentsRes.error;
 
       const taskData = (tasksRes.data ?? []) as Omit<KanbanTask, "comments">[];
-      const commentData = (commentsRes.data ?? []) as TaskComment[];
+      const taskIds = taskData.map((t) => t.id);
+
+      // Only fetch comments for this user's tasks (scoped query)
+      let commentData: TaskComment[] = [];
+      if (taskIds.length > 0) {
+        const commentsRes = await supabase
+          .from("task_comments")
+          .select("*")
+          .in("task_id", taskIds)
+          .order("created_at", { ascending: true });
+
+        if (commentsRes.error) throw commentsRes.error;
+        commentData = (commentsRes.data ?? []) as TaskComment[];
+      }
 
       const merged: KanbanTask[] = taskData.map((t) => ({
         ...t,
@@ -146,10 +154,24 @@ export function useKanbanTasks() {
   // ── CRUD ─────────────────────────────────────────────────────────────────
   const createTask = useCallback(async (input: Partial<KanbanTaskInput>) => {
     if (!user || !input.title?.trim()) return;
+
+    // Sanitize inputs and check for PHI leakage
+    const title = sanitizeInput(input.title.trim());
+    const description = sanitizeInput(input.description?.trim() ?? "");
+
+    // Warn if PHI is detected in task content
+    if (containsPhi(title) || containsPhi(description)) {
+      toast({
+        title: "PHI Detected",
+        description: "Potential patient data was detected and redacted. Avoid including PHI in task titles.",
+        variant: "destructive",
+      } as Parameters<typeof toast>[0]);
+    }
+
     const row = {
       user_id: user.id,
-      title: input.title.trim(),
-      description: input.description?.trim() ?? "",
+      title: containsPhi(title) ? redactPhi(title) : title,
+      description: containsPhi(description) ? redactPhi(description) : description,
       agent_id: input.agent_id ?? "1",
       priority: input.priority ?? "medium",
       zone: input.zone ?? "clinical",
@@ -186,11 +208,18 @@ export function useKanbanTasks() {
 
   const addComment = useCallback(async (taskId: string, content: string, authorName = "You") => {
     if (!user || !content.trim()) return;
+
+    // Sanitize and redact PHI from comments
+    let safeContent = sanitizeInput(content.trim());
+    if (containsPhi(safeContent)) {
+      safeContent = redactPhi(safeContent);
+    }
+
     const row = {
       task_id: taskId,
       user_id: user.id,
-      author: authorName,
-      content: content.trim(),
+      author: sanitizeInput(authorName),
+      content: safeContent,
       avatar_color: "bg-cyan-500/20 text-cyan-400",
     };
     const { data, error } = await supabase.from("task_comments").insert(row).select().single();

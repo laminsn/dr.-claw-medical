@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Shield, Lock, CheckCircle, ArrowRight, ArrowLeft, Check, Star, AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { checkClientRateLimit, resetClientRateLimit, sanitizeInput, isValidEmail } from "@/lib/security";
 
 /* ---------- Password strength ---------- */
 function getPasswordStrength(pw: string, t: (k: string) => string): { score: number; label: string; color: string } {
@@ -26,10 +27,7 @@ function getPasswordStrength(pw: string, t: (k: string) => string): { score: num
   return { score, label: t("auth.passwordStrong"), color: "bg-green-500" };
 }
 
-/* ---------- Simple rate-limit ---------- */
-const loginAttempts: { count: number; lastAttempt: number } = { count: 0, lastAttempt: 0 };
-const MAX_ATTEMPTS = 5;
-const LOCKOUT_MS = 60_000; // 1 minute
+/* ---------- Rate limiting via security module ---------- */
 
 const PLANS = [
   { id: "starter", name: "Starter", price: "$147", agents: "2 Agents", skills: "5 Skills" },
@@ -61,12 +59,18 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
-    const now = Date.now();
-    if (now - loginAttempts.lastAttempt > LOCKOUT_MS) {
-      loginAttempts.count = 0;
+    // Validate email format
+    if (!isValidEmail(email)) {
+      toast({ title: t("auth.errors.error"), description: "Please enter a valid email address.", variant: "destructive" });
+      setLoading(false);
+      return;
     }
-    if (loginAttempts.count >= MAX_ATTEMPTS) {
-      const remaining = Math.ceil((LOCKOUT_MS - (now - loginAttempts.lastAttempt)) / 1000);
+
+    // Rate limit check (client-side first layer — server enforces via edge function)
+    const action = mode === "signin" ? "auth_login" : "auth_signup";
+    const rateCheck = checkClientRateLimit(action);
+    if (!rateCheck.allowed) {
+      const remaining = Math.ceil(rateCheck.retryAfterMs / 1000);
       toast({
         title: t("auth.errors.tooManyAttempts"),
         description: t("auth.errors.tooManyAttemptsDesc", { remaining }),
@@ -75,15 +79,13 @@ const Auth = () => {
       setLoading(false);
       return;
     }
-    loginAttempts.count++;
-    loginAttempts.lastAttempt = now;
 
     if (mode === "signin") {
-      const { error } = await signIn(email, password);
+      const { error } = await signIn(sanitizeInput(email), password);
       if (error) {
         toast({ title: t("auth.errors.signInFailed"), description: error.message, variant: "destructive" });
       } else {
-        loginAttempts.count = 0;
+        resetClientRateLimit("auth_login");
         navigate("/dashboard");
       }
     } else {
@@ -108,10 +110,11 @@ const Auth = () => {
         setLoading(false);
         return;
       }
-      const { error } = await signUp(email, password, fullName);
+      const { error } = await signUp(sanitizeInput(email), password, sanitizeInput(fullName));
       if (error) {
         toast({ title: t("auth.errors.signUpFailed"), description: error.message, variant: "destructive" });
       } else {
+        resetClientRateLimit("auth_signup");
         toast({ title: t("auth.success.welcomeTitle"), description: t("auth.success.welcomeDesc") });
       }
     }
