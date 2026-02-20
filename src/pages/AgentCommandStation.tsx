@@ -57,6 +57,7 @@ import {
   Server,
   PanelRightOpen,
   PanelRightClose,
+  MessageCircle,
 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -67,6 +68,7 @@ import { Badge } from "@/components/ui/badge";
 import { useKanbanTasks, KanbanTask, KanbanColumn, KanbanTaskInput, TaskComment, DateFilter } from "@/hooks/useKanbanTasks";
 import { useAuth } from "@/hooks/useAuth";
 import { TaskAnalyticsDashboard } from "@/components/command-station/TaskAnalyticsDashboard";
+import { AgentChatPanel } from "@/components/command-station/AgentChatPanel";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface AgentMessage {
@@ -103,7 +105,7 @@ interface AgentState {
   messages: AgentMessage[];
 }
 
-type ViewMode = "board" | "split" | "analytics";
+type ViewMode = "board" | "split" | "analytics" | "chat";
 
 // ── Mock Data ───────────────────────────────────────────────────────────────
 const MOCK_AGENTS: AgentState[] = [
@@ -339,6 +341,7 @@ const AgentCommandStation = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showActivityFeed, setShowActivityFeed] = useState(false);
   const [fleetBarExpanded, setFleetBarExpanded] = useState(true);
+  const [chatAgentId, setChatAgentId] = useState<string | null>("1");
   const activityFeedRef = useRef<HTMLDivElement>(null);
 
   // ── Fleet health metrics (derived) ─────────────────────────────────────
@@ -1427,6 +1430,9 @@ const AgentCommandStation = () => {
                 <button onClick={() => setViewMode("split")} className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium transition-colors ${viewMode === "split" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/40"}`}>
                   <LayoutGrid className="h-4 w-4" /> Multi-Screen
                 </button>
+                <button onClick={() => setViewMode("chat")} className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium transition-colors ${viewMode === "chat" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/40"}`}>
+                  <MessageCircle className="h-4 w-4" /> Chat
+                </button>
               </div>
               <button
                 onClick={() => setShowActivityFeed((p) => !p)}
@@ -1455,6 +1461,13 @@ const AgentCommandStation = () => {
             {viewMode === "split" && renderSplitScreen()}
             {viewMode === "board" && renderTaskBoard()}
             {viewMode === "analytics" && <TaskAnalyticsDashboard tasks={tasks} agents={agents} />}
+            {viewMode === "chat" && (
+              <AgentChatPanel
+                agents={agents.map((a) => ({ id: a.id, name: a.name, model: a.model, zone: a.zone, active: a.active }))}
+                selectedAgentId={chatAgentId}
+                onSelectAgent={setChatAgentId}
+              />
+            )}
           </div>
           {renderActivityFeed()}
         </div>
