@@ -1,5 +1,22 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  ReactFlow,
+  Background,
+  Controls,
+  MiniMap,
+  useNodesState,
+  useEdgesState,
+  addEdge,
+  type Connection,
+  type Node,
+  type Edge,
+  type NodeTypes,
+  BackgroundVariant,
+  Panel,
+  MarkerType,
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 import {
   Bot,
   Send,
@@ -27,12 +44,28 @@ import {
   ArrowDown,
   Fullscreen,
   MonitorPlay,
+  LayoutGrid,
+  Rows3,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Workflow,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import AgentNodeComponent, {
+  type AgentNodeData,
+} from "@/components/command-station/AgentNode";
+import CommandPanelNodeComponent, {
+  type CommandPanelNodeData,
+} from "@/components/command-station/CommandPanelNode";
+import MetricsPanelNodeComponent, {
+  type MetricsPanelNodeData,
+} from "@/components/command-station/MetricsPanelNode";
+import LogsPanelNodeComponent, {
+  type LogsPanelNodeData,
+} from "@/components/command-station/LogsPanelNode";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface AgentMessage {
@@ -69,10 +102,7 @@ interface AgentState {
   messages: AgentMessage[];
 }
 
-type SortField = "name" | "model" | "zone" | "active" | "tasksCompleted" | "tasksFailed" | "successRate" | "costToday" | "costMonth" | "tokensUsed" | "avgResponseTime";
-type SortDir = "asc" | "desc";
-type ViewMode = "command" | "compare";
-type CompareMetric = "tasksCompleted" | "tasksFailed" | "successRate" | "costToday" | "costMonth" | "tokensUsed";
+type ViewMode = "canvas" | "split" | "fullscreen";
 
 // ── Mock Data ───────────────────────────────────────────────────────────────
 const MOCK_AGENTS: AgentState[] = [
@@ -90,7 +120,7 @@ const MOCK_AGENTS: AgentState[] = [
     memory: 54,
     tokensUsed: 412500,
     costToday: 4.13,
-    costMonth: 87.40,
+    costMonth: 87.4,
     avgResponseTime: "1.4s",
     logs: [
       { id: "l1", level: "success", message: "Appointment confirmed — Maria Gonzalez, 9:00 AM", timestamp: "2m ago" },
@@ -118,7 +148,7 @@ const MOCK_AGENTS: AgentState[] = [
     memory: 41,
     tokensUsed: 198000,
     costToday: 2.21,
-    costMonth: 43.60,
+    costMonth: 43.6,
     avgResponseTime: "2.1s",
     logs: [
       { id: "l1", level: "success", message: "Blog post generated: 'Heart Health Month Tips'", timestamp: "5m ago" },
@@ -143,8 +173,8 @@ const MOCK_AGENTS: AgentState[] = [
     cpu: 0,
     memory: 12,
     tokensUsed: 89200,
-    costToday: 0.00,
-    costMonth: 21.30,
+    costToday: 0.0,
+    costMonth: 21.3,
     avgResponseTime: "3.4s",
     logs: [
       { id: "l1", level: "success", message: "NIH R01 proposal draft completed — $1.2M request", timestamp: "2h ago" },
@@ -155,11 +185,163 @@ const MOCK_AGENTS: AgentState[] = [
   },
 ];
 
-const ZONE_COLORS = {
-  clinical: "text-red-400 bg-red-500/10 border-red-500/30",
-  operations: "text-amber-400 bg-amber-500/10 border-amber-500/30",
-  external: "text-blue-400 bg-blue-500/10 border-blue-500/30",
+// ── Helpers ─────────────────────────────────────────────────────────────────
+const clamp = (v: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, v));
+
+const generateAgentReply = (agent: AgentState, cmd: string): string => {
+  const lower = cmd.toLowerCase();
+  if (lower.includes("status") || lower.includes("what are you"))
+    return `Acknowledged. I'm currently ${agent.currentTask.toLowerCase()}. All systems nominal.`;
+  if (lower.includes("pause") || lower.includes("stop"))
+    return `Understood. Pausing current task and queuing remaining work. I'll resume when you give the command.`;
+  if (lower.includes("priority") || lower.includes("focus"))
+    return `Reprioritizing task queue. Bringing high-urgency items to front. Estimated completion of current task: 3 minutes.`;
+  if (lower.includes("report") || lower.includes("summary"))
+    return `Summary for today: ${agent.tasksCompleted} tasks completed, ${agent.tasksFailed} flagged for review. Cost so far: $${agent.costToday.toFixed(2)}. Avg response: ${agent.avgResponseTime}.`;
+  return `Command received: "${cmd}". Processing and updating task queue accordingly. I'll notify you when complete.`;
 };
+
+// ── Node Types ──────────────────────────────────────────────────────────────
+const nodeTypes: NodeTypes = {
+  agentNode: AgentNodeComponent,
+  commandPanel: CommandPanelNodeComponent,
+  metricsPanel: MetricsPanelNodeComponent,
+  logsPanel: LogsPanelNodeComponent,
+};
+
+// ── Canvas Layout Positions ─────────────────────────────────────────────────
+function buildNodesAndEdges(
+  agents: AgentState[],
+  selectedAgentId: string,
+  onSelectAgent: (id: string) => void,
+  onSendCommand: (agentId: string, cmd: string) => void
+): { nodes: Node[]; edges: Edge[] } {
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+
+  // Place agent nodes in a column
+  agents.forEach((agent, i) => {
+    nodes.push({
+      id: `agent-${agent.id}`,
+      type: "agentNode",
+      position: { x: 80, y: i * 380 },
+      data: {
+        ...agent,
+        onSelect: (nid: string) => {
+          const aid = nid.replace("agent-", "");
+          onSelectAgent(aid);
+        },
+      } satisfies AgentNodeData,
+    });
+  });
+
+  // Metrics panel (top right)
+  nodes.push({
+    id: "metrics-panel",
+    type: "metricsPanel",
+    position: { x: 500, y: 0 },
+    data: {
+      agents: agents.map((a) => ({
+        id: a.id,
+        name: a.name,
+        active: a.active,
+        tasksCompleted: a.tasksCompleted,
+        tasksFailed: a.tasksFailed,
+        tokensUsed: a.tokensUsed,
+        costToday: a.costToday,
+        costMonth: a.costMonth,
+        zone: a.zone,
+      })),
+    } satisfies MetricsPanelNodeData,
+  });
+
+  // Command panel (middle right)
+  const selectedAgent = agents.find((a) => a.id === selectedAgentId) || agents[0];
+  nodes.push({
+    id: "command-panel",
+    type: "commandPanel",
+    position: { x: 500, y: 380 },
+    data: {
+      agentName: selectedAgent.name,
+      agentId: selectedAgent.id,
+      messages: selectedAgent.messages,
+      onSendCommand,
+    } satisfies CommandPanelNodeData,
+  });
+
+  // Logs panel (bottom right)
+  nodes.push({
+    id: "logs-panel",
+    type: "logsPanel",
+    position: { x: 920, y: 200 },
+    data: {
+      agentName: selectedAgent.name,
+      logs: selectedAgent.logs,
+    } satisfies LogsPanelNodeData,
+  });
+
+  // Edges from selected agent to command panel
+  edges.push({
+    id: `edge-agent-cmd`,
+    source: `agent-${selectedAgentId}`,
+    target: "command-panel",
+    sourceHandle: "right",
+    targetHandle: undefined,
+    animated: true,
+    style: { stroke: "rgb(6, 182, 212)", strokeWidth: 2 },
+    markerEnd: { type: MarkerType.ArrowClosed, color: "rgb(6, 182, 212)" },
+  });
+
+  // Edges from selected agent to logs panel
+  edges.push({
+    id: `edge-agent-logs`,
+    source: `agent-${selectedAgentId}`,
+    target: "logs-panel",
+    animated: true,
+    style: { stroke: "rgb(16, 185, 129)", strokeWidth: 1.5 },
+    markerEnd: { type: MarkerType.ArrowClosed, color: "rgb(16, 185, 129)" },
+  });
+
+  // Edges from all agents to metrics
+  agents.forEach((agent) => {
+    edges.push({
+      id: `edge-metrics-${agent.id}`,
+      source: `agent-${agent.id}`,
+      target: "metrics-panel",
+      sourceHandle: "right",
+      targetHandle: undefined,
+      style: {
+        stroke: "rgba(139, 92, 246, 0.3)",
+        strokeWidth: 1,
+        strokeDasharray: "5,5",
+      },
+    });
+  });
+
+  // Connection edges between agents (data flow)
+  for (let i = 0; i < agents.length - 1; i++) {
+    edges.push({
+      id: `edge-flow-${agents[i].id}-${agents[i + 1].id}`,
+      source: `agent-${agents[i].id}`,
+      target: `agent-${agents[i + 1].id}`,
+      style: { stroke: "rgba(255,255,255,0.08)", strokeWidth: 1 },
+      animated: false,
+    });
+  }
+
+  return { nodes, edges };
+}
+
+// ── Fullscreen Tasks Mock ───────────────────────────────────────────────────
+const FULLSCREEN_TASKS = [
+  { id: "ft1", label: "Insurance verification #4822", progress: 72 },
+  { id: "ft2", label: "Appointment reminder batch (14 patients)", progress: 45 },
+  { id: "ft3", label: "Lab result notification — J. Chen", progress: 91 },
+  { id: "ft4", label: "Referral processing — Cardiology", progress: 18 },
+  { id: "ft5", label: "Campaign A/B test analysis", progress: 33 },
+  { id: "ft6", label: "Grant deadline compliance check", progress: 55 },
+];
 
 const LOG_LEVEL_STYLES = {
   info: "text-blue-400",
@@ -168,110 +350,120 @@ const LOG_LEVEL_STYLES = {
   success: "text-emerald-400",
 };
 
-const LOG_LEVEL_ICONS = {
-  info: Radio,
-  warn: AlertTriangle,
-  error: AlertTriangle,
-  success: CheckCircle2,
-};
-
-// ── Fullscreen task queue mock data ─────────────────────────────────────────
-const FULLSCREEN_TASKS = [
-  { id: "ft1", label: "Insurance verification #4822", progress: 72 },
-  { id: "ft2", label: "Appointment reminder batch (14 patients)", progress: 45 },
-  { id: "ft3", label: "Lab result notification — J. Chen", progress: 91 },
-  { id: "ft4", label: "Referral processing — Cardiology", progress: 18 },
-  { id: "ft5", label: "Patient intake form digitization", progress: 60 },
-  { id: "ft6", label: "Campaign A/B test analysis", progress: 33 },
-  { id: "ft7", label: "Grant deadline compliance check", progress: 55 },
-  { id: "ft8", label: "EHR data reconciliation batch #12", progress: 80 },
-];
-
-// ── Helpers ─────────────────────────────────────────────────────────────────
-const getSuccessRate = (a: AgentState) =>
-  a.tasksCompleted + a.tasksFailed > 0
-    ? Math.round((a.tasksCompleted / (a.tasksCompleted + a.tasksFailed)) * 100)
-    : 0;
-
-const parseResponseTime = (s: string): number => parseFloat(s.replace("s", ""));
-
-const METRIC_LABELS: Record<CompareMetric, string> = {
-  tasksCompleted: "Tasks Completed",
-  tasksFailed: "Tasks Failed",
-  successRate: "Success Rate (%)",
-  costToday: "Cost Today ($)",
-  costMonth: "Cost This Month ($)",
-  tokensUsed: "Tokens Used",
-};
-
-const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
-
 // ── Component ───────────────────────────────────────────────────────────────
 const AgentCommandStation = () => {
   const { t } = useTranslation();
   const [agents, setAgents] = useState<AgentState[]>(MOCK_AGENTS);
-  const [selectedAgent, setSelectedAgent] = useState<AgentState>(MOCK_AGENTS[0]);
-  const [commandInput, setCommandInput] = useState("");
-  const [screenExpanded, setScreenExpanded] = useState(false);
-  const [screenRefreshing, setScreenRefreshing] = useState(false);
-  const [agentDropOpen, setAgentDropOpen] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
-
-  // New state: view mode, fullscreen, comparison
-  const [viewMode, setViewMode] = useState<ViewMode>("command");
+  const [selectedAgentId, setSelectedAgentId] = useState("1");
+  const [viewMode, setViewMode] = useState<ViewMode>("canvas");
   const [fullscreenMode, setFullscreenMode] = useState(false);
-  const [sortField, setSortField] = useState<SortField>("name");
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const [compareMetric, setCompareMetric] = useState<CompareMetric>("tasksCompleted");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Fullscreen live metrics state
+  // Multi-screen state
+  const [splitScreenIds, setSplitScreenIds] = useState<string[]>(["1", "2"]);
+
+  // Fullscreen live state
   const [fsTasks, setFsTasks] = useState(FULLSCREEN_TASKS.map((t) => ({ ...t })));
   const [fsTick, setFsTick] = useState(0);
 
-  // Auto-scroll chat
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [selectedAgent.messages]);
+  const selectedAgent = agents.find((a) => a.id === selectedAgentId) || agents[0];
 
-  // Sync selected agent when agents update
-  useEffect(() => {
-    const updated = agents.find((a) => a.id === selectedAgent.id);
-    if (updated) setSelectedAgent(updated);
-  }, [agents]);
+  // ── Send command handler ────────────────────────────────────────────────
+  const handleSendCommand = useCallback(
+    (agentId: string, command: string) => {
+      const agent = agents.find((a) => a.id === agentId);
+      if (!agent) return;
 
-  // ── Fullscreen auto-refresh every 5 seconds ──────────────────────────────
+      const newMsg: AgentMessage = {
+        id: String(Date.now()),
+        from: "commander",
+        content: command,
+        timestamp: "just now",
+      };
+
+      const agentReply: AgentMessage = {
+        id: String(Date.now() + 1),
+        from: "agent",
+        content: generateAgentReply(agent, command),
+        timestamp: "just now",
+      };
+
+      setAgents((prev) =>
+        prev.map((a) =>
+          a.id === agentId
+            ? { ...a, messages: [...a.messages, newMsg, agentReply] }
+            : a
+        )
+      );
+    },
+    [agents]
+  );
+
+  // ── Build React Flow graph ──────────────────────────────────────────────
+  const { nodes: initialNodes, edges: initialEdges } = useMemo(
+    () =>
+      buildNodesAndEdges(agents, selectedAgentId, setSelectedAgentId, handleSendCommand),
+    [agents, selectedAgentId, handleSendCommand]
+  );
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+  // Sync nodes/edges when agents or selection changes
+  useEffect(() => {
+    const { nodes: newNodes, edges: newEdges } = buildNodesAndEdges(
+      agents,
+      selectedAgentId,
+      setSelectedAgentId,
+      handleSendCommand
+    );
+    setNodes(newNodes);
+    setEdges(newEdges);
+  }, [agents, selectedAgentId, handleSendCommand, setNodes, setEdges]);
+
+  const onConnect = useCallback(
+    (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
+    [setEdges]
+  );
+
+  // ── Fullscreen auto-refresh ─────────────────────────────────────────────
   useEffect(() => {
     if (!fullscreenMode) return;
-
     const interval = setInterval(() => {
       setFsTick((t) => t + 1);
-
-      // Fluctuate agent metrics
       setAgents((prev) =>
         prev.map((a) => ({
           ...a,
-          cpu: a.active ? clamp(a.cpu + Math.floor(Math.random() * 13) - 6, 5, 95) : 0,
-          memory: a.active ? clamp(a.memory + Math.floor(Math.random() * 9) - 4, 10, 92) : a.memory,
-          tokensUsed: a.active ? a.tokensUsed + Math.floor(Math.random() * 800) + 100 : a.tokensUsed,
-          costToday: a.active ? Math.round((a.costToday + Math.random() * 0.08) * 100) / 100 : a.costToday,
-          tasksCompleted: a.active && Math.random() > 0.7 ? a.tasksCompleted + 1 : a.tasksCompleted,
+          cpu: a.active
+            ? clamp(a.cpu + Math.floor(Math.random() * 13) - 6, 5, 95)
+            : 0,
+          memory: a.active
+            ? clamp(a.memory + Math.floor(Math.random() * 9) - 4, 10, 92)
+            : a.memory,
+          tokensUsed: a.active
+            ? a.tokensUsed + Math.floor(Math.random() * 800) + 100
+            : a.tokensUsed,
+          costToday: a.active
+            ? Math.round((a.costToday + Math.random() * 0.08) * 100) / 100
+            : a.costToday,
+          tasksCompleted:
+            a.active && Math.random() > 0.7
+              ? a.tasksCompleted + 1
+              : a.tasksCompleted,
         }))
       );
-
-      // Progress the task bars
       setFsTasks((prev) =>
         prev.map((t) => {
           let next = t.progress + Math.floor(Math.random() * 12) + 1;
-          if (next >= 100) next = Math.floor(Math.random() * 25) + 5; // reset
+          if (next >= 100) next = Math.floor(Math.random() * 25) + 5;
           return { ...t, progress: next };
         })
       );
     }, 5000);
-
     return () => clearInterval(interval);
   }, [fullscreenMode]);
 
-  // ── Escape key to exit fullscreen ─────────────────────────────────────────
+  // ── Escape key ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!fullscreenMode) return;
     const handler = (e: KeyboardEvent) => {
@@ -281,180 +473,37 @@ const AgentCommandStation = () => {
     return () => window.removeEventListener("keydown", handler);
   }, [fullscreenMode]);
 
-  const handleSendCommand = () => {
-    const trimmed = commandInput.trim();
-    if (!trimmed) return;
+  // ── Canvas auto-refresh (gentle metric fluctuation) ─────────────────────
+  useEffect(() => {
+    if (fullscreenMode) return;
+    const interval = setInterval(() => {
+      setAgents((prev) =>
+        prev.map((a) => ({
+          ...a,
+          cpu: a.active
+            ? clamp(a.cpu + Math.floor(Math.random() * 7) - 3, 5, 95)
+            : 0,
+          memory: a.active
+            ? clamp(a.memory + Math.floor(Math.random() * 5) - 2, 10, 92)
+            : a.memory,
+          tokensUsed: a.active
+            ? a.tokensUsed + Math.floor(Math.random() * 200)
+            : a.tokensUsed,
+        }))
+      );
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [fullscreenMode]);
 
-    const newMsg: AgentMessage = {
-      id: String(Date.now()),
-      from: "commander",
-      content: trimmed,
-      timestamp: "just now",
-    };
-
-    // Simulate agent response
-    const agentReply: AgentMessage = {
-      id: String(Date.now() + 1),
-      from: "agent",
-      content: generateAgentReply(selectedAgent.name, trimmed),
-      timestamp: "just now",
-    };
-
-    setAgents((prev) =>
-      prev.map((a) =>
-        a.id === selectedAgent.id
-          ? { ...a, messages: [...a.messages, newMsg, agentReply] }
-          : a
-      )
-    );
-    setCommandInput("");
-  };
-
-  const generateAgentReply = (agentName: string, cmd: string): string => {
-    const lower = cmd.toLowerCase();
-    if (lower.includes("status") || lower.includes("what are you"))
-      return `Acknowledged. I'm currently ${selectedAgent.currentTask.toLowerCase()}. All systems nominal.`;
-    if (lower.includes("pause") || lower.includes("stop"))
-      return `Understood. Pausing current task and queuing remaining work. I'll resume when you give the command.`;
-    if (lower.includes("priority") || lower.includes("focus"))
-      return `Reprioritizing task queue. Bringing high-urgency items to front. Estimated completion of current task: 3 minutes.`;
-    if (lower.includes("report") || lower.includes("summary"))
-      return `Summary for today: ${selectedAgent.tasksCompleted} tasks completed, ${selectedAgent.tasksFailed} flagged for review. Cost so far: $${selectedAgent.costToday.toFixed(2)}. Avg response: ${selectedAgent.avgResponseTime}.`;
-    return `Command received: "${cmd}". Processing and updating task queue accordingly. I'll notify you when complete.`;
-  };
-
-  const handleRefreshScreen = () => {
-    setScreenRefreshing(true);
-    setTimeout(() => setScreenRefreshing(false), 1200);
-  };
-
-  // ── Sorting logic for comparison table ────────────────────────────────────
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortField(field);
-      setSortDir("asc");
-    }
-  };
-
-  const getSortedAgents = useCallback((): AgentState[] => {
-    const sorted = [...agents].sort((a, b) => {
-      let valA: number | string;
-      let valB: number | string;
-
-      switch (sortField) {
-        case "name":
-          valA = a.name.toLowerCase();
-          valB = b.name.toLowerCase();
-          break;
-        case "model":
-          valA = a.model.toLowerCase();
-          valB = b.model.toLowerCase();
-          break;
-        case "zone":
-          valA = a.zone;
-          valB = b.zone;
-          break;
-        case "active":
-          valA = a.active ? 1 : 0;
-          valB = b.active ? 1 : 0;
-          break;
-        case "tasksCompleted":
-          valA = a.tasksCompleted;
-          valB = b.tasksCompleted;
-          break;
-        case "tasksFailed":
-          valA = a.tasksFailed;
-          valB = b.tasksFailed;
-          break;
-        case "successRate":
-          valA = getSuccessRate(a);
-          valB = getSuccessRate(b);
-          break;
-        case "costToday":
-          valA = a.costToday;
-          valB = b.costToday;
-          break;
-        case "costMonth":
-          valA = a.costMonth;
-          valB = b.costMonth;
-          break;
-        case "tokensUsed":
-          valA = a.tokensUsed;
-          valB = b.tokensUsed;
-          break;
-        case "avgResponseTime":
-          valA = parseResponseTime(a.avgResponseTime);
-          valB = parseResponseTime(b.avgResponseTime);
-          break;
-        default:
-          valA = a.name;
-          valB = b.name;
-      }
-
-      if (valA < valB) return sortDir === "asc" ? -1 : 1;
-      if (valA > valB) return sortDir === "asc" ? 1 : -1;
-      return 0;
-    });
-    return sorted;
-  }, [agents, sortField, sortDir]);
-
-  const getMetricValue = (a: AgentState, metric: CompareMetric): number => {
-    switch (metric) {
-      case "tasksCompleted":
-        return a.tasksCompleted;
-      case "tasksFailed":
-        return a.tasksFailed;
-      case "successRate":
-        return getSuccessRate(a);
-      case "costToday":
-        return a.costToday;
-      case "costMonth":
-        return a.costMonth;
-      case "tokensUsed":
-        return a.tokensUsed;
-      default:
-        return 0;
-    }
-  };
-
-  const getPerformanceColor = (rate: number): string => {
-    if (rate >= 95) return "text-emerald-400";
-    if (rate >= 80) return "text-amber-400";
-    return "text-red-400";
-  };
-
-  const getPerformanceBg = (rate: number): string => {
-    if (rate >= 95) return "bg-emerald-500";
-    if (rate >= 80) return "bg-amber-500";
-    return "bg-red-500";
-  };
-
-  const agent = selectedAgent;
-  const successRate = getSuccessRate(agent);
-
-  // ── Sort header helper ────────────────────────────────────────────────────
-  const SortHeader = ({ field, label, className = "" }: { field: SortField; label: string; className?: string }) => (
-    <button
-      onClick={() => handleSort(field)}
-      className={`flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors ${className}`}
-    >
-      {label}
-      {sortField === field ? (
-        sortDir === "asc" ? (
-          <ArrowUp className="h-3 w-3 text-primary" />
-        ) : (
-          <ArrowDown className="h-3 w-3 text-primary" />
+  const getSuccessRate = (a: AgentState) =>
+    a.tasksCompleted + a.tasksFailed > 0
+      ? Math.round(
+          (a.tasksCompleted / (a.tasksCompleted + a.tasksFailed)) * 100
         )
-      ) : (
-        <ArrowUpDown className="h-3 w-3 opacity-40" />
-      )}
-    </button>
-  );
+      : 0;
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ── FULLSCREEN MODE ───────────────────────────────────────────────────────
+  // ── FULLSCREEN MODE ─────────────────────────────────────────────────────
   // ═══════════════════════════════════════════════════════════════════════════
   if (fullscreenMode) {
     const totalTokens = agents.reduce((s, a) => s + a.tokensUsed, 0);
@@ -463,27 +512,35 @@ const AgentCommandStation = () => {
 
     return (
       <div className="fixed inset-0 z-[9999] bg-black text-green-400 font-mono overflow-auto flex flex-col">
-        {/* Fullscreen header bar */}
         <div className="flex items-center justify-between px-6 py-3 border-b border-green-900/60 bg-black/95 shrink-0">
           <div className="flex items-center gap-4">
             <MonitorPlay className="h-5 w-5 text-cyan-400" />
-            <span className="text-sm font-bold tracking-widest text-cyan-400 uppercase">{t("commandStation.agentScreen")}</span>
-            <span className="text-xs text-green-600 animate-pulse">{t("commandStation.live")}</span>
+            <span className="text-sm font-bold tracking-widest text-cyan-400 uppercase">
+              {t("commandStation.agentScreen")}
+            </span>
+            <span className="text-xs text-green-600 animate-pulse">
+              {t("commandStation.live")}
+            </span>
             <span className="text-xs text-green-700">Tick #{fsTick}</span>
           </div>
           <div className="flex items-center gap-6">
-            {/* Global counters */}
             <div className="flex items-center gap-2 text-xs">
               <Zap className="h-3.5 w-3.5 text-amber-400" />
-              <span className="text-amber-400 tabular-nums">{totalTokens.toLocaleString()} tokens</span>
+              <span className="text-amber-400 tabular-nums">
+                {totalTokens.toLocaleString()} tokens
+              </span>
             </div>
             <div className="flex items-center gap-2 text-xs">
               <DollarSign className="h-3.5 w-3.5 text-amber-400" />
-              <span className="text-amber-400 tabular-nums">${totalCost.toFixed(2)} today</span>
+              <span className="text-amber-400 tabular-nums">
+                ${totalCost.toFixed(2)} today
+              </span>
             </div>
             <div className="flex items-center gap-2 text-xs">
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-              <span className="text-emerald-400 tabular-nums">{totalTasks.toLocaleString()} tasks done</span>
+              <span className="text-emerald-400 tabular-nums">
+                {totalTasks.toLocaleString()} tasks done
+              </span>
             </div>
             <Button
               variant="outline"
@@ -497,101 +554,171 @@ const AgentCommandStation = () => {
           </div>
         </div>
 
-        {/* Agent grid */}
         <div className="flex-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-0 overflow-auto">
           {agents.map((ag) => {
             const sr = getSuccessRate(ag);
             const agTasks = fsTasks.slice(0, ag.active ? 3 : 1);
             return (
-              <div key={ag.id} className="border border-green-900/40 p-4 flex flex-col gap-3 relative overflow-hidden">
-                {/* Agent header */}
+              <div
+                key={ag.id}
+                className="border border-green-900/40 p-4 flex flex-col gap-3 relative overflow-hidden"
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="relative flex h-2.5 w-2.5">
                       {ag.active && (
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
                       )}
-                      <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${ag.active ? "bg-green-500" : "bg-gray-600"}`} />
+                      <span
+                        className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                          ag.active ? "bg-green-500" : "bg-gray-600"
+                        }`}
+                      />
                     </span>
-                    <span className="text-sm font-bold text-cyan-400">{ag.name}</span>
+                    <span className="text-sm font-bold text-cyan-400">
+                      {ag.name}
+                    </span>
                     <span className="text-[10px] text-green-700">{ag.model}</span>
                   </div>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded border ${ag.active ? "border-green-700 text-green-400 bg-green-950/50" : "border-gray-700 text-gray-500 bg-gray-900/50"}`}>
-                    {ag.active ? t("commandStation.online") : t("commandStation.offline")}
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded border ${
+                      ag.active
+                        ? "border-green-700 text-green-400 bg-green-950/50"
+                        : "border-gray-700 text-gray-500 bg-gray-900/50"
+                    }`}
+                  >
+                    {ag.active
+                      ? t("commandStation.online")
+                      : t("commandStation.offline")}
                   </span>
                 </div>
 
-                {/* Current task */}
-                <p className="text-xs text-green-500/80 leading-relaxed">&gt; {ag.currentTask}</p>
+                <p className="text-xs text-green-500/80 leading-relaxed">
+                  &gt; {ag.currentTask}
+                </p>
 
-                {/* CPU / Memory gauges */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] text-green-700 flex items-center gap-1"><Cpu className="h-3 w-3" /> CPU</span>
-                      <span className="text-[10px] text-green-400 tabular-nums">{ag.cpu}%</span>
+                      <span className="text-[10px] text-green-700 flex items-center gap-1">
+                        <Cpu className="h-3 w-3" /> CPU
+                      </span>
+                      <span className="text-[10px] text-green-400 tabular-nums">
+                        {ag.cpu}%
+                      </span>
                     </div>
                     <div className="h-2 rounded bg-green-950 overflow-hidden">
                       <div
-                        className={`h-full rounded transition-all duration-1000 ease-in-out ${ag.cpu > 75 ? "bg-red-500" : ag.cpu > 50 ? "bg-amber-500" : "bg-green-500"}`}
+                        className={`h-full rounded transition-all duration-1000 ease-in-out ${
+                          ag.cpu > 75
+                            ? "bg-red-500"
+                            : ag.cpu > 50
+                            ? "bg-amber-500"
+                            : "bg-green-500"
+                        }`}
                         style={{ width: `${ag.cpu}%` }}
                       />
                     </div>
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] text-green-700 flex items-center gap-1"><Activity className="h-3 w-3" /> MEM</span>
-                      <span className="text-[10px] text-green-400 tabular-nums">{ag.memory}%</span>
+                      <span className="text-[10px] text-green-700 flex items-center gap-1">
+                        <Activity className="h-3 w-3" /> MEM
+                      </span>
+                      <span className="text-[10px] text-green-400 tabular-nums">
+                        {ag.memory}%
+                      </span>
                     </div>
                     <div className="h-2 rounded bg-green-950 overflow-hidden">
                       <div
-                        className={`h-full rounded transition-all duration-1000 ease-in-out ${ag.memory > 75 ? "bg-red-500" : ag.memory > 50 ? "bg-amber-500" : "bg-cyan-500"}`}
+                        className={`h-full rounded transition-all duration-1000 ease-in-out ${
+                          ag.memory > 75
+                            ? "bg-red-500"
+                            : ag.memory > 50
+                            ? "bg-amber-500"
+                            : "bg-cyan-500"
+                        }`}
                         style={{ width: `${ag.memory}%` }}
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Stats row */}
                 <div className="grid grid-cols-4 gap-2">
                   {[
-                    { label: "Tasks", value: ag.tasksCompleted.toLocaleString(), color: "text-green-400" },
-                    { label: "Failed", value: String(ag.tasksFailed), color: ag.tasksFailed > 5 ? "text-red-400" : "text-green-400" },
-                    { label: "Rate", value: `${sr}%`, color: sr >= 95 ? "text-green-400" : sr >= 80 ? "text-amber-400" : "text-red-400" },
-                    { label: "Cost", value: `$${ag.costToday.toFixed(2)}`, color: "text-amber-400" },
+                    {
+                      label: "Tasks",
+                      value: ag.tasksCompleted.toLocaleString(),
+                      color: "text-green-400",
+                    },
+                    {
+                      label: "Failed",
+                      value: String(ag.tasksFailed),
+                      color:
+                        ag.tasksFailed > 5
+                          ? "text-red-400"
+                          : "text-green-400",
+                    },
+                    {
+                      label: "Rate",
+                      value: `${sr}%`,
+                      color:
+                        sr >= 95
+                          ? "text-green-400"
+                          : sr >= 80
+                          ? "text-amber-400"
+                          : "text-red-400",
+                    },
+                    {
+                      label: "Cost",
+                      value: `$${ag.costToday.toFixed(2)}`,
+                      color: "text-amber-400",
+                    },
                   ].map((s) => (
                     <div key={s.label} className="text-center">
-                      <p className={`text-xs font-bold tabular-nums ${s.color}`}>{s.value}</p>
+                      <p
+                        className={`text-xs font-bold tabular-nums ${s.color}`}
+                      >
+                        {s.value}
+                      </p>
                       <p className="text-[9px] text-green-800">{s.label}</p>
                     </div>
                   ))}
                 </div>
 
-                {/* Token / cost counters animated */}
                 <div className="flex items-center justify-between text-[10px] border-t border-green-900/40 pt-2">
                   <span className="text-green-700 flex items-center gap-1">
                     <Zap className="h-3 w-3" />
-                    <span className="text-green-400 tabular-nums transition-all duration-700">{ag.tokensUsed.toLocaleString()}</span> tokens
+                    <span className="text-green-400 tabular-nums transition-all duration-700">
+                      {ag.tokensUsed.toLocaleString()}
+                    </span>{" "}
+                    tokens
                   </span>
                   <span className="text-green-700">
-                    Uptime: <span className="text-green-400">{ag.uptime}</span>
+                    Uptime:{" "}
+                    <span className="text-green-400">{ag.uptime}</span>
                   </span>
                 </div>
 
-                {/* Task progress bars */}
                 {ag.active && (
                   <div className="space-y-1.5 border-t border-green-900/40 pt-2">
-                    <p className="text-[10px] text-green-700 uppercase tracking-wider">{t("commandStation.taskQueue")}</p>
-                    {agTasks.map((t, i) => (
-                      <div key={t.id + "-" + ag.id + "-" + i} className="space-y-0.5">
+                    <p className="text-[10px] text-green-700 uppercase tracking-wider">
+                      {t("commandStation.taskQueue")}
+                    </p>
+                    {agTasks.map((tk, i) => (
+                      <div key={tk.id + "-" + ag.id + "-" + i} className="space-y-0.5">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-green-600 truncate max-w-[70%]">{t.label}</span>
-                          <span className="text-[10px] text-green-400 tabular-nums">{t.progress}%</span>
+                          <span className="text-[10px] text-green-600 truncate max-w-[70%]">
+                            {tk.label}
+                          </span>
+                          <span className="text-[10px] text-green-400 tabular-nums">
+                            {tk.progress}%
+                          </span>
                         </div>
                         <div className="h-1.5 rounded bg-green-950 overflow-hidden">
                           <div
                             className="h-full rounded bg-gradient-to-r from-green-600 to-cyan-500 transition-all duration-1000 ease-in-out"
-                            style={{ width: `${t.progress}%` }}
+                            style={{ width: `${tk.progress}%` }}
                           />
                         </div>
                       </div>
@@ -599,12 +726,31 @@ const AgentCommandStation = () => {
                   </div>
                 )}
 
-                {/* Recent logs */}
                 <div className="space-y-1 border-t border-green-900/40 pt-2 max-h-[100px] overflow-y-auto">
-                  <p className="text-[10px] text-green-700 uppercase tracking-wider">{t("commandStation.recentActivity")}</p>
+                  <p className="text-[10px] text-green-700 uppercase tracking-wider">
+                    {t("commandStation.recentActivity")}
+                  </p>
                   {ag.logs.slice(0, 3).map((log) => (
-                    <p key={log.id} className={`text-[10px] leading-snug ${log.level === "error" ? "text-red-400" : log.level === "warn" ? "text-amber-400" : log.level === "success" ? "text-green-500" : "text-green-600"}`}>
-                      {log.level === "error" ? "ERR" : log.level === "warn" ? "WRN" : log.level === "success" ? "OK " : "INF"} {log.message}
+                    <p
+                      key={log.id}
+                      className={`text-[10px] leading-snug ${
+                        log.level === "error"
+                          ? "text-red-400"
+                          : log.level === "warn"
+                          ? "text-amber-400"
+                          : log.level === "success"
+                          ? "text-green-500"
+                          : "text-green-600"
+                      }`}
+                    >
+                      {log.level === "error"
+                        ? "ERR"
+                        : log.level === "warn"
+                        ? "WRN"
+                        : log.level === "success"
+                        ? "OK "
+                        : "INF"}{" "}
+                      {log.message}
                     </p>
                   ))}
                 </div>
@@ -613,191 +759,168 @@ const AgentCommandStation = () => {
           })}
         </div>
 
-        {/* Fullscreen footer */}
         <div className="shrink-0 flex items-center justify-between px-6 py-2 border-t border-green-900/60 bg-black/95 text-[10px] text-green-700">
           <span>{t("commandStation.autoRefresh")}</span>
-          <span className="text-green-600">{new Date().toLocaleTimeString()} | {agents.filter((a) => a.active).length}/{agents.length} {t("commandStation.agentsOnline")}</span>
+          <span className="text-green-600">
+            {new Date().toLocaleTimeString()} |{" "}
+            {agents.filter((a) => a.active).length}/{agents.length}{" "}
+            {t("commandStation.agentsOnline")}
+          </span>
         </div>
       </div>
     );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ── COMPARISON VIEW ───────────────────────────────────────────────────────
+  // ── MULTI-SCREEN SPLIT VIEW ─────────────────────────────────────────────
   // ═══════════════════════════════════════════════════════════════════════════
-  const renderCompareView = () => {
-    const sorted = getSortedAgents();
-    const maxMetricVal = Math.max(...agents.map((a) => getMetricValue(a, compareMetric)), 1);
-
-    // Totals / averages
-    const totalCompleted = agents.reduce((s, a) => s + a.tasksCompleted, 0);
-    const totalFailed = agents.reduce((s, a) => s + a.tasksFailed, 0);
-    const avgSuccessRate = agents.length > 0 ? Math.round(agents.reduce((s, a) => s + getSuccessRate(a), 0) / agents.length) : 0;
-    const totalCostToday = agents.reduce((s, a) => s + a.costToday, 0);
-    const totalCostMonth = agents.reduce((s, a) => s + a.costMonth, 0);
-    const totalTokens = agents.reduce((s, a) => s + a.tokensUsed, 0);
-    const avgResponseTime = agents.length > 0
-      ? (agents.reduce((s, a) => s + parseResponseTime(a.avgResponseTime), 0) / agents.length).toFixed(1) + "s"
-      : "0s";
+  const renderSplitScreen = () => {
+    const screenAgents = splitScreenIds
+      .map((id) => agents.find((a) => a.id === id))
+      .filter(Boolean) as AgentState[];
 
     return (
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Comparison table */}
-        <div className="flex-1 overflow-auto p-6">
-          <div className="rounded-xl border border-border overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-muted/50 border-b border-border">
-                  <th className="px-4 py-3 text-left"><SortHeader field="name" label={t("commandStation.columnAgent")} /></th>
-                  <th className="px-4 py-3 text-left"><SortHeader field="model" label={t("commandStation.columnModel")} /></th>
-                  <th className="px-4 py-3 text-left"><SortHeader field="zone" label={t("commandStation.columnZone")} /></th>
-                  <th className="px-4 py-3 text-center"><SortHeader field="active" label={t("commandStation.columnStatus")} className="justify-center" /></th>
-                  <th className="px-4 py-3 text-right"><SortHeader field="tasksCompleted" label={t("commandStation.columnCompleted")} className="justify-end" /></th>
-                  <th className="px-4 py-3 text-right"><SortHeader field="tasksFailed" label={t("commandStation.columnFailed")} className="justify-end" /></th>
-                  <th className="px-4 py-3 text-right"><SortHeader field="successRate" label={t("commandStation.columnSuccess")} className="justify-end" /></th>
-                  <th className="px-4 py-3 text-right"><SortHeader field="costToday" label={t("commandStation.columnCostToday")} className="justify-end" /></th>
-                  <th className="px-4 py-3 text-right"><SortHeader field="costMonth" label={t("commandStation.columnCostMonth")} className="justify-end" /></th>
-                  <th className="px-4 py-3 text-right"><SortHeader field="tokensUsed" label={t("commandStation.columnTokens")} className="justify-end" /></th>
-                  <th className="px-4 py-3 text-right"><SortHeader field="avgResponseTime" label={t("commandStation.columnAvgTime")} className="justify-end" /></th>
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map((a) => {
-                  const sr = getSuccessRate(a);
-                  return (
-                    <tr key={a.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <Bot className="h-4 w-4 text-primary shrink-0" />
-                          <span className="font-semibold text-foreground">{a.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">{a.model}</td>
-                      <td className="px-4 py-3">
-                        <Badge variant="outline" className={`text-[10px] ${ZONE_COLORS[a.zone]}`}>{a.zone}</Badge>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${a.active ? "text-emerald-400" : "text-muted-foreground"}`}>
-                          <span className={`h-2 w-2 rounded-full ${a.active ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
-                          {a.active ? t("commandStation.statusActive") : t("commandStation.statusIdle")}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right font-medium text-foreground tabular-nums">{a.tasksCompleted.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-right tabular-nums">
-                        <span className={a.tasksFailed > 5 ? "text-red-400 font-medium" : "text-muted-foreground"}>{a.tasksFailed}</span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className={`font-bold tabular-nums ${getPerformanceColor(sr)}`}>{sr}%</span>
-                      </td>
-                      <td className="px-4 py-3 text-right font-medium text-foreground tabular-nums">${a.costToday.toFixed(2)}</td>
-                      <td className="px-4 py-3 text-right font-medium text-foreground tabular-nums">${a.costMonth.toFixed(2)}</td>
-                      <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">{(a.tokensUsed / 1000).toFixed(1)}k</td>
-                      <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">{a.avgResponseTime}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-              {/* Summary row */}
-              <tfoot>
-                <tr className="bg-muted/30 border-t-2 border-border font-semibold">
-                  <td className="px-4 py-3 text-foreground" colSpan={2}>
-                    <span className="flex items-center gap-1.5">
-                      <Table2 className="h-4 w-4 text-primary" />
-                      {t("commandStation.totalsAverages")}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3" />
-                  <td className="px-4 py-3 text-center text-xs text-muted-foreground">{agents.filter((a) => a.active).length} {t("commandStation.active")}</td>
-                  <td className="px-4 py-3 text-right text-foreground tabular-nums">{totalCompleted.toLocaleString()}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">
-                    <span className={totalFailed > 15 ? "text-red-400" : "text-muted-foreground"}>{totalFailed}</span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <span className={`font-bold tabular-nums ${getPerformanceColor(avgSuccessRate)}`}>{avgSuccessRate}% avg</span>
-                  </td>
-                  <td className="px-4 py-3 text-right text-foreground tabular-nums">${totalCostToday.toFixed(2)}</td>
-                  <td className="px-4 py-3 text-right text-foreground tabular-nums">${totalCostMonth.toFixed(2)}</td>
-                  <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">{(totalTokens / 1000).toFixed(1)}k</td>
-                  <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">{avgResponseTime}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-
-          {/* Bar chart visualization */}
-          <div className="mt-6 rounded-xl border border-border p-5 bg-card/50">
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-primary" />
-                <h3 className="text-sm font-bold text-foreground">{t("commandStation.agentComparison")}</h3>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground mr-1">{t("commandStation.metric")}</span>
-                {(Object.keys(METRIC_LABELS) as CompareMetric[]).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setCompareMetric(m)}
-                    className={`text-[11px] px-2.5 py-1 rounded-lg transition-colors ${
-                      compareMetric === m
-                        ? "bg-primary/20 text-primary font-semibold border border-primary/30"
-                        : "bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/60"
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-0 overflow-hidden">
+        {screenAgents.map((agent) => {
+          const sr = getSuccessRate(agent);
+          return (
+            <div
+              key={agent.id}
+              className="flex flex-col border-r border-b border-border overflow-hidden"
+            >
+              {/* Screen header */}
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-card/60 shrink-0">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2.5 w-2.5">
+                    {agent.active && (
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    )}
+                    <span
+                      className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                        agent.active
+                          ? "bg-emerald-500"
+                          : "bg-muted-foreground/40"
+                      }`}
+                    />
+                  </span>
+                  <Bot className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold text-foreground">
+                    {agent.name}
+                  </span>
+                  <Badge
+                    variant="outline"
+                    className={`text-[10px] ${
+                      agent.zone === "clinical"
+                        ? "text-red-400 bg-red-500/10 border-red-500/30"
+                        : agent.zone === "operations"
+                        ? "text-amber-400 bg-amber-500/10 border-amber-500/30"
+                        : "text-blue-400 bg-blue-500/10 border-blue-500/30"
                     }`}
                   >
-                    {METRIC_LABELS[m]}
-                  </button>
-                ))}
+                    {agent.zone}
+                  </Badge>
+                </div>
+                <span className="text-[10px] text-muted-foreground">
+                  {agent.model}
+                </span>
+              </div>
+
+              {/* Terminal */}
+              <div className="flex-1 bg-black/90 overflow-y-auto p-4 font-mono text-xs space-y-1.5 min-h-0">
+                <p className="text-white/30">
+                  --- {agent.name} --- {agent.model} ---{" "}
+                  {new Date().toLocaleTimeString()} ---
+                </p>
+                {agent.active ? (
+                  <>
+                    <p className="text-emerald-400">
+                      &gt; {agent.currentTask}
+                    </p>
+                    <p className="text-white/50">
+                      {" "}
+                      CPU: {agent.cpu}% | Memory: {agent.memory}% | Tokens:{" "}
+                      {agent.tokensUsed.toLocaleString()}
+                    </p>
+                    <p className="text-cyan-400">
+                      {" "}
+                      Success Rate: {sr}% | Cost: $
+                      {agent.costToday.toFixed(2)} | Uptime: {agent.uptime}
+                    </p>
+                    <p className="text-white/30 mt-2">-- Recent Activity --</p>
+                    {agent.logs.map((log) => (
+                      <p
+                        key={log.id}
+                        className={`${
+                          LOG_LEVEL_STYLES[log.level]
+                        } leading-snug`}
+                      >
+                        [{log.level.toUpperCase()}] {log.message}{" "}
+                        <span className="text-white/20">({log.timestamp})</span>
+                      </p>
+                    ))}
+                    <p className="text-white/20 animate-pulse mt-3">_</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-white/40">
+                      Agent is offline --- last active 2h ago
+                    </p>
+                    <p className="text-white/30">
+                      Context preserved. Tasks queued: 0
+                    </p>
+                  </>
+                )}
+              </div>
+
+              {/* Stats bar */}
+              <div className="flex items-center justify-between px-4 py-2 bg-card/40 border-t border-border text-[10px] text-muted-foreground shrink-0">
+                <span className="flex items-center gap-2">
+                  <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+                  {agent.tasksCompleted} done
+                </span>
+                <span className="flex items-center gap-2">
+                  <Zap className="h-3 w-3 text-amber-400" />
+                  {(agent.tokensUsed / 1000).toFixed(1)}k tokens
+                </span>
+                <span className="flex items-center gap-2">
+                  <DollarSign className="h-3 w-3 text-amber-400" />$
+                  {agent.costToday.toFixed(2)}
+                </span>
               </div>
             </div>
+          );
+        })}
 
-            {/* CSS bar chart */}
-            <div className="space-y-3">
-              {agents.map((a) => {
-                const val = getMetricValue(a, compareMetric);
-                const pct = maxMetricVal > 0 ? (val / maxMetricVal) * 100 : 0;
-                const sr = getSuccessRate(a);
-                const barColor = compareMetric === "successRate"
-                  ? getPerformanceBg(sr)
-                  : compareMetric === "tasksFailed"
-                    ? a.tasksFailed > 5 ? "bg-red-500" : "bg-amber-500"
-                    : "bg-primary";
-
-                let displayVal: string;
-                if (compareMetric === "costToday" || compareMetric === "costMonth") {
-                  displayVal = `$${val.toFixed(2)}`;
-                } else if (compareMetric === "successRate") {
-                  displayVal = `${val}%`;
-                } else if (compareMetric === "tokensUsed") {
-                  displayVal = `${(val / 1000).toFixed(1)}k`;
-                } else {
-                  displayVal = val.toLocaleString();
-                }
-
-                return (
-                  <div key={a.id} className="flex items-center gap-3">
-                    <div className="w-32 shrink-0 text-right">
-                      <span className="text-xs font-medium text-foreground">{a.name}</span>
-                    </div>
-                    <div className="flex-1 h-7 rounded-lg bg-muted/30 overflow-hidden relative">
-                      <div
-                        className={`h-full rounded-lg ${barColor} transition-all duration-500 ease-out`}
-                        style={{ width: `${Math.max(pct, 2)}%` }}
-                      />
-                      <span className="absolute inset-y-0 right-2 flex items-center text-xs font-bold text-foreground tabular-nums">
-                        {displayVal}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
+        {/* Add more screens */}
+        {splitScreenIds.length < agents.length && (
+          <div className="flex flex-col items-center justify-center border-r border-b border-border bg-card/20 min-h-[300px]">
+            <p className="text-sm text-muted-foreground mb-3">
+              Add agent screen
+            </p>
+            <div className="flex gap-2 flex-wrap justify-center px-4">
+              {agents
+                .filter((a) => !splitScreenIds.includes(a.id))
+                .map((a) => (
+                  <button
+                    key={a.id}
+                    onClick={() =>
+                      setSplitScreenIds((prev) => [...prev, a.id])
+                    }
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card hover:border-primary/40 transition-colors text-sm"
+                  >
+                    <Bot className="h-3.5 w-3.5 text-primary" />
+                    {a.name}
+                  </button>
+                ))}
             </div>
           </div>
-        </div>
+        )}
       </div>
     );
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ── NORMAL (COMMAND) VIEW ─────────────────────────────────────────────────
+  // ── MAIN CANVAS VIEW ────────────────────────────────────────────────────
   // ═══════════════════════════════════════════════════════════════════════════
   return (
     <div className="flex min-h-screen bg-background">
@@ -808,38 +931,42 @@ const AgentCommandStation = () => {
         <div className="px-8 pt-8 pb-4 border-b border-border shrink-0">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold font-heading gradient-hero-text">{t("commandStation.title")}</h1>
-              <p className="text-muted-foreground mt-1">{t("commandStation.subtitle")}</p>
+              <h1 className="text-3xl font-bold font-heading gradient-hero-text">
+                {t("commandStation.title")}
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                {t("commandStation.subtitle")}
+              </p>
             </div>
 
             <div className="flex items-center gap-3">
-              {/* View toggle: Command | Compare */}
+              {/* View toggles */}
               <div className="flex items-center rounded-xl border border-border bg-card overflow-hidden">
                 <button
-                  onClick={() => setViewMode("command")}
+                  onClick={() => setViewMode("canvas")}
                   className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium transition-colors ${
-                    viewMode === "command"
+                    viewMode === "canvas"
                       ? "bg-primary/15 text-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
                   }`}
                 >
-                  <Terminal className="h-4 w-4" />
-                  {t("commandStation.viewCommand")}
+                  <Workflow className="h-4 w-4" />
+                  Canvas
                 </button>
                 <button
-                  onClick={() => setViewMode("compare")}
+                  onClick={() => setViewMode("split")}
                   className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium transition-colors ${
-                    viewMode === "compare"
+                    viewMode === "split"
                       ? "bg-primary/15 text-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
                   }`}
                 >
-                  <Columns className="h-4 w-4" />
-                  {t("commandStation.viewCompare")}
+                  <LayoutGrid className="h-4 w-4" />
+                  Multi-Screen
                 </button>
               </div>
 
-              {/* Fullscreen button */}
+              {/* Fullscreen */}
               <Button
                 variant="outline"
                 size="sm"
@@ -850,262 +977,156 @@ const AgentCommandStation = () => {
                 {t("commandStation.agentScreen")}
               </Button>
 
-              {/* Agent selector */}
-              <div className="relative">
-                <button
-                  onClick={() => setAgentDropOpen((p) => !p)}
-                  className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-border bg-card hover:border-primary/40 transition-colors"
-                >
-                  <span className="relative flex h-2.5 w-2.5 shrink-0">
-                    {agent.active && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />}
-                    <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${agent.active ? "bg-green-500" : "bg-muted-foreground/40"}`} />
-                  </span>
-                  <Bot className="h-4 w-4 text-primary" />
-                  <span className="font-semibold text-sm text-foreground">{agent.name}</span>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                </button>
-
-                {agentDropOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-64 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
-                    {agents.map((a) => (
-                      <button
-                        key={a.id}
-                        onClick={() => { setSelectedAgent(a); setAgentDropOpen(false); }}
-                        className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors text-left ${a.id === agent.id ? "bg-primary/10" : ""}`}
+              {/* Agent selector for canvas mode */}
+              {viewMode === "canvas" && (
+                <div className="flex items-center gap-2">
+                  {agents.map((a) => (
+                    <button
+                      key={a.id}
+                      onClick={() => setSelectedAgentId(a.id)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-colors ${
+                        selectedAgentId === a.id
+                          ? "border-primary/40 bg-primary/10"
+                          : "border-border bg-card hover:border-primary/20"
+                      }`}
+                    >
+                      <span className="relative flex h-2 w-2">
+                        {a.active && (
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                        )}
+                        <span
+                          className={`relative inline-flex rounded-full h-2 w-2 ${
+                            a.active ? "bg-green-500" : "bg-muted-foreground/40"
+                          }`}
+                        />
+                      </span>
+                      <span
+                        className={`text-xs font-medium ${
+                          selectedAgentId === a.id
+                            ? "text-foreground"
+                            : "text-muted-foreground"
+                        }`}
                       >
-                        <span className={`h-2 w-2 rounded-full ${a.active ? "bg-green-500" : "bg-muted-foreground/40"}`} />
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{a.name}</p>
-                          <p className="text-xs text-muted-foreground">{a.model}</p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+                        {a.name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* ── COMPARE VIEW ─────────────────────────────────────────────── */}
-        {viewMode === "compare" && renderCompareView()}
+        {/* ── SPLIT VIEW ─────────────────────────────────────────── */}
+        {viewMode === "split" && renderSplitScreen()}
 
-        {/* ── COMMAND VIEW (original layout) ───────────────────────────── */}
-        {viewMode === "command" && (
-          <div className="flex flex-1 overflow-hidden">
-            {/* Left: Command panel */}
-            <div className="flex flex-col w-[420px] shrink-0 border-r border-border overflow-hidden">
-              {/* Agent quick stats */}
-              <div className="p-5 border-b border-border bg-card/40 space-y-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${agent.active ? "gradient-primary" : "bg-muted"}`}>
-                    <Bot className={`h-4 w-4 ${agent.active ? "text-white" : "text-muted-foreground"}`} />
-                  </div>
-                  <div>
-                    <p className="font-bold text-sm text-foreground">{agent.name}</p>
-                    <Badge variant="outline" className={`text-[10px] ${ZONE_COLORS[agent.zone]}`}>{agent.zone} zone</Badge>
-                  </div>
-                </div>
+        {/* ── CANVAS VIEW ────────────────────────────────────────── */}
+        {viewMode === "canvas" && (
+          <div className="flex-1 relative">
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              nodeTypes={nodeTypes}
+              fitView
+              fitViewOptions={{ padding: 0.2 }}
+              minZoom={0.3}
+              maxZoom={1.5}
+              defaultEdgeOptions={{
+                type: "smoothstep",
+                animated: false,
+              }}
+              proOptions={{ hideAttribution: true }}
+              className="command-station-flow"
+            >
+              <Background
+                variant={BackgroundVariant.Dots}
+                gap={20}
+                size={1}
+                color="rgba(100, 150, 255, 0.08)"
+              />
+              <Controls
+                className="!bg-card/80 !border-border !rounded-xl !shadow-lg"
+                showInteractive={false}
+              />
+              <MiniMap
+                nodeStrokeColor={(n) => {
+                  if (n.type === "agentNode") {
+                    const d = n.data as AgentNodeData;
+                    if (d.zone === "clinical") return "#ef4444";
+                    if (d.zone === "operations") return "#f59e0b";
+                    return "#3b82f6";
+                  }
+                  if (n.type === "commandPanel") return "#06b6d4";
+                  if (n.type === "metricsPanel") return "#8b5cf6";
+                  if (n.type === "logsPanel") return "#10b981";
+                  return "#666";
+                }}
+                nodeColor={(n) => {
+                  if (n.type === "agentNode") {
+                    const d = n.data as AgentNodeData;
+                    if (d.zone === "clinical") return "rgba(239,68,68,0.2)";
+                    if (d.zone === "operations") return "rgba(245,158,11,0.2)";
+                    return "rgba(59,130,246,0.2)";
+                  }
+                  return "rgba(100,100,100,0.2)";
+                }}
+                maskColor="rgba(0,0,0,0.7)"
+                className="!bg-card/80 !border-border !rounded-xl"
+              />
 
-                <p className="text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2 leading-relaxed">{agent.currentTask}</p>
-
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { label: t("commandStation.successRate"), value: `${successRate}%`, icon: TrendingUp, color: "text-emerald-400" },
-                    { label: t("commandStation.tasksDone"), value: agent.tasksCompleted.toLocaleString(), icon: CheckCircle2, color: "text-primary" },
-                    { label: t("commandStation.avgSpeed"), value: agent.avgResponseTime, icon: Clock, color: "text-cyan-400" },
-                  ].map((s) => (
-                    <div key={s.label} className="rounded-lg bg-muted/30 p-2 text-center">
-                      <s.icon className={`h-3.5 w-3.5 mx-auto mb-1 ${s.color}`} />
-                      <p className="text-xs font-bold text-foreground">{s.value}</p>
-                      <p className="text-[10px] text-muted-foreground leading-tight">{s.label}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Resource usage */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-muted-foreground flex items-center gap-1"><Cpu className="h-3 w-3" /> CPU</span>
-                    <span className="text-[11px] font-medium text-foreground">{agent.cpu}%</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div className="h-full rounded-full bg-primary/60 transition-all" style={{ width: `${agent.cpu}%` }} />
-                  </div>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-[11px] text-muted-foreground flex items-center gap-1"><Activity className="h-3 w-3" /> Memory</span>
-                    <span className="text-[11px] font-medium text-foreground">{agent.memory}%</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div className="h-full rounded-full bg-cyan-500/60 transition-all" style={{ width: `${agent.memory}%` }} />
-                  </div>
-                </div>
-
-                {/* Cost meter */}
-                <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 space-y-1">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <DollarSign className="h-3.5 w-3.5 text-amber-400" />
-                    <span className="text-xs font-semibold text-amber-400">{t("commandStation.usageCost")}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-muted-foreground">{t("commandStation.today")}</span>
-                    <span className="text-sm font-bold text-foreground">${agent.costToday.toFixed(2)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-muted-foreground">{t("commandStation.thisMonth")}</span>
-                    <span className="text-sm font-bold text-foreground">${agent.costMonth.toFixed(2)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-muted-foreground">{t("commandStation.tokensUsed")}</span>
-                    <span className="text-[11px] font-medium text-foreground">{(agent.tokensUsed / 1000).toFixed(1)}k</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Chat messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {agent.messages.length === 0 && (
-                  <div className="flex flex-col items-center justify-center h-full text-center py-12">
-                    <MessageSquare className="h-8 w-8 text-muted-foreground/30 mb-3" />
-                    <p className="text-sm text-muted-foreground">{t("commandStation.sendCommand", { name: agent.name })}</p>
-                    <p className="text-xs text-muted-foreground/60 mt-1">{t("commandStation.commandHint")}</p>
-                  </div>
-                )}
-                {agent.messages.map((msg) => (
-                  <div key={msg.id} className={`flex ${msg.from === "commander" ? "justify-end" : "justify-start"}`}>
-                    <div
-                      className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed ${
-                        msg.from === "commander"
-                          ? "gradient-primary text-white rounded-br-sm"
-                          : "bg-card border border-border text-foreground rounded-bl-sm"
-                      }`}
-                    >
-                      {msg.from === "agent" && (
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <Bot className="h-3 w-3 text-primary" />
-                          <span className="text-[10px] font-semibold text-primary">{agent.name}</span>
-                        </div>
-                      )}
-                      <p>{msg.content}</p>
-                      <p className="text-[10px] opacity-60 mt-1 text-right">{msg.timestamp}</p>
-                    </div>
-                  </div>
-                ))}
-                <div ref={chatEndRef} />
-              </div>
-
-              {/* Command input */}
-              <div className="p-4 border-t border-border bg-card/60">
-                <div className="flex gap-2">
-                  <Textarea
-                    value={commandInput}
-                    onChange={(e) => setCommandInput(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendCommand(); } }}
-                    placeholder={t("commandStation.commandPlaceholder", { name: agent.name })}
-                    className="resize-none text-sm h-[68px] bg-background border-border"
-                  />
-                  <Button
-                    onClick={handleSendCommand}
-                    disabled={!commandInput.trim()}
-                    className="gradient-primary text-white h-auto px-3 self-end"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="flex gap-1.5 mt-2 flex-wrap">
-                  {[t("commandStation.quickStatus"), t("commandStation.quickPause"), t("commandStation.quickPrioritize"), t("commandStation.quickClear")].map((quick) => (
-                    <button
-                      key={quick}
-                      onClick={() => { setCommandInput(quick); }}
-                      className="text-[10px] px-2 py-1 rounded-md bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                    >
-                      {quick}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Right: Agent screen + logs */}
-            <div className="flex-1 flex flex-col overflow-hidden">
-              {/* Agent "screen" viewer */}
-              <div className={`border-b border-border ${screenExpanded ? "flex-1" : "h-64"} bg-black/90 flex flex-col transition-all duration-300`}>
-                <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10">
-                  <div className="flex items-center gap-2">
-                    <Eye className="h-4 w-4 text-emerald-400" />
-                    <span className="text-xs font-semibold text-emerald-400">{t("commandStation.liveAgentView")} — {agent.name}</span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded border ${agent.active ? "border-emerald-500/40 text-emerald-400 bg-emerald-500/10" : "border-muted/30 text-muted-foreground bg-muted/10"}`}>
-                      {agent.active ? "● LIVE" : "○ OFFLINE"}
+              {/* Floating status panel */}
+              <Panel position="top-right" className="mr-4 mt-4">
+                <div className="bg-card/90 backdrop-blur-xl border border-border rounded-xl p-3 space-y-2 min-w-[180px]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Activity className="h-4 w-4 text-primary" />
+                    <span className="text-xs font-semibold text-foreground">
+                      Fleet Status
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={handleRefreshScreen} className="text-white/40 hover:text-white/80 transition-colors">
-                      <RefreshCw className={`h-3.5 w-3.5 ${screenRefreshing ? "animate-spin" : ""}`} />
-                    </button>
-                    <button onClick={() => setScreenExpanded((p) => !p)} className="text-white/40 hover:text-white/80 transition-colors">
-                      {screenExpanded ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-                    </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="text-center p-1.5 rounded bg-muted/30">
+                      <p className="text-xs font-bold text-emerald-400">
+                        {agents.filter((a) => a.active).length}
+                      </p>
+                      <p className="text-[9px] text-muted-foreground">Online</p>
+                    </div>
+                    <div className="text-center p-1.5 rounded bg-muted/30">
+                      <p className="text-xs font-bold text-muted-foreground">
+                        {agents.filter((a) => !a.active).length}
+                      </p>
+                      <p className="text-[9px] text-muted-foreground">
+                        Offline
+                      </p>
+                    </div>
+                    <div className="text-center p-1.5 rounded bg-muted/30">
+                      <p className="text-xs font-bold text-amber-400 tabular-nums">
+                        $
+                        {agents
+                          .reduce((s, a) => s + a.costToday, 0)
+                          .toFixed(2)}
+                      </p>
+                      <p className="text-[9px] text-muted-foreground">
+                        Cost Today
+                      </p>
+                    </div>
+                    <div className="text-center p-1.5 rounded bg-muted/30">
+                      <p className="text-xs font-bold text-cyan-400 tabular-nums">
+                        {(
+                          agents.reduce((s, a) => s + a.tokensUsed, 0) / 1000
+                        ).toFixed(0)}
+                        k
+                      </p>
+                      <p className="text-[9px] text-muted-foreground">
+                        Tokens
+                      </p>
+                    </div>
                   </div>
                 </div>
-
-                {/* Simulated agent terminal screen */}
-                <div className="flex-1 overflow-y-auto p-4 font-mono text-xs space-y-1.5">
-                  <p className="text-white/30">─── {agent.name} ─── {agent.model} ─── {new Date().toLocaleTimeString()} ───</p>
-                  {agent.active ? (
-                    <>
-                      <p className="text-emerald-400">▶ {agent.currentTask}</p>
-                      <p className="text-white/50">  → Connecting to external APIs...</p>
-                      <p className="text-white/50">  → Auth token validated ✓</p>
-                      <p className="text-cyan-400">  → Awaiting API response (1.4s elapsed)</p>
-                      <p className="text-white/30 mt-2">── Task Queue ({Math.ceil(agent.tasksCompleted * 0.03)} pending) ──</p>
-                      {[
-                        "Insurance verification #4822",
-                        "Appointment reminder batch (14 patients)",
-                        "Lab result notification — J. Chen",
-                      ].map((task, i) => (
-                        <p key={i} className="text-white/40">  {i + 1}. {task}</p>
-                      ))}
-                      <p className="text-white/30 mt-2">── Memory Context ──</p>
-                      <p className="text-white/40">  Active sessions: 3 | Context window: 12,400 tokens</p>
-                      <p className="text-white/40">  PHI scrubbed: Yes | Zone: {agent.zone.toUpperCase()}</p>
-                      <p className="text-amber-400 mt-2">  ⚡ {agent.tokensUsed.toLocaleString()} tokens used today · ${agent.costToday.toFixed(2)} cost</p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-white/40">▷ Agent is offline — last active 2h ago</p>
-                      <p className="text-white/30">  Context preserved. Tasks queued: 0</p>
-                      <p className="text-white/30">  Send a command to wake this agent.</p>
-                    </>
-                  )}
-                  <p className="text-white/20 animate-pulse mt-3">█</p>
-                </div>
-              </div>
-
-              {/* Activity log */}
-              {!screenExpanded && (
-                <div className="flex-1 overflow-hidden flex flex-col">
-                  <div className="px-5 py-3 border-b border-border flex items-center gap-2">
-                    <Terminal className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-semibold text-foreground">{t("commandStation.activityLog")}</span>
-                    <Badge variant="outline" className="text-[10px] border-border text-muted-foreground">{agent.logs.length} {t("commandStation.events")}</Badge>
-                  </div>
-                  <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                    {agent.logs.map((log) => {
-                      const Icon = LOG_LEVEL_ICONS[log.level];
-                      return (
-                        <div key={log.id} className="flex items-start gap-3 text-xs">
-                          <Icon className={`h-3.5 w-3.5 mt-0.5 shrink-0 ${LOG_LEVEL_STYLES[log.level]}`} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-foreground/80 leading-snug">{log.message}</p>
-                            <p className="text-muted-foreground/50 text-[10px] mt-0.5">{log.timestamp}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
+              </Panel>
+            </ReactFlow>
           </div>
         )}
       </main>

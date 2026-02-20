@@ -198,3 +198,84 @@
     opacity: 0;
   }
 }
+
+/* ── React Flow Dark Theme Overrides ──────────────────────────────────── */
+.command-station-flow,
+.org-chart-flow {
+  background: hsl(220 20% 7%) !important;
+}
+
+.command-station-flow .react-flow__background,
+.org-chart-flow .react-flow__background {
+  background: hsl(220 20% 7%) !important;
+}
+
+/* Edge styling */
+.command-station-flow .react-flow__edge-path,
+.org-chart-flow .react-flow__edge-path {
+  filter: drop-shadow(0 0 4px rgba(6, 182, 212, 0.3));
+}
+
+/* Controls */
+.command-station-flow .react-flow__controls,
+.org-chart-flow .react-flow__controls {
+  background: hsla(220, 18%, 10%, 0.9) !important;
+  border: 1px solid hsla(220, 15%, 20%, 0.6) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+  overflow: hidden;
+}
+
+.command-station-flow .react-flow__controls-button,
+.org-chart-flow .react-flow__controls-button {
+  background: transparent !important;
+  border-bottom: 1px solid hsla(220, 15%, 20%, 0.4) !important;
+  fill: hsla(220, 10%, 60%, 0.8) !important;
+  color: hsla(220, 10%, 60%, 0.8) !important;
+  width: 28px !important;
+  height: 28px !important;
+}
+
+.command-station-flow .react-flow__controls-button:hover,
+.org-chart-flow .react-flow__controls-button:hover {
+  background: hsla(217, 100%, 59%, 0.15) !important;
+  fill: hsl(217 100% 65%) !important;
+}
+
+.command-station-flow .react-flow__controls-button:last-child,
+.org-chart-flow .react-flow__controls-button:last-child {
+  border-bottom: none !important;
+}
+
+/* MiniMap */
+.command-station-flow .react-flow__minimap,
+.org-chart-flow .react-flow__minimap {
+  background: hsla(220, 18%, 10%, 0.9) !important;
+  border: 1px solid hsla(220, 15%, 20%, 0.6) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Handle dots */
+.command-station-flow .react-flow__handle,
+.org-chart-flow .react-flow__handle {
+  transition: all 0.2s ease;
+}
+
+.command-station-flow .react-flow__handle:hover,
+.org-chart-flow .react-flow__handle:hover {
+  transform: scale(1.3);
+  filter: drop-shadow(0 0 6px rgba(6, 182, 212, 0.6));
+}
+
+/* Selection */
+.command-station-flow .react-flow__node.selected,
+.org-chart-flow .react-flow__node.selected {
+  filter: drop-shadow(0 0 12px rgba(6, 182, 212, 0.4));
+}
+
+/* Panel backgrounds */
+.command-station-flow .react-flow__panel,
+.org-chart-flow .react-flow__panel {
+  margin: 10px;
+}
