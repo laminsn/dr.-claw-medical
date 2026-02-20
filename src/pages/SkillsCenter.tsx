@@ -49,6 +49,12 @@ import {
   Circle,
   Timer,
   ArrowRight,
+  Code,
+  Bot,
+  Sparkles,
+  RefreshCw,
+  BookOpen,
+  Linkedin,
   type LucideIcon,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
@@ -111,6 +117,12 @@ const iconMap: Record<string, LucideIcon> = {
   Microscope,
   TestTube,
   CheckSquare,
+  Code,
+  Bot,
+  Sparkles,
+  RefreshCw,
+  BookOpen,
+  Linkedin,
 };
 
 function resolveIcon(name: string): LucideIcon {
@@ -134,6 +146,9 @@ const categoryColors: Record<string, string> = {
   operations: "bg-slate-500/15 text-slate-300 border-slate-500/30",
   finance: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
   research: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
+  development: "bg-indigo-500/15 text-indigo-400 border-indigo-500/30",
+  clawbots: "bg-orange-500/15 text-orange-400 border-orange-500/30",
+  intelligence: "bg-purple-500/15 text-purple-400 border-purple-500/30",
 };
 
 // ---------------------------------------------------------------------------
