@@ -7,9 +7,12 @@ import {
   MiniMap,
   useNodesState,
   useEdgesState,
+  useReactFlow,
+  ReactFlowProvider,
   type Node,
   type Edge,
   type NodeTypes,
+  type EdgeTypes,
   BackgroundVariant,
   Panel,
   MarkerType,
@@ -36,14 +39,13 @@ import {
   Settings,
   GitBranch,
   Search,
-  ZoomIn,
-  ZoomOut,
   List,
-  LayoutGrid,
   Trash2,
-  ArrowRight,
   Download,
   Workflow,
+  Maximize2,
+  LayoutGrid,
+  RefreshCw,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
@@ -61,6 +63,10 @@ import { useAgents, type MyAgent } from "@/hooks/useAgents";
 import OrgAgentNodeComponent, {
   type OrgAgentNodeData,
 } from "@/components/command-station/OrgAgentNode";
+import DepartmentGroupNode, {
+  type DepartmentGroupNodeData,
+} from "@/components/command-station/DepartmentGroupNode";
+import HierarchyEdge from "@/components/command-station/HierarchyEdge";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -312,13 +318,18 @@ function loadDeptAccess(): DepartmentAccess[] {
   return INITIAL_ACCESS;
 }
 
-// ── Node Types for React Flow ───────────────────────────────────────────────
+// ── Node & Edge Types for React Flow ────────────────────────────────────────
 
 const nodeTypes: NodeTypes = {
   orgAgent: OrgAgentNodeComponent,
+  departmentGroup: DepartmentGroupNode,
 };
 
-// ── Build hierarchy graph ───────────────────────────────────────────────────
+const edgeTypes: EdgeTypes = {
+  hierarchy: HierarchyEdge,
+};
+
+// ── Build hierarchy graph with department groups ────────────────────────────
 
 function buildOrgGraph(
   agents: MyAgent[],
@@ -328,13 +339,36 @@ function buildOrgGraph(
   const edges: Edge[] = [];
 
   const ceo = agents.find((a) => a.level === "ceo");
-  const departments = Array.from(new Set(agents.filter((a) => a.department !== "Executive").map((a) => a.department)));
+  const departments = Array.from(
+    new Set(
+      agents
+        .filter((a) => a.department !== "Executive")
+        .map((a) => a.department)
+    )
+  );
 
+  // Layout constants
+  const deptSpacing = 380;
+  const workerSpacing = 270;
+  const ceoY = 0;
+  const headY = 260;
+  const workerY = headY + 260;
+  const groupPadding = 40;
+  const groupTopPadding = 70;
+  const nodeHeight = 140;
+
+  const totalWidth = (departments.length - 1) * deptSpacing;
+  const startX = -totalWidth / 2;
+
+  // CEO node
   if (ceo) {
+    const ceoChildCount = agents.filter(
+      (a) => a.level === "department-head"
+    ).length;
     nodes.push({
       id: ceo.id,
       type: "orgAgent",
-      position: { x: 0, y: 0 },
+      position: { x: -160, y: ceoY },
       data: {
         name: ceo.name,
         role: ceo.role,
@@ -344,24 +378,57 @@ function buildOrgGraph(
         level: ceo.level,
         active: ceo.active,
         skills: ceo.skills,
+        tasksToday: ceo.tasksToday,
+        successRate: ceo.successRate,
+        childCount: ceoChildCount,
         onSelect,
       } satisfies OrgAgentNodeData,
     });
   }
 
-  // Layout: departments spread horizontally under CEO, workers under each dept head
-  const deptSpacing = 320;
-  const totalWidth = (departments.length - 1) * deptSpacing;
-  const startX = -totalWidth / 2;
-
+  // Departments
   departments.forEach((dept, deptIdx) => {
     const deptAgents = agents.filter((a) => a.department === dept);
     const head = deptAgents.find((a) => a.level === "department-head");
     const workers = deptAgents.filter((a) => a.level === "worker");
 
     const deptX = startX + deptIdx * deptSpacing;
-    const headY = 200;
 
+    // Determine the primary zone for this department
+    const primaryZone: AgentZone = head?.zone || "operations";
+
+    // Calculate department group dimensions
+    const workerTotalWidth =
+      workers.length > 0
+        ? (workers.length - 1) * workerSpacing + 240
+        : 280;
+    const groupWidth = Math.max(workerTotalWidth + groupPadding * 2, 340);
+    const groupHeight =
+      workers.length > 0
+        ? groupTopPadding + nodeHeight + 260 + nodeHeight + groupPadding
+        : groupTopPadding + nodeHeight + groupPadding;
+
+    const groupX = deptX - groupWidth / 2 + 135;
+    const groupY = headY - groupTopPadding;
+
+    // Department group background node
+    nodes.push({
+      id: `dept-group-${dept}`,
+      type: "departmentGroup",
+      position: { x: groupX, y: groupY },
+      data: {
+        label: dept,
+        zone: primaryZone,
+        agentCount: deptAgents.length,
+        activeCount: deptAgents.filter((a) => a.active).length,
+      } satisfies DepartmentGroupNodeData,
+      style: { width: groupWidth, height: groupHeight },
+      selectable: false,
+      draggable: false,
+      zIndex: -1,
+    });
+
+    // Department head node
     if (head) {
       nodes.push({
         id: head.id,
@@ -376,41 +443,40 @@ function buildOrgGraph(
           level: head.level,
           active: head.active,
           skills: head.skills,
+          tasksToday: head.tasksToday,
+          successRate: head.successRate,
+          childCount: workers.length,
           onSelect,
         } satisfies OrgAgentNodeData,
       });
 
       // Edge from CEO to head
       if (ceo) {
-        const zoneColors: Record<string, string> = {
-          clinical: "rgb(239, 68, 68)",
-          operations: "rgb(245, 158, 11)",
-          external: "rgb(59, 130, 246)",
-        };
         edges.push({
           id: `edge-${ceo.id}-${head.id}`,
           source: ceo.id,
           target: head.id,
+          type: "hierarchy",
           animated: head.active,
-          style: {
-            stroke: zoneColors[head.zone] || "rgba(255,255,255,0.2)",
-            strokeWidth: 2,
+          data: {
+            zone: head.zone,
+            sourceLevel: "ceo",
+            targetLevel: "department-head",
           },
           markerEnd: {
             type: MarkerType.ArrowClosed,
-            color: zoneColors[head.zone] || "rgba(255,255,255,0.2)",
+            width: 16,
+            height: 16,
           },
         });
       }
 
       // Workers under this head
-      const workerSpacing = 260;
-      const totalWorkerWidth = (workers.length - 1) * workerSpacing;
-      const workerStartX = deptX - totalWorkerWidth / 2;
+      const workerTotalW = (workers.length - 1) * workerSpacing;
+      const workerStartX = deptX - workerTotalW / 2;
 
       workers.forEach((worker, wIdx) => {
         const workerX = workerStartX + wIdx * workerSpacing;
-        const workerY = headY + 220;
 
         nodes.push({
           id: worker.id,
@@ -425,28 +491,27 @@ function buildOrgGraph(
             level: worker.level,
             active: worker.active,
             skills: worker.skills,
+            tasksToday: worker.tasksToday,
+            successRate: worker.successRate,
             onSelect,
           } satisfies OrgAgentNodeData,
         });
-
-        const zoneColors: Record<string, string> = {
-          clinical: "rgba(239, 68, 68, 0.5)",
-          operations: "rgba(245, 158, 11, 0.5)",
-          external: "rgba(59, 130, 246, 0.5)",
-        };
 
         edges.push({
           id: `edge-${head.id}-${worker.id}`,
           source: head.id,
           target: worker.id,
+          type: "hierarchy",
           animated: worker.active,
-          style: {
-            stroke: zoneColors[worker.zone] || "rgba(255,255,255,0.1)",
-            strokeWidth: 1.5,
+          data: {
+            zone: worker.zone,
+            sourceLevel: "department-head",
+            targetLevel: "worker",
           },
           markerEnd: {
             type: MarkerType.ArrowClosed,
-            color: zoneColors[worker.zone] || "rgba(255,255,255,0.1)",
+            width: 12,
+            height: 12,
           },
         });
       });
@@ -457,7 +522,176 @@ function buildOrgGraph(
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Component
+// Inner Component (needs ReactFlowProvider)
+// ═════════════════════════════════════════════════════════════════════════════
+
+const OrgChartCanvas = ({
+  agents,
+  handleNodeSelect,
+}: {
+  agents: MyAgent[];
+  handleNodeSelect: (id: string) => void;
+}) => {
+  const { fitView } = useReactFlow();
+
+  const { nodes: graphNodes, edges: graphEdges } = useMemo(
+    () => buildOrgGraph(agents, handleNodeSelect),
+    [agents, handleNodeSelect]
+  );
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(graphNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(graphEdges);
+
+  // Sync when agents change
+  useEffect(() => {
+    const { nodes: newNodes, edges: newEdges } = buildOrgGraph(
+      agents,
+      handleNodeSelect
+    );
+    setNodes(newNodes);
+    setEdges(newEdges);
+  }, [agents, handleNodeSelect, setNodes, setEdges]);
+
+  const handleFitView = useCallback(() => {
+    fitView({ padding: 0.25, duration: 500 });
+  }, [fitView]);
+
+  return (
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      nodeTypes={nodeTypes}
+      edgeTypes={edgeTypes}
+      fitView
+      fitViewOptions={{ padding: 0.25 }}
+      minZoom={0.1}
+      maxZoom={2}
+      defaultEdgeOptions={{
+        type: "hierarchy",
+      }}
+      proOptions={{ hideAttribution: true }}
+      className="org-chart-flow"
+    >
+      <Background
+        variant={BackgroundVariant.Dots}
+        gap={24}
+        size={1}
+        color="rgba(100, 150, 255, 0.06)"
+      />
+      <Controls
+        className="!bg-card/90 !backdrop-blur-xl !border-border !rounded-xl !shadow-2xl"
+        showInteractive={false}
+      />
+      <MiniMap
+        nodeStrokeColor={(n) => {
+          if (n.type === "departmentGroup") return "transparent";
+          const d = n.data as OrgAgentNodeData;
+          if (d.zone === "clinical") return "#ef4444";
+          if (d.zone === "operations") return "#f59e0b";
+          return "#3b82f6";
+        }}
+        nodeColor={(n) => {
+          if (n.type === "departmentGroup") return "transparent";
+          const d = n.data as OrgAgentNodeData;
+          if (d.zone === "clinical") return "rgba(239,68,68,0.3)";
+          if (d.zone === "operations") return "rgba(245,158,11,0.3)";
+          return "rgba(59,130,246,0.3)";
+        }}
+        maskColor="rgba(0,0,0,0.75)"
+        className="!bg-card/90 !backdrop-blur-xl !border-border !rounded-xl"
+        pannable
+        zoomable
+      />
+
+      {/* Canvas Toolbar Panel */}
+      <Panel position="top-right" className="mr-4 mt-4">
+        <div className="flex items-center gap-1.5 bg-card/90 backdrop-blur-xl border border-border rounded-xl p-1.5 shadow-2xl">
+          <button
+            onClick={handleFitView}
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all"
+            title="Fit to view"
+          >
+            <Maximize2 className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => {
+              const { nodes: newNodes, edges: newEdges } = buildOrgGraph(
+                agents,
+                handleNodeSelect
+              );
+              setNodes(newNodes);
+              setEdges(newEdges);
+              setTimeout(() => fitView({ padding: 0.25, duration: 500 }), 50);
+            }}
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all"
+            title="Reset layout"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </button>
+        </div>
+      </Panel>
+
+      {/* Legend Panel */}
+      <Panel position="bottom-left" className="ml-4 mb-4">
+        <div className="bg-card/90 backdrop-blur-xl border border-border rounded-xl p-3.5 space-y-2.5 shadow-2xl">
+          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+            Zones
+          </span>
+          <div className="flex items-center gap-3">
+            {(["clinical", "operations", "external"] as AgentZone[]).map(
+              (zone) => (
+                <div key={zone} className="flex items-center gap-1.5">
+                  <div
+                    className={`w-2.5 h-2.5 rounded-full ${ZONE_STYLES[zone].dot}`}
+                  />
+                  <span
+                    className={`text-[10px] font-medium ${ZONE_STYLES[zone].text}`}
+                  >
+                    {ZONE_LABELS[zone]}
+                  </span>
+                </div>
+              )
+            )}
+          </div>
+          <div className="flex items-center gap-4 pt-1.5 border-t border-border/50">
+            <div className="flex items-center gap-1.5">
+              <span className="flex h-2.5 w-2.5 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400" />
+              </span>
+              <span className="text-[10px] text-muted-foreground">Active</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-gray-500" />
+              <span className="text-[10px] text-muted-foreground">
+                Inactive
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 pt-1.5 border-t border-border/50">
+            <div className="flex items-center gap-1.5">
+              <Crown className="h-3 w-3 text-amber-400" />
+              <span className="text-[10px] text-muted-foreground">CEO</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Building2 className="h-3 w-3 text-violet-400" />
+              <span className="text-[10px] text-muted-foreground">Dept Head</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Bot className="h-3 w-3 text-white/40" />
+              <span className="text-[10px] text-muted-foreground">Worker</span>
+            </div>
+          </div>
+        </div>
+      </Panel>
+    </ReactFlow>
+  );
+};
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Main Component
 // ═════════════════════════════════════════════════════════════════════════════
 
 const AgentOrgChart = () => {
@@ -549,24 +783,6 @@ const AgentOrgChart = () => {
     },
     [agents]
   );
-
-  const { nodes: graphNodes, edges: graphEdges } = useMemo(
-    () => buildOrgGraph(agents, handleNodeSelect),
-    [agents, handleNodeSelect]
-  );
-
-  const [nodes, setNodes, onNodesChange] = useNodesState(graphNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(graphEdges);
-
-  // Sync when agents change
-  useEffect(() => {
-    const { nodes: newNodes, edges: newEdges } = buildOrgGraph(
-      agents,
-      handleNodeSelect
-    );
-    setNodes(newNodes);
-    setEdges(newEdges);
-  }, [agents, handleNodeSelect, setNodes, setEdges]);
 
   // ── Handlers ────────────────────────────────────────────────────────────
 
@@ -990,96 +1206,12 @@ const AgentOrgChart = () => {
             {/* Chart Area */}
             {viewMode === "graph" ? (
               <div className="flex-1 relative">
-                <ReactFlow
-                  nodes={nodes}
-                  edges={edges}
-                  onNodesChange={onNodesChange}
-                  onEdgesChange={onEdgesChange}
-                  nodeTypes={nodeTypes}
-                  fitView
-                  fitViewOptions={{ padding: 0.3 }}
-                  minZoom={0.2}
-                  maxZoom={1.5}
-                  defaultEdgeOptions={{
-                    type: "smoothstep",
-                  }}
-                  proOptions={{ hideAttribution: true }}
-                  className="org-chart-flow"
-                >
-                  <Background
-                    variant={BackgroundVariant.Dots}
-                    gap={20}
-                    size={1}
-                    color="rgba(100, 150, 255, 0.08)"
+                <ReactFlowProvider>
+                  <OrgChartCanvas
+                    agents={agents}
+                    handleNodeSelect={handleNodeSelect}
                   />
-                  <Controls
-                    className="!bg-card/80 !border-border !rounded-xl !shadow-lg"
-                    showInteractive={false}
-                  />
-                  <MiniMap
-                    nodeStrokeColor={(n) => {
-                      const d = n.data as OrgAgentNodeData;
-                      if (d.zone === "clinical") return "#ef4444";
-                      if (d.zone === "operations") return "#f59e0b";
-                      return "#3b82f6";
-                    }}
-                    nodeColor={(n) => {
-                      const d = n.data as OrgAgentNodeData;
-                      if (d.zone === "clinical")
-                        return "rgba(239,68,68,0.2)";
-                      if (d.zone === "operations")
-                        return "rgba(245,158,11,0.2)";
-                      return "rgba(59,130,246,0.2)";
-                    }}
-                    maskColor="rgba(0,0,0,0.7)"
-                    className="!bg-card/80 !border-border !rounded-xl"
-                  />
-
-                  {/* Legend Panel */}
-                  <Panel position="bottom-left" className="ml-4 mb-4">
-                    <div className="bg-card/90 backdrop-blur-xl border border-border rounded-xl p-3 space-y-2">
-                      <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                        Zones
-                      </span>
-                      <div className="flex items-center gap-3">
-                        {(
-                          ["clinical", "operations", "external"] as AgentZone[]
-                        ).map((zone) => (
-                          <div
-                            key={zone}
-                            className="flex items-center gap-1.5"
-                          >
-                            <div
-                              className={`w-2.5 h-2.5 rounded-full ${ZONE_STYLES[zone].dot}`}
-                            />
-                            <span
-                              className={`text-[10px] ${ZONE_STYLES[zone].text}`}
-                            >
-                              {ZONE_LABELS[zone]}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="flex items-center gap-3 pt-1 border-t border-border/50">
-                        <div className="flex items-center gap-1.5">
-                          <span className="flex h-2.5 w-2.5 relative">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400" />
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">
-                            Active
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-gray-500" />
-                          <span className="text-[10px] text-muted-foreground">
-                            Inactive
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </Panel>
-                </ReactFlow>
+                </ReactFlowProvider>
               </div>
             ) : (
               /* List View */
@@ -1656,6 +1788,22 @@ const AgentOrgChart = () => {
                   <p className="text-sm text-foreground capitalize">
                     {selectedAgent.level.replace("-", " ")}
                   </p>
+                </div>
+              </div>
+
+              {/* Metrics */}
+              <div className="grid grid-cols-3 gap-3 p-3 rounded-lg bg-card/50 border border-border">
+                <div className="text-center">
+                  <p className="text-lg font-bold text-foreground">{selectedAgent.tasksToday}</p>
+                  <p className="text-[10px] text-muted-foreground">Tasks Today</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-emerald-400">{selectedAgent.successRate}%</p>
+                  <p className="text-[10px] text-muted-foreground">Success Rate</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-foreground">{selectedAgent.avgResponseTime}</p>
+                  <p className="text-[10px] text-muted-foreground">Avg Response</p>
                 </div>
               </div>
 
