@@ -7,7 +7,7 @@ export interface Skill {
   id: string;
   name: string;
   shortName: string;
-  category: "executive" | "marketing" | "finance" | "research" | "healthcare" | "operations" | "development" | "clawbots" | "intelligence";
+  category: "executive" | "marketing" | "finance" | "research" | "healthcare" | "operations" | "development" | "clawbots" | "intelligence" | "marketing-suite" | "sales";
   icon: string;
   description: string;
   longDescription: string;
@@ -86,6 +86,20 @@ export const skillCategories: SkillCategory[] = [
     description:
       "Meta-cognitive agents that analyze performance data, identify optimization opportunities, and continuously improve the entire Dr. Claw agent ecosystem.",
     icon: "Sparkles",
+  },
+  {
+    id: "marketing-suite",
+    name: "Marketing Suite",
+    description:
+      "Enterprise-tier marketing powerhouse agents that orchestrate omni-channel campaigns, automate content pipelines, optimize paid media, and deliver full-funnel attribution analytics. Top-tier package exclusive.",
+    icon: "Rocket",
+  },
+  {
+    id: "sales",
+    name: "Sales Suite",
+    description:
+      "Enterprise-tier sales acceleration agents that automate prospecting, manage pipeline intelligence, close deals with AI-powered proposals, and forecast revenue with precision. Top-tier package exclusive.",
+    icon: "Handshake",
   },
 ];
 
@@ -2400,6 +2414,834 @@ export const skills: Skill[] = [
       "Performing a predictive analysis of patient volume trends to optimize staffing and resource allocation for the next quarter",
       "Creating automated weekly reports that measure agent performance, cost savings, and quality metrics for each department",
       "Detecting anomalies in billing data that indicate potential coding errors or revenue leakage requiring immediate investigation",
+    ],
+    tier: "enterprise",
+  },
+
+  // ─────────────────────────────────────────────
+  // MARKETING SUITE SKILLS (Top-Tier Package)
+  // ─────────────────────────────────────────────
+  {
+    id: "marketing-director",
+    name: "Marketing Director",
+    shortName: "Marketing Dir",
+    category: "marketing-suite",
+    icon: "Rocket",
+    description:
+      "Enterprise marketing leadership agent that orchestrates omni-channel campaigns, brand strategy, and full-funnel growth.",
+    longDescription:
+      "The Marketing Director agent is the commanding force behind your entire marketing operation. It designs quarterly marketing plans, allocates budgets across channels, coordinates creative and media teams, and ensures every campaign ladders up to revenue targets. This agent thinks in funnels — from brand awareness through conversion — and continuously rebalances efforts based on real-time performance data. Built exclusively for top-tier organizations that demand CMO-caliber execution at machine speed.",
+    capabilities: [
+      {
+        name: "Omni-Channel Campaign Orchestration",
+        description:
+          "Designs and coordinates integrated campaigns across email, social, paid media, content, and events — ensuring consistent messaging and optimal budget allocation per channel.",
+      },
+      {
+        name: "Brand Strategy & Positioning",
+        description:
+          "Develops brand architecture, positioning statements, and competitive differentiation frameworks that resonate with target audiences and withstand market shifts.",
+      },
+      {
+        name: "Marketing Budget Optimization",
+        description:
+          "Builds dynamic budget models that allocate spend to highest-ROI channels, forecast CAC by segment, and automatically rebalance based on performance thresholds.",
+      },
+      {
+        name: "Full-Funnel Attribution",
+        description:
+          "Implements multi-touch attribution models that trace every conversion back to its originating touchpoints, revealing true channel and campaign contribution to revenue.",
+      },
+      {
+        name: "Competitive Intelligence",
+        description:
+          "Monitors competitor marketing activity, messaging shifts, and market positioning to identify windows of opportunity and inform strategic counter-moves.",
+      },
+      {
+        name: "Go-to-Market Planning",
+        description:
+          "Creates comprehensive GTM launch plans including audience segmentation, channel strategy, content calendars, sales enablement materials, and success metrics.",
+      },
+      {
+        name: "Marketing Team Coordination",
+        description:
+          "Manages cross-functional marketing workflows, assigns creative briefs, tracks deliverables, and ensures alignment between content, design, and demand-gen teams.",
+      },
+      {
+        name: "Executive Marketing Reports",
+        description:
+          "Generates board-ready marketing performance reports with pipeline attribution, brand health metrics, and strategic recommendations for the next quarter.",
+      },
+    ],
+    useCases: [
+      "Building a Q3 integrated marketing plan with channel allocation, creative briefs, and projected pipeline contribution across five segments",
+      "Analyzing multi-touch attribution data to reallocate $500K in ad spend from underperforming channels to high-converting ones",
+      "Launching a competitive repositioning campaign after a major competitor enters your market with aggressive pricing",
+      "Creating a comprehensive go-to-market plan for a new product line targeting enterprise healthcare organizations",
+    ],
+    tier: "enterprise",
+  },
+  {
+    id: "content-pipeline-manager",
+    name: "Content Pipeline Manager",
+    shortName: "Content Pipeline",
+    category: "marketing-suite",
+    icon: "FileText",
+    description:
+      "Automated content production engine that plans, creates, optimizes, and distributes content at enterprise scale.",
+    longDescription:
+      "The Content Pipeline Manager transforms your content operation from ad-hoc to industrial-grade. It maintains an intelligent editorial calendar, generates SEO-optimized articles, social media posts, email sequences, and sales collateral — all in your brand voice. The agent tracks content performance, identifies gaps in your content library, and automatically repurposes top-performing pieces across formats. Designed for organizations that need to produce high volumes of quality content without scaling headcount.",
+    capabilities: [
+      {
+        name: "Editorial Calendar Management",
+        description:
+          "Maintains a dynamic content calendar that aligns with campaign themes, seasonal opportunities, and product launches while balancing content types and audience segments.",
+      },
+      {
+        name: "SEO Content Production",
+        description:
+          "Produces keyword-researched, search-optimized long-form articles, landing pages, and pillar content that drives organic traffic growth and establishes topical authority.",
+      },
+      {
+        name: "Content Repurposing Engine",
+        description:
+          "Automatically transforms high-performing content into derivative formats — turning blog posts into social threads, webinar recordings into article series, and case studies into email sequences.",
+      },
+      {
+        name: "Brand Voice Consistency",
+        description:
+          "Enforces brand voice guidelines, tone parameters, and style standards across all content outputs to maintain a unified brand presence regardless of channel or format.",
+      },
+      {
+        name: "Content Performance Analytics",
+        description:
+          "Tracks engagement, conversion, and SEO metrics for every piece of content and uses performance data to inform future content strategy and topic prioritization.",
+      },
+      {
+        name: "Thought Leadership Development",
+        description:
+          "Crafts executive thought leadership articles, keynote scripts, and LinkedIn content that positions leadership as industry authorities and drives inbound opportunities.",
+      },
+    ],
+    useCases: [
+      "Building a 90-day content calendar with 40 blog posts, 200 social posts, and 12 email sequences all mapped to funnel stages",
+      "Repurposing a 60-minute webinar into a blog series, social media campaign, email nurture sequence, and sales one-pager",
+      "Producing a monthly thought leadership article series for the CEO that drives LinkedIn engagement and inbound leads",
+      "Auditing existing content library to identify gaps, update outdated pieces, and consolidate overlapping content",
+    ],
+    tier: "enterprise",
+  },
+  {
+    id: "paid-media-optimizer",
+    name: "Paid Media Optimizer",
+    shortName: "Paid Media",
+    category: "marketing-suite",
+    icon: "TrendingUp",
+    description:
+      "AI-powered paid advertising agent that manages campaigns across Google, Meta, LinkedIn, and programmatic channels.",
+    longDescription:
+      "The Paid Media Optimizer brings algorithmic precision to your advertising spend. It designs campaign structures, writes ad copy, manages bidding strategies, and continuously optimizes creative performance across all major paid channels. The agent monitors real-time ROAS, adjusts targeting based on conversion signals, and automatically pauses underperforming ad sets. It provides the media buying expertise of a senior paid media team in a single, tireless agent.",
+    capabilities: [
+      {
+        name: "Cross-Platform Campaign Management",
+        description:
+          "Designs and manages advertising campaigns across Google Ads, Meta, LinkedIn Ads, and programmatic platforms with unified reporting and budget allocation.",
+      },
+      {
+        name: "Ad Creative Generation",
+        description:
+          "Produces high-converting ad copy, headlines, and creative briefs optimized for each platform's best practices and your audience's engagement patterns.",
+      },
+      {
+        name: "Bid Strategy Optimization",
+        description:
+          "Implements and tunes automated bidding strategies — target CPA, maximize conversions, ROAS targets — based on campaign objectives and historical performance data.",
+      },
+      {
+        name: "Audience Targeting & Segmentation",
+        description:
+          "Builds custom audiences, lookalike models, and retargeting segments that maximize ad relevance and minimize wasted spend on unqualified impressions.",
+      },
+      {
+        name: "ROAS Tracking & Reporting",
+        description:
+          "Tracks return on ad spend at the campaign, ad set, and creative level with automated dashboards and alerts when performance deviates from targets.",
+      },
+      {
+        name: "A/B Testing Frameworks",
+        description:
+          "Designs and executes structured ad experiments — testing headlines, images, CTAs, landing pages, and audiences — with statistical rigor and clear winner selection criteria.",
+      },
+    ],
+    useCases: [
+      "Launching a multi-platform paid campaign across Google, Meta, and LinkedIn with a $100K monthly budget and target $5 CPA",
+      "Optimizing a retargeting campaign that recaptures abandoned demo requests with personalized ad creative by industry segment",
+      "Running a structured A/B test of 20 ad creative variations to identify the top-performing messaging for enterprise buyers",
+      "Building an automated reporting dashboard that tracks daily ROAS, CPA, and pipeline contribution across all paid channels",
+    ],
+    tier: "enterprise",
+  },
+  {
+    id: "email-automation-specialist",
+    name: "Email Automation Specialist",
+    shortName: "Email Auto",
+    category: "marketing-suite",
+    icon: "Mail",
+    description:
+      "Advanced email marketing agent that designs sequences, optimizes deliverability, and maximizes engagement and conversion.",
+    longDescription:
+      "The Email Automation Specialist is your dedicated email revenue engine. It builds sophisticated nurture sequences, designs trigger-based automations, optimizes subject lines and send times, and manages list health to maximize deliverability. The agent segments audiences by behavior, lifecycle stage, and engagement level, ensuring every recipient gets the right message at the right time. Ideal for organizations with complex buyer journeys that need email to work as a precision instrument, not a blunt broadcast.",
+    capabilities: [
+      {
+        name: "Nurture Sequence Design",
+        description:
+          "Creates multi-step email nurture sequences with branching logic based on recipient behavior — opens, clicks, page visits, and form submissions.",
+      },
+      {
+        name: "Behavioral Trigger Automation",
+        description:
+          "Designs event-triggered email flows — onboarding sequences, re-engagement campaigns, cart abandonment, and milestone-based communications.",
+      },
+      {
+        name: "Subject Line Optimization",
+        description:
+          "Generates and A/B tests subject lines, preview text, and sender names to maximize open rates across different audience segments and email clients.",
+      },
+      {
+        name: "List Health & Deliverability",
+        description:
+          "Monitors sender reputation, bounce rates, and spam complaints while implementing list hygiene protocols that maintain high deliverability rates.",
+      },
+      {
+        name: "Segmentation & Personalization",
+        description:
+          "Builds dynamic audience segments based on demographics, behavior, engagement, and lifecycle stage for hyper-personalized email experiences.",
+      },
+      {
+        name: "Email Performance Analytics",
+        description:
+          "Tracks open rates, click-through rates, conversion rates, and revenue attribution for every email and sequence with automated performance reports.",
+      },
+    ],
+    useCases: [
+      "Designing a 12-email onboarding sequence with behavioral branching that adapts based on feature adoption signals",
+      "Building a win-back campaign targeting subscribers who haven't engaged in 90 days with progressively stronger offers",
+      "Optimizing email deliverability by auditing DNS records, sender reputation, and list hygiene across 500K subscribers",
+      "Creating a product launch email sequence with countdown triggers, early-access tiers, and post-launch follow-up",
+    ],
+    tier: "enterprise",
+  },
+  {
+    id: "social-media-commander",
+    name: "Social Media Commander",
+    shortName: "Social Media",
+    category: "marketing-suite",
+    icon: "Share2",
+    description:
+      "Enterprise social media management agent that schedules, publishes, engages, and analyzes across all platforms.",
+    longDescription:
+      "The Social Media Commander owns your entire social presence. It develops platform-specific content strategies, maintains posting schedules, crafts engaging posts, monitors mentions and sentiment, and generates performance reports. The agent understands the nuances of each platform — LinkedIn's professional tone, Twitter's brevity, Instagram's visual storytelling — and adapts content accordingly. Built for organizations that need a consistent, strategic social presence without a large in-house team.",
+    capabilities: [
+      {
+        name: "Multi-Platform Content Strategy",
+        description:
+          "Develops tailored content strategies for each social platform based on audience demographics, engagement patterns, and platform-specific best practices.",
+      },
+      {
+        name: "Content Calendar & Scheduling",
+        description:
+          "Maintains a comprehensive social media calendar with optimal posting times, content mix ratios, and campaign integration across all active platforms.",
+      },
+      {
+        name: "Community Engagement",
+        description:
+          "Monitors mentions, comments, and direct messages with suggested responses that maintain brand voice while addressing audience needs and sentiment.",
+      },
+      {
+        name: "Social Listening & Sentiment",
+        description:
+          "Tracks brand mentions, industry conversations, and competitor activity to surface trends, threats, and opportunities for real-time strategic response.",
+      },
+      {
+        name: "Influencer Identification",
+        description:
+          "Identifies and evaluates potential influencer partnerships based on audience alignment, engagement authenticity, and brand fit for amplified reach.",
+      },
+      {
+        name: "Social Analytics & ROI",
+        description:
+          "Measures social media performance with engagement metrics, reach analytics, and attribution models that connect social activity to business outcomes.",
+      },
+    ],
+    useCases: [
+      "Developing a LinkedIn thought leadership strategy for five executives with personalized posting schedules and content themes",
+      "Launching a multi-platform product announcement campaign with platform-specific creative and coordinated timing",
+      "Monitoring social sentiment during a PR crisis and generating real-time response recommendations for the communications team",
+      "Building a monthly social performance report that tracks follower growth, engagement rates, and lead generation by platform",
+    ],
+    tier: "enterprise",
+  },
+  {
+    id: "marketing-analytics-engine",
+    name: "Marketing Analytics Engine",
+    shortName: "Mktg Analytics",
+    category: "marketing-suite",
+    icon: "BarChart3",
+    description:
+      "Deep marketing analytics agent that delivers attribution, forecasting, and data-driven optimization recommendations.",
+    longDescription:
+      "The Marketing Analytics Engine transforms raw marketing data into strategic intelligence. It builds attribution models, calculates customer lifetime value, forecasts pipeline contribution, and identifies the levers that move your most important metrics. The agent integrates data from CRM, ad platforms, web analytics, and email systems to provide a unified view of marketing performance. Essential for marketing leaders who need to prove ROI and make confident investment decisions.",
+    capabilities: [
+      {
+        name: "Multi-Touch Attribution Modeling",
+        description:
+          "Implements and maintains attribution models — first-touch, last-touch, linear, time-decay, and data-driven — that accurately credit revenue to marketing touchpoints.",
+      },
+      {
+        name: "Customer Lifetime Value Analysis",
+        description:
+          "Calculates and segments CLV by acquisition channel, campaign, and customer cohort to inform acquisition spending limits and retention investment priorities.",
+      },
+      {
+        name: "Pipeline Forecasting",
+        description:
+          "Projects marketing-sourced pipeline and revenue contribution using historical conversion rates, seasonality patterns, and current funnel velocity.",
+      },
+      {
+        name: "Marketing Mix Modeling",
+        description:
+          "Analyzes the impact of each marketing channel and tactic on overall business outcomes to determine optimal budget allocation across the marketing mix.",
+      },
+      {
+        name: "Funnel Conversion Analysis",
+        description:
+          "Maps and monitors conversion rates at every funnel stage — from impression to MQL to SQL to closed-won — identifying bottlenecks and drop-off patterns.",
+      },
+      {
+        name: "Competitive Benchmarking",
+        description:
+          "Benchmarks marketing KPIs against industry standards and competitor estimates to contextualize performance and identify areas for improvement.",
+      },
+    ],
+    useCases: [
+      "Building a multi-touch attribution model that reveals the true revenue contribution of content marketing vs. paid advertising",
+      "Forecasting Q4 pipeline contribution by channel to inform budget allocation decisions for the upcoming planning cycle",
+      "Analyzing customer lifetime value by acquisition cohort to determine which campaigns produce the highest long-term ROI",
+      "Creating an automated weekly marketing dashboard that tracks CAC, LTV, pipeline velocity, and conversion rates by segment",
+    ],
+    tier: "enterprise",
+  },
+  {
+    id: "event-webinar-producer",
+    name: "Event & Webinar Producer",
+    shortName: "Events",
+    category: "marketing-suite",
+    icon: "CalendarCheck",
+    description:
+      "End-to-end event and webinar management agent from planning through post-event analysis and lead follow-up.",
+    longDescription:
+      "The Event & Webinar Producer manages the full lifecycle of marketing events — from concept and promotion through execution and post-event follow-up. It designs event themes, writes promotional copy, builds registration workflows, creates presenter materials, and generates post-event reports with attendee engagement scoring. Whether you are running intimate executive roundtables or large-scale virtual conferences, this agent ensures every detail is covered and every lead is captured.",
+    capabilities: [
+      {
+        name: "Event Strategy & Planning",
+        description:
+          "Develops event concepts, themes, and agendas aligned with marketing objectives, audience interests, and pipeline generation targets.",
+      },
+      {
+        name: "Promotional Campaign Design",
+        description:
+          "Creates multi-channel event promotion campaigns — email invitations, social media posts, paid ads, and partner outreach — to maximize registration.",
+      },
+      {
+        name: "Webinar Production",
+        description:
+          "Designs webinar formats, writes scripts and talking points, creates slide decks, and develops interactive elements like polls and Q&A frameworks.",
+      },
+      {
+        name: "Registration & Nurture Workflows",
+        description:
+          "Builds automated registration confirmation, reminder sequences, and pre-event nurture emails that boost attendance rates and engagement.",
+      },
+      {
+        name: "Post-Event Follow-Up",
+        description:
+          "Generates personalized follow-up sequences based on attendee behavior — session attendance, poll responses, and engagement scores — to accelerate pipeline.",
+      },
+      {
+        name: "Event ROI Analysis",
+        description:
+          "Calculates event ROI by tracking registrations, attendance, engagement, pipeline generated, and revenue influenced with comprehensive post-event reports.",
+      },
+    ],
+    useCases: [
+      "Planning and promoting a quarterly webinar series targeting enterprise healthcare executives with a goal of 500 registrations per session",
+      "Designing a virtual conference with multiple tracks, networking sessions, and sponsor integrations for 2,000 attendees",
+      "Creating a post-webinar follow-up sequence that segments attendees by engagement level and routes hot leads to sales within 24 hours",
+      "Building an annual event strategy with budget forecasts, venue recommendations, and projected pipeline contribution per event",
+    ],
+    tier: "enterprise",
+  },
+  {
+    id: "seo-growth-specialist",
+    name: "SEO & Growth Specialist",
+    shortName: "SEO Growth",
+    category: "marketing-suite",
+    icon: "Search",
+    description:
+      "Technical and content SEO agent that drives organic growth through search optimization, site health, and content strategy.",
+    longDescription:
+      "The SEO & Growth Specialist is your dedicated organic traffic engine. It conducts technical SEO audits, performs keyword research, develops content strategies mapped to search intent, and monitors ranking performance. The agent identifies quick wins for immediate traffic gains while building long-term topical authority. It understands the interplay between technical health, content quality, and link authority — delivering comprehensive SEO strategies that compound over time.",
+    capabilities: [
+      {
+        name: "Technical SEO Auditing",
+        description:
+          "Conducts comprehensive technical audits covering site speed, crawlability, indexation, schema markup, Core Web Vitals, and mobile optimization.",
+      },
+      {
+        name: "Keyword Research & Mapping",
+        description:
+          "Performs deep keyword research identifying high-value terms by search volume, difficulty, and intent, then maps them to content assets and landing pages.",
+      },
+      {
+        name: "Content Strategy for SEO",
+        description:
+          "Develops topic clusters, pillar page strategies, and content gap analyses that systematically build topical authority in your target categories.",
+      },
+      {
+        name: "Ranking Monitoring & Reporting",
+        description:
+          "Tracks keyword rankings, organic traffic, click-through rates, and SERP feature appearances with automated performance reports and alerts.",
+      },
+      {
+        name: "Link Building Strategy",
+        description:
+          "Identifies link acquisition opportunities through competitor backlink analysis, content-led outreach strategies, and digital PR recommendations.",
+      },
+      {
+        name: "Conversion Rate Optimization",
+        description:
+          "Analyzes landing page performance and recommends CRO improvements — headline tests, CTA placement, form optimization — to convert more organic traffic.",
+      },
+    ],
+    useCases: [
+      "Conducting a full technical SEO audit of a 5,000-page website with prioritized fix recommendations and estimated traffic impact",
+      "Building a keyword strategy and content plan targeting 200 high-intent terms with monthly traffic potential exceeding 50K visitors",
+      "Analyzing competitor backlink profiles to identify 100 link building opportunities ranked by authority and relevance",
+      "Designing a topic cluster strategy around three pillar themes to establish topical authority and capture featured snippets",
+    ],
+    tier: "enterprise",
+  },
+
+  // ─────────────────────────────────────────────
+  // SALES SUITE SKILLS (Top-Tier Package)
+  // ─────────────────────────────────────────────
+  {
+    id: "sales-director",
+    name: "Sales Director",
+    shortName: "Sales Dir",
+    category: "sales",
+    icon: "Handshake",
+    description:
+      "Enterprise sales leadership agent that builds pipeline strategy, manages forecasts, and drives revenue accountability.",
+    longDescription:
+      "The Sales Director agent is the strategic command center for your entire revenue operation. It builds territory plans, designs compensation structures, manages pipeline reviews, and produces accurate revenue forecasts. This agent thinks in quarters and quotas — aligning sales team activity with revenue targets while identifying coaching opportunities and deal risks. Built exclusively for top-tier organizations that need VP-of-Sales caliber strategic execution at machine speed.",
+    capabilities: [
+      {
+        name: "Revenue Strategy & Planning",
+        description:
+          "Develops annual and quarterly sales plans with territory assignments, quota allocation, and activity targets aligned to overall revenue objectives.",
+      },
+      {
+        name: "Pipeline Management & Forecasting",
+        description:
+          "Maintains pipeline health metrics, stage velocity benchmarks, and commit/upside forecasts with statistical confidence intervals for leadership reporting.",
+      },
+      {
+        name: "Sales Team Performance Management",
+        description:
+          "Tracks rep-level activity and outcome metrics, identifies coaching opportunities, and designs performance improvement plans for underperforming territories.",
+      },
+      {
+        name: "Compensation & Incentive Design",
+        description:
+          "Models compensation plans including base, variable, accelerators, and SPIFs that motivate desired behaviors while controlling cost-of-sale ratios.",
+      },
+      {
+        name: "Deal Strategy & Coaching",
+        description:
+          "Reviews complex deals and provides strategic guidance — stakeholder mapping, objection handling strategies, and competitive positioning frameworks.",
+      },
+      {
+        name: "Sales Process Optimization",
+        description:
+          "Analyzes the sales process end-to-end to identify friction points, stage bottlenecks, and conversion improvements that accelerate deal velocity.",
+      },
+      {
+        name: "Quarterly Business Reviews",
+        description:
+          "Generates comprehensive QBR presentations with pipeline analysis, win/loss trends, market intelligence, and strategic recommendations for the next quarter.",
+      },
+      {
+        name: "Revenue Operations Alignment",
+        description:
+          "Coordinates with marketing and customer success to optimize lead handoff processes, expansion revenue motions, and cross-functional revenue accountability.",
+      },
+    ],
+    useCases: [
+      "Building a Q3 territory plan that realigns accounts across 15 reps based on segment, geography, and growth potential",
+      "Creating a pipeline forecast with commit, best-case, and upside scenarios for the board presentation with deal-level backup",
+      "Designing a new compensation plan with accelerators that reward multi-year deals and expansion revenue",
+      "Running a deal strategy session for a $2M enterprise opportunity with stakeholder mapping and competitive counter-positioning",
+    ],
+    tier: "enterprise",
+  },
+  {
+    id: "lead-generation-engine",
+    name: "Lead Generation Engine",
+    shortName: "Lead Gen",
+    category: "sales",
+    icon: "UserPlus",
+    description:
+      "AI-powered prospecting agent that identifies, qualifies, and nurtures high-value leads across multiple channels.",
+    longDescription:
+      "The Lead Generation Engine is your always-on prospecting machine. It identifies ideal customer profiles, builds targeted prospect lists, qualifies inbound leads, and initiates personalized outreach sequences. The agent integrates intent data, firmographic intelligence, and engagement signals to surface the prospects most likely to convert, ensuring your sales team spends time only on high-value opportunities.",
+    capabilities: [
+      {
+        name: "Ideal Customer Profile Development",
+        description:
+          "Analyzes closed-won data to build and refine ICP definitions including firmographic, technographic, and behavioral characteristics that predict conversion.",
+      },
+      {
+        name: "Prospect List Building",
+        description:
+          "Builds targeted prospect lists by matching ICP criteria against company databases, enriching records with contact data, and scoring by fit and intent signals.",
+      },
+      {
+        name: "Lead Qualification & Scoring",
+        description:
+          "Implements multi-factor lead scoring models that combine demographic fit, behavioral engagement, and intent signals to prioritize sales follow-up.",
+      },
+      {
+        name: "Multi-Channel Outreach",
+        description:
+          "Designs and executes coordinated outreach campaigns across email, LinkedIn, phone, and direct mail with personalization at scale.",
+      },
+      {
+        name: "Intent Signal Monitoring",
+        description:
+          "Monitors buying intent signals — content consumption, competitor research, job postings, and technology adoption — to identify in-market prospects.",
+      },
+      {
+        name: "Lead Nurture Automation",
+        description:
+          "Builds automated nurture tracks that keep pre-qualified prospects engaged with relevant content until they reach sales-ready status.",
+      },
+    ],
+    useCases: [
+      "Building a target account list of 500 healthcare organizations matching ICP criteria with enriched contact data for decision-makers",
+      "Designing a multi-channel outbound sequence combining LinkedIn, email, and phone touches with personalization by persona and industry",
+      "Implementing a lead scoring model that reduces sales follow-up time by 60% by surfacing only marketing-qualified leads above threshold",
+      "Setting up intent monitoring to alert reps when target accounts show buying signals like competitor evaluations or budget planning",
+    ],
+    tier: "enterprise",
+  },
+  {
+    id: "crm-intelligence-agent",
+    name: "CRM Intelligence Agent",
+    shortName: "CRM Intel",
+    category: "sales",
+    icon: "Database",
+    description:
+      "CRM optimization agent that maintains data quality, surfaces insights, and automates workflow management.",
+    longDescription:
+      "The CRM Intelligence Agent transforms your CRM from a data entry system into a strategic intelligence platform. It automates data enrichment, enforces data hygiene standards, surfaces deal insights, and builds automated workflows that eliminate manual CRM administration. The agent ensures every record is complete and accurate while providing sales teams with the contextual intelligence they need to advance deals.",
+    capabilities: [
+      {
+        name: "Data Enrichment & Hygiene",
+        description:
+          "Automatically enriches contact and company records with firmographic data while identifying and merging duplicates, filling gaps, and flagging stale entries.",
+      },
+      {
+        name: "Deal Intelligence & Insights",
+        description:
+          "Analyzes deal data to surface patterns — which activities correlate with wins, which stages see the most fall-off, and which deal characteristics predict success.",
+      },
+      {
+        name: "Workflow Automation Design",
+        description:
+          "Designs CRM workflows that automate task creation, stage progression, notification triggers, and escalation paths based on deal activity and time thresholds.",
+      },
+      {
+        name: "Pipeline Reporting & Dashboards",
+        description:
+          "Builds custom pipeline views, stage-by-stage reports, and executive dashboards that provide real-time visibility into sales performance and forecast accuracy.",
+      },
+      {
+        name: "Activity Tracking & Analysis",
+        description:
+          "Monitors and analyzes sales activity data — calls, emails, meetings — to identify optimal engagement patterns and activity-to-outcome correlations.",
+      },
+      {
+        name: "Integration Architecture",
+        description:
+          "Designs CRM integration architecture connecting marketing automation, customer success, and finance platforms for a unified customer data ecosystem.",
+      },
+    ],
+    useCases: [
+      "Auditing CRM data quality across 50,000 records to identify duplicates, missing fields, and stale accounts with automated cleanup workflows",
+      "Building automated deal progression workflows that create tasks, send alerts, and escalate stalled opportunities based on stage duration",
+      "Designing an executive pipeline dashboard that shows real-time forecast, deal velocity, and rep activity metrics by territory",
+      "Analyzing win/loss data to identify the top five deal characteristics that predict closed-won outcomes for enterprise opportunities",
+    ],
+    tier: "enterprise",
+  },
+  {
+    id: "proposal-quote-specialist",
+    name: "Proposal & Quote Specialist",
+    shortName: "Proposals",
+    category: "sales",
+    icon: "FileCheck",
+    description:
+      "Sales document automation agent that generates proposals, quotes, SOWs, and contracts with speed and precision.",
+    longDescription:
+      "The Proposal & Quote Specialist eliminates the bottleneck of sales document creation. It generates custom proposals, price quotes, statements of work, and contract drafts in minutes — not days. The agent pulls deal context from CRM, applies approved pricing and discount rules, and produces polished documents that maintain brand standards and legal compliance. Built for organizations where deal velocity is constrained by document turnaround time.",
+    capabilities: [
+      {
+        name: "Proposal Generation",
+        description:
+          "Creates customized sales proposals incorporating company overview, solution fit, case studies, implementation timelines, and pricing — all tailored to the prospect's specific needs.",
+      },
+      {
+        name: "Dynamic Pricing & Quoting",
+        description:
+          "Generates accurate price quotes with product configurations, volume discounts, multi-year terms, and approval workflows for non-standard pricing.",
+      },
+      {
+        name: "SOW & Contract Drafting",
+        description:
+          "Produces statements of work and contract drafts with standard terms, scope definitions, deliverable timelines, and appropriate legal language.",
+      },
+      {
+        name: "Competitive Battle Cards",
+        description:
+          "Maintains and distributes competitive battle cards with objection handlers, feature comparisons, and win-theme recommendations for each major competitor.",
+      },
+      {
+        name: "ROI & Business Case Building",
+        description:
+          "Constructs detailed ROI models and business case documents that quantify the financial impact of your solution for executive decision-makers.",
+      },
+      {
+        name: "Document Analytics",
+        description:
+          "Tracks proposal engagement — which sections are read, time spent per page, and sharing activity — to inform follow-up strategy and content optimization.",
+      },
+    ],
+    useCases: [
+      "Generating a 20-page custom proposal for a six-figure enterprise deal with tailored ROI modeling and implementation timeline",
+      "Creating competitive battle cards for three new market entrants with feature comparisons and objection-handling scripts",
+      "Building a standardized SOW template system with modular sections that reps can customize in under 15 minutes",
+      "Producing a detailed business case showing five-year TCO comparison and projected ROI for a C-suite buying committee",
+    ],
+    tier: "enterprise",
+  },
+  {
+    id: "sales-enablement-specialist",
+    name: "Sales Enablement Specialist",
+    shortName: "Sales Enable",
+    category: "sales",
+    icon: "GraduationCap",
+    description:
+      "Sales training and enablement agent that creates playbooks, training programs, and rep-ready resources.",
+    longDescription:
+      "The Sales Enablement Specialist bridges the gap between marketing content and sales execution. It builds sales playbooks, designs onboarding programs, creates objection-handling guides, and develops training materials that accelerate rep ramp time and improve win rates. The agent continuously updates resources based on competitive intelligence, product changes, and win/loss analysis, ensuring your sales team always has the most current and effective tools.",
+    capabilities: [
+      {
+        name: "Sales Playbook Development",
+        description:
+          "Creates comprehensive sales playbooks with buyer personas, discovery questions, demo scripts, objection handlers, and closing techniques for each product and segment.",
+      },
+      {
+        name: "Onboarding Program Design",
+        description:
+          "Designs structured new-hire onboarding programs with learning paths, certification milestones, role-play scenarios, and competency assessments.",
+      },
+      {
+        name: "Objection Handling Library",
+        description:
+          "Builds and maintains a dynamic objection handling library with proven responses organized by objection type, competitor, and buyer persona.",
+      },
+      {
+        name: "Demo & Presentation Templates",
+        description:
+          "Creates customizable demo scripts, presentation templates, and talk tracks that align with buyer journeys and value propositions.",
+      },
+      {
+        name: "Win/Loss Analysis",
+        description:
+          "Conducts systematic win/loss analyses through deal reviews and generates actionable insights that inform messaging, positioning, and process improvements.",
+      },
+      {
+        name: "Content Utilization Tracking",
+        description:
+          "Monitors which enablement resources reps actually use and correlates content utilization with deal outcomes to optimize the resource library.",
+      },
+    ],
+    useCases: [
+      "Building a comprehensive sales playbook for a new product launch with personas, discovery scripts, and competitive positioning",
+      "Designing a 30-60-90 day onboarding program that reduces new rep ramp time from 6 months to 3 months",
+      "Creating a library of 50 objection responses covering pricing, competition, implementation, and security concerns",
+      "Conducting a quarterly win/loss analysis across 200 closed opportunities to identify pattern changes in deal outcomes",
+    ],
+    tier: "enterprise",
+  },
+  {
+    id: "revenue-forecasting-analyst",
+    name: "Revenue Forecasting Analyst",
+    shortName: "Rev Forecast",
+    category: "sales",
+    icon: "BarChart3",
+    description:
+      "Precision revenue forecasting agent that delivers accurate predictions using pipeline analytics and historical patterns.",
+    longDescription:
+      "The Revenue Forecasting Analyst brings data-science rigor to revenue prediction. It analyzes historical close rates, deal velocity, seasonal patterns, and pipeline composition to generate forecasts that leadership can trust. The agent produces multiple forecast scenarios — commit, best case, and upside — with deal-level justification and confidence scoring. Essential for organizations where forecast accuracy directly impacts hiring, investment, and board commitments.",
+    capabilities: [
+      {
+        name: "Statistical Forecasting Models",
+        description:
+          "Applies regression analysis, time-series modeling, and machine learning techniques to pipeline data for revenue predictions with quantified confidence intervals.",
+      },
+      {
+        name: "Pipeline Health Scoring",
+        description:
+          "Assesses pipeline quality by analyzing deal composition, stage distribution, velocity trends, and coverage ratios against quota targets.",
+      },
+      {
+        name: "Scenario Modeling",
+        description:
+          "Produces multiple forecast scenarios — conservative, expected, and optimistic — with sensitivity analysis showing which deal movements drive the biggest variance.",
+      },
+      {
+        name: "Quota Attainment Tracking",
+        description:
+          "Monitors real-time quota attainment by rep, team, and territory with projection models that flag at-risk quotas early enough for intervention.",
+      },
+      {
+        name: "Seasonal & Trend Analysis",
+        description:
+          "Identifies seasonal patterns, market trends, and cyclical behaviors in sales data to improve forecast accuracy and inform capacity planning.",
+      },
+      {
+        name: "Forecast Accuracy Measurement",
+        description:
+          "Tracks forecast accuracy over time by comparing predictions to actuals, identifying systematic biases, and calibrating models for continuous improvement.",
+      },
+    ],
+    useCases: [
+      "Building a Q4 revenue forecast with commit, best-case, and upside scenarios backed by deal-level analysis and historical close rates",
+      "Identifying at-risk quotas across 20 territories three weeks before quarter-end with recommended intervention strategies",
+      "Analyzing two years of sales data to model seasonal patterns and adjust quarterly targets for more equitable quota distribution",
+      "Creating a weekly forecast cadence that tracks accuracy over time and flags when pipeline coverage drops below safe thresholds",
+    ],
+    tier: "enterprise",
+  },
+  {
+    id: "account-expansion-agent",
+    name: "Account Expansion Agent",
+    shortName: "Account Expand",
+    category: "sales",
+    icon: "TrendingUp",
+    description:
+      "Customer expansion agent that identifies upsell and cross-sell opportunities within the existing account base.",
+    longDescription:
+      "The Account Expansion Agent mines your existing customer base for revenue growth opportunities. It analyzes product usage data, contract renewal timelines, and customer health scores to surface accounts ripe for upsell, cross-sell, or expansion. The agent builds account plans, calculates whitespace, and generates personalized expansion proposals that leverage existing relationships and proven value delivery.",
+    capabilities: [
+      {
+        name: "Whitespace Analysis",
+        description:
+          "Maps product penetration across the customer base to identify untapped expansion opportunities by product, department, and use case.",
+      },
+      {
+        name: "Upsell & Cross-Sell Scoring",
+        description:
+          "Scores expansion opportunities using product usage, engagement data, contract value, and customer health to prioritize the highest-probability revenue opportunities.",
+      },
+      {
+        name: "Account Planning",
+        description:
+          "Develops strategic account plans with growth targets, stakeholder maps, expansion timelines, and personalized value propositions for key accounts.",
+      },
+      {
+        name: "Renewal Risk Detection",
+        description:
+          "Monitors customer health signals to identify at-risk renewals early and triggers retention playbooks before churn becomes imminent.",
+      },
+      {
+        name: "Customer Success Alignment",
+        description:
+          "Coordinates with customer success to align expansion motions with value milestones, ensuring commercial conversations happen when customers are most receptive.",
+      },
+      {
+        name: "Expansion Revenue Forecasting",
+        description:
+          "Forecasts expansion revenue by account segment and product with models that incorporate usage trends, renewal dates, and historical expansion rates.",
+      },
+    ],
+    useCases: [
+      "Conducting a whitespace analysis across 500 enterprise accounts to identify $5M in untapped cross-sell opportunities by product line",
+      "Building strategic account plans for 20 key accounts with growth targets, stakeholder mapping, and quarterly expansion milestones",
+      "Identifying 30 accounts with strong health scores approaching renewal that are prime candidates for multi-year upsell conversations",
+      "Forecasting next-quarter expansion revenue by segment with historical rates and current pipeline to set realistic growth targets",
+    ],
+    tier: "enterprise",
+  },
+  {
+    id: "sales-outreach-automator",
+    name: "Sales Outreach Automator",
+    shortName: "Outreach Auto",
+    category: "sales",
+    icon: "Send",
+    description:
+      "Personalized outreach automation agent that crafts and executes multi-touch sales sequences at scale.",
+    longDescription:
+      "The Sales Outreach Automator enables hyper-personalized prospecting at massive scale. It crafts individualized emails, LinkedIn messages, and call scripts using prospect-specific research — company news, recent hires, technology stack, and competitive signals. The agent designs multi-touch sequences with optimal spacing and channel mix, then measures response rates to continuously improve messaging effectiveness. Built for sales organizations that need to reach thousands of prospects without sacrificing personalization quality.",
+    capabilities: [
+      {
+        name: "Personalized Email Sequences",
+        description:
+          "Generates individualized cold email sequences using prospect research, company context, and trigger events for relevance that drives response rates.",
+      },
+      {
+        name: "LinkedIn Messaging Campaigns",
+        description:
+          "Crafts connection requests and follow-up message sequences for LinkedIn outreach with personalization hooks based on shared connections, content, and company news.",
+      },
+      {
+        name: "Call Script Generation",
+        description:
+          "Produces customized call scripts with opening hooks, discovery questions, and value propositions tailored to the prospect's industry, role, and likely pain points.",
+      },
+      {
+        name: "Sequence Optimization",
+        description:
+          "Analyzes response rates, open rates, and conversion data across sequences to identify the optimal number of touches, timing, and channel mix.",
+      },
+      {
+        name: "Prospect Research Automation",
+        description:
+          "Automatically researches prospects — pulling company news, recent funding, leadership changes, and technology signals — to fuel personalized outreach.",
+      },
+      {
+        name: "Response Handling & Routing",
+        description:
+          "Classifies prospect responses by intent — interested, not now, not interested, out of office — and routes appropriately to reps or nurture tracks.",
+      },
+    ],
+    useCases: [
+      "Launching a 500-prospect outbound campaign with individually personalized emails referencing company-specific triggers and pain points",
+      "Designing a five-touch multi-channel sequence combining email, LinkedIn, and phone with optimized timing and escalating value propositions",
+      "A/B testing 10 email opening hooks across 1,000 prospects to identify which personalization approach drives the highest response rate",
+      "Building automated response classification that routes positive replies to reps within 5 minutes and negative replies to nurture tracks",
     ],
     tier: "enterprise",
   },

@@ -44,6 +44,8 @@ import {
   Target,
   BarChart3,
   RefreshCw,
+  Rocket,
+  Handshake,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
@@ -272,6 +274,38 @@ const DEPARTMENT_TEMPLATES: DepartmentTemplate[] = [
       { name: "Home Health Researcher", role: "Home Healthcare & Hospice Researcher", zone: "clinical", active: true, model: "claude", skills: ["CMS Regulatory Research", "OASIS Guidance", "Quality Measures", "Accreditation Prep"], level: "worker" },
     ],
   },
+  {
+    id: "tpl-marketing-suite",
+    name: "Marketing Suite",
+    icon: "rocket",
+    description: "Enterprise-tier marketing department with campaign orchestration, content pipeline, paid media, email automation, social media, SEO, events, and analytics agents.",
+    agents: [
+      { name: "Marketing Commander", role: "Marketing Suite Director", zone: "operations", active: true, model: "claude", skills: ["Omni-Channel Campaigns", "Budget Optimization", "Full-Funnel Attribution", "GTM Planning"], level: "department-head" },
+      { name: "Content Factory", role: "Content Pipeline Manager", zone: "operations", active: true, model: "claude", skills: ["Editorial Calendar", "SEO Content", "Content Repurposing", "Thought Leadership"], level: "worker" },
+      { name: "Ad Optimizer", role: "Paid Media Optimizer", zone: "operations", active: true, model: "claude", skills: ["Cross-Platform Ads", "Bid Strategy", "Audience Targeting", "A/B Testing"], level: "worker" },
+      { name: "Email Engine", role: "Email Automation Specialist", zone: "operations", active: true, model: "openai", skills: ["Nurture Sequences", "Behavioral Triggers", "Deliverability", "Segmentation"], level: "worker" },
+      { name: "Social Commander", role: "Social Media Commander", zone: "external", active: true, model: "openai", skills: ["Multi-Platform Strategy", "Community Engagement", "Social Listening", "Influencer ID"], level: "worker" },
+      { name: "SEO Engine", role: "SEO & Growth Specialist", zone: "operations", active: true, model: "claude", skills: ["Technical SEO", "Keyword Research", "Link Building", "CRO"], level: "worker" },
+      { name: "Event Producer", role: "Event & Webinar Producer", zone: "operations", active: true, model: "claude", skills: ["Event Strategy", "Webinar Production", "Registration Workflows", "Post-Event Follow-Up"], level: "worker" },
+      { name: "Mktg Analytics", role: "Marketing Analytics Engine", zone: "operations", active: true, model: "claude", skills: ["Attribution Modeling", "CLV Analysis", "Pipeline Forecasting", "Marketing Mix"], level: "worker" },
+    ],
+  },
+  {
+    id: "tpl-sales-suite",
+    name: "Sales Suite",
+    icon: "handshake",
+    description: "Enterprise-tier sales department with pipeline management, lead generation, CRM intelligence, proposals, enablement, forecasting, account expansion, and outreach automation agents.",
+    agents: [
+      { name: "Sales Commander", role: "Sales Suite Director", zone: "operations", active: true, model: "claude", skills: ["Revenue Strategy", "Pipeline Management", "Deal Coaching", "QBR Presentations"], level: "department-head" },
+      { name: "Lead Machine", role: "Lead Generation Engine", zone: "external", active: true, model: "claude", skills: ["ICP Development", "Prospect Lists", "Lead Scoring", "Intent Signals"], level: "worker" },
+      { name: "CRM Brain", role: "CRM Intelligence Agent", zone: "operations", active: true, model: "claude", skills: ["Data Enrichment", "Deal Insights", "Workflow Automation", "Pipeline Dashboards"], level: "worker" },
+      { name: "Proposal Pro", role: "Proposal & Quote Specialist", zone: "operations", active: true, model: "claude", skills: ["Proposal Generation", "Dynamic Pricing", "Battle Cards", "ROI Models"], level: "worker" },
+      { name: "Enablement Hub", role: "Sales Enablement Specialist", zone: "operations", active: true, model: "claude", skills: ["Sales Playbooks", "Onboarding Programs", "Objection Library", "Win/Loss Analysis"], level: "worker" },
+      { name: "Forecast Engine", role: "Revenue Forecasting Analyst", zone: "operations", active: true, model: "claude", skills: ["Statistical Forecasting", "Pipeline Scoring", "Scenario Modeling", "Quota Tracking"], level: "worker" },
+      { name: "Expansion Agent", role: "Account Expansion Agent", zone: "operations", active: true, model: "claude", skills: ["Whitespace Analysis", "Upsell Scoring", "Account Planning", "Renewal Risk"], level: "worker" },
+      { name: "Outreach Bot", role: "Sales Outreach Automator", zone: "external", active: true, model: "openai", skills: ["Personalized Emails", "LinkedIn Campaigns", "Call Scripts", "Response Routing"], level: "worker" },
+    ],
+  },
 ];
 
 // ── Initial Access ──────────────────────────────────────────────────────────
@@ -287,6 +321,8 @@ const INITIAL_ACCESS: DepartmentAccess[] = [
   { departmentName: "Development & Integration", accessLevel: "department-only" },
   { departmentName: "Clawbots", accessLevel: "department-only" },
   { departmentName: "Intelligence & Analytics", accessLevel: "admin-only" },
+  { departmentName: "Marketing Suite", accessLevel: "admin-only" },
+  { departmentName: "Sales Suite", accessLevel: "admin-only" },
 ];
 
 // ── Helper Functions ────────────────────────────────────────────────────────
@@ -303,6 +339,8 @@ function getDeptIcon(iconKey: string) {
     case "code": return <Code className="h-5 w-5" />;
     case "linkedin": return <Linkedin className="h-5 w-5" />;
     case "sparkles": return <Sparkles className="h-5 w-5" />;
+    case "rocket": return <Rocket className="h-5 w-5" />;
+    case "handshake": return <Handshake className="h-5 w-5" />;
     default: return <Building2 className="h-5 w-5" />;
   }
 }
@@ -1951,6 +1989,7 @@ const AgentOrgChart = () => {
                   "Clinical Operations", "Marketing & Growth", "Finance & Accounting",
                   "Human Resources", "Research & Development", "IT & Security",
                   "Development & Integration", "Clawbots", "Intelligence & Analytics",
+                  "Marketing Suite", "Sales Suite",
                 ].map((dept) => (
                   <button
                     key={dept}
