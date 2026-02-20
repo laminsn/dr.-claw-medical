@@ -10,6 +10,8 @@ export interface Integration {
   features: string[];
   tier: "starter" | "professional" | "advanced" | "enterprise";
   popular?: boolean;
+  supportsOAuth?: boolean;
+  oauthProvider?: string;
 }
 
 export const integrationCategories = [
@@ -48,6 +50,8 @@ export const integrations: Integration[] = [
     ],
     tier: "starter",
     popular: true,
+    supportsOAuth: true,
+    oauthProvider: "openai",
   },
   {
     id: "anthropic",
@@ -67,6 +71,8 @@ export const integrations: Integration[] = [
     ],
     tier: "starter",
     popular: true,
+    supportsOAuth: true,
+    oauthProvider: "anthropic",
   },
   {
     id: "google-gemini",
@@ -86,6 +92,8 @@ export const integrations: Integration[] = [
     ],
     tier: "starter",
     popular: true,
+    supportsOAuth: true,
+    oauthProvider: "google",
   },
   {
     id: "minimax",

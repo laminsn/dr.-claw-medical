@@ -40,6 +40,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useUserIntegrations } from "@/hooks/useUserIntegrations";
+
+// ---------------------------------------------------------------------------
+// Model name → integration key mapping
+// ---------------------------------------------------------------------------
+const MODEL_TO_INTEGRATION_KEY: Record<string, string> = {
+  "GPT-4": "openai",
+  "GPT-4o": "openai",
+  "OpenAI": "openai",
+  "Claude": "anthropic",
+  "Gemini": "google-gemini",
+};
 
 // ---------------------------------------------------------------------------
 // Types
@@ -377,6 +389,12 @@ function getTimeNow(): string {
 const AgentPlayground = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const { isConnected: isIntegrationConnected } = useUserIntegrations();
+
+  const isModelRegistered = (modelName: string): boolean => {
+    const key = MODEL_TO_INTEGRATION_KEY[modelName];
+    return key ? isIntegrationConnected(key) : true;
+  };
 
   const ZONE_CONFIG: Record<AgentZone, { label: string; shortLabel: string; color: string; bgColor: string; description: string }> = {
     clinical: { label: t("playground.zoneClinicalLabel"), shortLabel: t("playground.zoneClinicalShort"), color: "text-red-400", bgColor: "bg-red-500/15 border-red-500/30 text-red-400", description: t("playground.zoneClinicalDesc") },
@@ -637,16 +655,29 @@ const AgentPlayground = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {AGENTS.map((agent) => (
-                        <SelectItem key={agent.id} value={agent.id}>
-                          <span className="flex items-center gap-2">
-                            {agent.name} &mdash; {agent.model}
-                            <span className={`text-[9px] px-1 py-0 rounded ${ZONE_CONFIG[AGENT_ZONE_MAP[agent.id] || "operations"].bgColor}`}>
-                              {ZONE_CONFIG[AGENT_ZONE_MAP[agent.id] || "operations"].shortLabel}
+                      {AGENTS.map((agent) => {
+                        const registered = isModelRegistered(agent.model);
+                        return (
+                          <SelectItem
+                            key={agent.id}
+                            value={agent.id}
+                            disabled={!registered}
+                            className={!registered ? "opacity-40 grayscale" : ""}
+                          >
+                            <span className="flex items-center gap-2">
+                              {agent.name} &mdash; {agent.model}
+                              {!registered && (
+                                <span className="text-[9px] px-1 py-0 rounded bg-muted/50 text-muted-foreground border border-muted-foreground/30">
+                                  Not Registered
+                                </span>
+                              )}
+                              <span className={`text-[9px] px-1 py-0 rounded ${ZONE_CONFIG[AGENT_ZONE_MAP[agent.id] || "operations"].bgColor}`}>
+                                {ZONE_CONFIG[AGENT_ZONE_MAP[agent.id] || "operations"].shortLabel}
+                              </span>
                             </span>
-                          </span>
-                        </SelectItem>
-                      ))}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>

@@ -50,6 +50,7 @@ import { agentTemplates } from "@/data/agentTemplates";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { useAgents, type MyAgent, type AgentCapabilities } from "@/hooks/useAgents";
+import { useUserIntegrations } from "@/hooks/useUserIntegrations";
 
 const AGENT_LANGUAGE_OPTIONS = [
   { code: "en", label: "English", flag: "EN" },
@@ -78,12 +79,19 @@ interface ActivityEntry {
 }
 
 const MODEL_OPTIONS = [
-  { id: "openai", label: "OpenAI", color: "text-green-400" },
-  { id: "claude", label: "Claude", color: "text-violet-400" },
-  { id: "gemini", label: "Gemini", color: "text-blue-400" },
-  { id: "minimax", label: "MiniMax", color: "text-amber-400" },
-  { id: "kimi", label: "Kimi", color: "text-rose-400" },
+  { id: "openai", label: "OpenAI", color: "text-green-400", integrationKey: "openai" },
+  { id: "claude", label: "Claude", color: "text-violet-400", integrationKey: "anthropic" },
+  { id: "gemini", label: "Gemini", color: "text-blue-400", integrationKey: "google-gemini" },
+  { id: "minimax", label: "MiniMax", color: "text-amber-400", integrationKey: "minimax" },
+  { id: "kimi", label: "Kimi", color: "text-rose-400", integrationKey: "kimi" },
 ];
+
+// Maps suggestedModel from templates → integration key
+const TEMPLATE_MODEL_TO_INTEGRATION: Record<string, string> = {
+  OpenAI: "openai",
+  Claude: "anthropic",
+  Gemini: "google-gemini",
+};
 
 const ZONE_CONFIG: Record<AgentZone, { label: string; description: string; color: string; border: string; icon: typeof Shield; restrictions: string[] }> = {
   clinical: {
@@ -146,6 +154,11 @@ const Agents = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
   const { agents: myAgents, addAgent, updateAgent, deleteAgent: removeAgent, archiveAgent: archiveAgentCtx, restoreAgent: restoreAgentCtx } = useAgents();
+  const { isConnected: isIntegrationConnected } = useUserIntegrations();
+
+  const isModelRegistered = (integrationKey: string): boolean => {
+    return isIntegrationConnected(integrationKey);
+  };
 
   const [createOpen, setCreateOpen] = useState(false);
   const [newAgentName, setNewAgentName] = useState("");
@@ -719,13 +732,25 @@ const Agents = () => {
                 Pre-configured agent blueprints. Deploy one in a single click.
               </p>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {agentTemplates.map((template) => (
-                  <div key={template.id} className="rounded-xl border border-border bg-card p-5 transition-all duration-300 card-hover flex flex-col">
+                {agentTemplates.map((template) => {
+                  const templateIntegrationKey = TEMPLATE_MODEL_TO_INTEGRATION[template.suggestedModel];
+                  const templateModelRegistered = templateIntegrationKey ? isModelRegistered(templateIntegrationKey) : true;
+                  return (
+                  <div key={template.id} className={`rounded-xl border border-border bg-card p-5 transition-all duration-300 card-hover flex flex-col ${
+                    !templateModelRegistered ? "opacity-50 grayscale" : ""
+                  }`}>
                     <div className="flex items-start justify-between mb-3">
-                      <div className="h-10 w-10 rounded-lg gradient-primary flex items-center justify-center shadow-glow-sm">
-                        <Brain className="h-5 w-5 text-primary-foreground" />
+                      <div className={`h-10 w-10 rounded-lg flex items-center justify-center shadow-glow-sm ${templateModelRegistered ? "gradient-primary" : "bg-muted"}`}>
+                        <Brain className={`h-5 w-5 ${templateModelRegistered ? "text-primary-foreground" : "text-muted-foreground"}`} />
                       </div>
-                      <Badge variant="outline" className="text-[10px] capitalize border-border">{template.category}</Badge>
+                      <div className="flex items-center gap-1.5">
+                        {!templateModelRegistered && (
+                          <Badge variant="outline" className="text-[10px] bg-muted/50 text-muted-foreground border-muted-foreground/30">
+                            {template.suggestedModel} Not Registered
+                          </Badge>
+                        )}
+                        <Badge variant="outline" className="text-[10px] capitalize border-border">{template.category}</Badge>
+                      </div>
                     </div>
                     <h3 className="font-display font-bold text-foreground mb-1">{template.name}</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1">{template.description}</p>
@@ -745,13 +770,19 @@ const Agents = () => {
                       ))}
                     </div>
                     <Button
-                      className="w-full gradient-primary text-primary-foreground rounded-lg shadow-glow-sm hover:opacity-90 gap-2"
-                      onClick={() => openDeployDialog(template.id)}
+                      className={`w-full rounded-lg gap-2 ${
+                        templateModelRegistered
+                          ? "gradient-primary text-primary-foreground shadow-glow-sm hover:opacity-90"
+                          : "bg-muted text-muted-foreground cursor-not-allowed"
+                      }`}
+                      disabled={!templateModelRegistered}
+                      onClick={() => templateModelRegistered && openDeployDialog(template.id)}
                     >
-                      <Zap className="h-4 w-4" /> Deploy <ArrowRight className="h-4 w-4 ml-auto" />
+                      <Zap className="h-4 w-4" /> {templateModelRegistered ? "Deploy" : "Register Model First"} <ArrowRight className="h-4 w-4 ml-auto" />
                     </Button>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -899,25 +930,32 @@ const Agents = () => {
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">AI Model</Label>
                   <div className="grid grid-cols-5 gap-2">
-                    {MODEL_OPTIONS.map((model) => (
-                      <button
-                        key={model.id}
-                        onClick={() => setConfigModel(model.id)}
-                        className={`relative flex flex-col items-center gap-1 rounded-lg border p-2.5 transition-all text-center ${
-                          configModel === model.id
-                            ? "border-primary bg-primary/10 shadow-glow-sm"
-                            : "border-border bg-background hover:border-primary/30 hover:bg-primary/5"
-                        }`}
-                      >
-                        {configModel === model.id && (
-                          <span className="absolute top-1 right-1"><Check className="h-3 w-3 text-primary" /></span>
-                        )}
-                        <Brain className={`h-4 w-4 ${configModel === model.id ? model.color : "text-muted-foreground"}`} />
-                        <span className={`text-[10px] font-medium ${configModel === model.id ? "text-foreground" : "text-muted-foreground"}`}>
-                          {model.label}
-                        </span>
-                      </button>
-                    ))}
+                    {MODEL_OPTIONS.map((model) => {
+                      const registered = isModelRegistered(model.integrationKey);
+                      return (
+                        <button
+                          key={model.id}
+                          onClick={() => registered && setConfigModel(model.id)}
+                          disabled={!registered}
+                          className={`relative flex flex-col items-center gap-1 rounded-lg border p-2.5 transition-all text-center ${
+                            !registered
+                              ? "border-border bg-background opacity-40 grayscale cursor-not-allowed"
+                              : configModel === model.id
+                              ? "border-primary bg-primary/10 shadow-glow-sm"
+                              : "border-border bg-background hover:border-primary/30 hover:bg-primary/5"
+                          }`}
+                        >
+                          {configModel === model.id && registered && (
+                            <span className="absolute top-1 right-1"><Check className="h-3 w-3 text-primary" /></span>
+                          )}
+                          <Brain className={`h-4 w-4 ${configModel === model.id && registered ? model.color : "text-muted-foreground"}`} />
+                          <span className={`text-[10px] font-medium ${configModel === model.id && registered ? "text-foreground" : "text-muted-foreground"}`}>
+                            {model.label}
+                          </span>
+                          {!registered && <span className="text-[8px] text-muted-foreground">Not Registered</span>}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -1217,19 +1255,28 @@ const Agents = () => {
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">AI Model</Label>
                   <div className="grid grid-cols-5 gap-2">
-                    {MODEL_OPTIONS.map((model) => (
-                      <button
-                        key={model.id}
-                        onClick={() => setDeployModel(model.id)}
-                        className={`relative flex flex-col items-center gap-1 rounded-lg border p-2.5 transition-all text-center ${
-                          deployModel === model.id ? "border-primary bg-primary/10 shadow-glow-sm" : "border-border bg-background hover:border-primary/30 hover:bg-primary/5"
-                        }`}
-                      >
-                        {deployModel === model.id && <span className="absolute top-1 right-1"><Check className="h-3 w-3 text-primary" /></span>}
-                        <Brain className={`h-4 w-4 ${deployModel === model.id ? model.color : "text-muted-foreground"}`} />
-                        <span className={`text-[10px] font-medium ${deployModel === model.id ? "text-foreground" : "text-muted-foreground"}`}>{model.label}</span>
-                      </button>
-                    ))}
+                    {MODEL_OPTIONS.map((model) => {
+                      const registered = isModelRegistered(model.integrationKey);
+                      return (
+                        <button
+                          key={model.id}
+                          onClick={() => registered && setDeployModel(model.id)}
+                          disabled={!registered}
+                          className={`relative flex flex-col items-center gap-1 rounded-lg border p-2.5 transition-all text-center ${
+                            !registered
+                              ? "border-border bg-background opacity-40 grayscale cursor-not-allowed"
+                              : deployModel === model.id
+                              ? "border-primary bg-primary/10 shadow-glow-sm"
+                              : "border-border bg-background hover:border-primary/30 hover:bg-primary/5"
+                          }`}
+                        >
+                          {deployModel === model.id && registered && <span className="absolute top-1 right-1"><Check className="h-3 w-3 text-primary" /></span>}
+                          <Brain className={`h-4 w-4 ${deployModel === model.id && registered ? model.color : "text-muted-foreground"}`} />
+                          <span className={`text-[10px] font-medium ${deployModel === model.id && registered ? "text-foreground" : "text-muted-foreground"}`}>{model.label}</span>
+                          {!registered && <span className="text-[8px] text-muted-foreground">Not Registered</span>}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -1280,19 +1327,28 @@ const Agents = () => {
               <div className="space-y-2">
                 <Label className="text-sm font-medium">AI Model</Label>
                 <div className="grid grid-cols-5 gap-2">
-                  {MODEL_OPTIONS.map((model) => (
-                    <button
-                      key={model.id}
-                      onClick={() => setNewAgentModel(model.id)}
-                      className={`relative flex flex-col items-center gap-1 rounded-lg border p-3 transition-all text-center ${
-                        newAgentModel === model.id ? "border-primary bg-primary/10 shadow-glow-sm" : "border-border bg-background hover:border-primary/30 hover:bg-primary/5"
-                      }`}
-                    >
-                      {newAgentModel === model.id && <span className="absolute top-1.5 right-1.5"><Check className="h-3 w-3 text-primary" /></span>}
-                      <Brain className={`h-5 w-5 ${newAgentModel === model.id ? model.color : "text-muted-foreground"}`} />
-                      <span className={`text-xs font-medium ${newAgentModel === model.id ? "text-foreground" : "text-muted-foreground"}`}>{model.label}</span>
-                    </button>
-                  ))}
+                  {MODEL_OPTIONS.map((model) => {
+                    const registered = isModelRegistered(model.integrationKey);
+                    return (
+                      <button
+                        key={model.id}
+                        onClick={() => registered && setNewAgentModel(model.id)}
+                        disabled={!registered}
+                        className={`relative flex flex-col items-center gap-1 rounded-lg border p-3 transition-all text-center ${
+                          !registered
+                            ? "border-border bg-background opacity-40 grayscale cursor-not-allowed"
+                            : newAgentModel === model.id
+                            ? "border-primary bg-primary/10 shadow-glow-sm"
+                            : "border-border bg-background hover:border-primary/30 hover:bg-primary/5"
+                        }`}
+                      >
+                        {newAgentModel === model.id && registered && <span className="absolute top-1.5 right-1.5"><Check className="h-3 w-3 text-primary" /></span>}
+                        <Brain className={`h-5 w-5 ${newAgentModel === model.id && registered ? model.color : "text-muted-foreground"}`} />
+                        <span className={`text-[10px] font-medium ${newAgentModel === model.id && registered ? "text-foreground" : "text-muted-foreground"}`}>{model.label}</span>
+                        {!registered && <span className="text-[8px] text-muted-foreground">Not Registered</span>}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
               {/* Zone Classification */}

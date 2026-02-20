@@ -53,6 +53,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
@@ -62,6 +63,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { useUserIntegrations } from "@/hooks/useUserIntegrations";
+import { supabase } from "@/integrations/supabase/client";
 import { integrations, integrationCategories } from "@/data/integrations";
 
 // ---------------------------------------------------------------------------
@@ -208,12 +212,16 @@ const INTEGRATION_ZONE_ACCESS: Record<string, AgentZone[]> = {
 const Integrations = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const { isConnected: isIntegrationConnected, refetch: refetchIntegrations } = useUserIntegrations();
 
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedIntegration, setSelectedIntegration] = useState<
     (typeof integrations)[number] | null
   >(null);
   const [apiKeyInput, setApiKeyInput] = useState("");
+  const [connectMode, setConnectMode] = useState<"apikey" | "oauth">("apikey");
+  const [oauthLoading, setOauthLoading] = useState(false);
   const [connectedKeys, setConnectedKeys] = useState<Record<string, string>>(
     {},
   );
@@ -248,8 +256,25 @@ const Integrations = () => {
     ...integrationCategories.map((c) => ({ id: c.id, name: c.name })),
   ];
 
-  const handleConnect = () => {
-    if (!selectedIntegration || !apiKeyInput.trim()) return;
+  const handleConnect = async () => {
+    if (!selectedIntegration || !apiKeyInput.trim() || !user) return;
+
+    const { error } = await supabase
+      .from("user_integrations")
+      .upsert(
+        {
+          user_id: user.id,
+          integration_key: selectedIntegration.id,
+          api_key: apiKeyInput.trim(),
+          is_active: true,
+        },
+        { onConflict: "user_id,integration_key" }
+      );
+
+    if (error) {
+      toast({ title: t("auth.errors.error"), description: error.message, variant: "destructive" });
+      return;
+    }
 
     setConnectedKeys((prev) => ({
       ...prev,
@@ -261,8 +286,56 @@ const Integrations = () => {
       description: t("integrations.toastConnectedDesc", { name: selectedIntegration.name }),
     });
 
+    await refetchIntegrations();
     setApiKeyInput("");
     setSelectedIntegration(null);
+  };
+
+  const handleOAuthConnect = async () => {
+    if (!selectedIntegration || !user) return;
+    setOauthLoading(true);
+
+    try {
+      // Store a placeholder to indicate OAuth-based connection
+      const { error } = await supabase
+        .from("user_integrations")
+        .upsert(
+          {
+            user_id: user.id,
+            integration_key: selectedIntegration.id,
+            api_key: `oauth:${selectedIntegration.oauthProvider}`,
+            is_active: true,
+          },
+          { onConflict: "user_id,integration_key" }
+        );
+
+      if (error) {
+        toast({ title: t("auth.errors.error"), description: error.message, variant: "destructive" });
+        return;
+      }
+
+      setConnectedKeys((prev) => ({
+        ...prev,
+        [selectedIntegration.id]: `oauth:${selectedIntegration.oauthProvider}`,
+      }));
+
+      toast({
+        title: t("integrations.toastConnected"),
+        description: t("integrations.toastConnectedDesc", { name: selectedIntegration.name }) +
+          " (via OAuth)",
+      });
+
+      await refetchIntegrations();
+      setSelectedIntegration(null);
+    } catch {
+      toast({
+        title: t("auth.errors.error"),
+        description: "OAuth connection failed. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setOauthLoading(false);
+    }
   };
 
   return (
@@ -324,12 +397,16 @@ const Integrations = () => {
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {filteredIntegrations.map((integ) => {
                 const Icon = resolveIcon(integ.icon);
-                const isConnected = !!connectedKeys[integ.id];
+                const isConnected = isIntegrationConnected(integ.id) || !!connectedKeys[integ.id];
+                const isLlm = integ.category === "llm";
+                const isGreyedOut = isLlm && !isConnected;
 
                 return (
                   <div
                     key={integ.id}
-                    className="glass-card card-hover rounded-2xl p-5 flex flex-col transition-all group"
+                    className={`glass-card card-hover rounded-2xl p-5 flex flex-col transition-all group ${
+                      isGreyedOut ? "opacity-50 grayscale" : ""
+                    }`}
                   >
                     {/* Top row */}
                     <div className="flex items-start justify-between mb-3">
@@ -338,7 +415,15 @@ const Integrations = () => {
                       </div>
 
                       <div className="flex items-center gap-1.5">
-                        {integ.popular && (
+                        {isGreyedOut && (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] bg-muted/50 text-muted-foreground border-muted-foreground/30"
+                          >
+                            Not Registered
+                          </Badge>
+                        )}
+                        {integ.popular && !isGreyedOut && (
                           <Badge
                             variant="outline"
                             className="text-[10px] bg-yellow-500/15 text-yellow-400 border-yellow-500/30"
@@ -413,6 +498,7 @@ const Integrations = () => {
                           className="text-xs border-white/10 hover:bg-white/5"
                           onClick={() => {
                             setApiKeyInput("");
+                            setConnectMode(integ.supportsOAuth ? "oauth" : "apikey");
                             setSelectedIntegration(integ);
                           }}
                         >
@@ -462,24 +548,80 @@ const Integrations = () => {
               </div>
             </DialogHeader>
 
-            {/* API key input */}
-            <div className="space-y-2 pt-2">
-              <Label htmlFor="api-key" className="text-sm font-medium">
-                {selectedIntegration.apiKeyLabel}
-              </Label>
-              <Input
-                id="api-key"
-                type="password"
-                placeholder={selectedIntegration.apiKeyPlaceholder}
-                value={apiKeyInput}
-                onChange={(e) => setApiKeyInput(e.target.value)}
-                className="bg-white/5 border-white/10 focus:border-primary"
-              />
-              <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
-                <Lock className="h-3 w-3" />
-                {t("integrations.keyEncrypted")}
-              </p>
-            </div>
+            {/* OAuth / API key toggle for LLM providers */}
+            {selectedIntegration.supportsOAuth && (
+              <div className="pt-2">
+                <div className="flex rounded-lg bg-white/[0.04] border border-white/[0.06] p-1">
+                  <button
+                    type="button"
+                    onClick={() => setConnectMode("oauth")}
+                    className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+                      connectMode === "oauth"
+                        ? "bg-white/10 text-white shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    OAuth Sign In
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConnectMode("apikey")}
+                    className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+                      connectMode === "apikey"
+                        ? "bg-white/10 text-white shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    API Key
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* OAuth connect section */}
+            {selectedIntegration.supportsOAuth && connectMode === "oauth" ? (
+              <div className="space-y-3 pt-2">
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Sign in with your {selectedIntegration.name} account to securely connect without managing API keys.
+                </p>
+                <Button
+                  className="w-full h-12 text-sm font-medium gap-3 border-white/10 hover:bg-white/5 transition-colors"
+                  variant="outline"
+                  onClick={handleOAuthConnect}
+                  disabled={oauthLoading}
+                >
+                  {oauthLoading ? (
+                    <div className="h-5 w-5 border-2 border-muted-foreground/40 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <ExternalLink className="h-4 w-4" />
+                  )}
+                  Sign in with {selectedIntegration.name}
+                </Button>
+                <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
+                  <Lock className="h-3 w-3" />
+                  Secure OAuth 2.0 authentication
+                </p>
+              </div>
+            ) : (
+              /* API key input */
+              <div className="space-y-2 pt-2">
+                <Label htmlFor="api-key" className="text-sm font-medium">
+                  {selectedIntegration.apiKeyLabel}
+                </Label>
+                <Input
+                  id="api-key"
+                  type="password"
+                  placeholder={selectedIntegration.apiKeyPlaceholder}
+                  value={apiKeyInput}
+                  onChange={(e) => setApiKeyInput(e.target.value)}
+                  className="bg-white/5 border-white/10 focus:border-primary"
+                />
+                <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
+                  <Lock className="h-3 w-3" />
+                  {t("integrations.keyEncrypted")}
+                </p>
+              </div>
+            )}
 
             {/* Features */}
             <div className="pt-2">
@@ -510,16 +652,18 @@ const Integrations = () => {
               <ExternalLink className="h-3 w-3" />
             </a>
 
-            <DialogFooter className="pt-2">
-              <Button
-                className="w-full gradient-primary text-white shadow-glow-sm hover:opacity-90 transition-opacity"
-                disabled={!apiKeyInput.trim()}
-                onClick={handleConnect}
-              >
-                <Zap className="h-4 w-4 mr-1.5" />
-                {t("integrations.saveAndConnect")}
-              </Button>
-            </DialogFooter>
+            {(!selectedIntegration.supportsOAuth || connectMode === "apikey") && (
+              <DialogFooter className="pt-2">
+                <Button
+                  className="w-full gradient-primary text-white shadow-glow-sm hover:opacity-90 transition-opacity"
+                  disabled={!apiKeyInput.trim()}
+                  onClick={handleConnect}
+                >
+                  <Zap className="h-4 w-4 mr-1.5" />
+                  {t("integrations.saveAndConnect")}
+                </Button>
+              </DialogFooter>
+            )}
           </DialogContent>
         )}
       </Dialog>
