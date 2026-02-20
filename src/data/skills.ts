@@ -7,7 +7,7 @@ export interface Skill {
   id: string;
   name: string;
   shortName: string;
-  category: "executive" | "marketing" | "finance" | "research" | "healthcare" | "operations";
+  category: "executive" | "marketing" | "finance" | "research" | "healthcare" | "operations" | "development" | "clawbots" | "intelligence";
   icon: string;
   description: string;
   longDescription: string;
@@ -65,6 +65,27 @@ export const skillCategories: SkillCategory[] = [
     description:
       "Operational and human resources agents that optimize workflows, nurture talent, and build high-performing organizational cultures.",
     icon: "Settings",
+  },
+  {
+    id: "development",
+    name: "Development & Integration",
+    description:
+      "Specialized development agents that build, integrate, and automate workflows across platforms like Notion, Airtable, and custom applications.",
+    icon: "Code",
+  },
+  {
+    id: "clawbots",
+    name: "Clawbots",
+    description:
+      "Autonomous client-facing Clawbot agents that prospect, engage, and nurture leads across LinkedIn, Google, and other digital channels.",
+    icon: "Bot",
+  },
+  {
+    id: "intelligence",
+    name: "Intelligence & Self-Improvement",
+    description:
+      "Meta-cognitive agents that analyze performance data, identify optimization opportunities, and continuously improve the entire Dr. Claw agent ecosystem.",
+    icon: "Sparkles",
   },
 ];
 
@@ -1481,6 +1502,906 @@ export const skills: Skill[] = [
       "Coordinating physical therapy scheduling and adherence tracking for an orthopedic surgery center",
     ],
     tier: "advanced",
+  },
+
+  // ─────────────────────────────────────────────
+  // DEVELOPMENT & INTEGRATION SKILLS
+  // ─────────────────────────────────────────────
+  {
+    id: "notion-development-specialist",
+    name: "Notion Development Specialist",
+    shortName: "Notion Dev",
+    category: "development",
+    icon: "FileText",
+    description:
+      "Notion platform expert that designs databases, builds automations, and creates integrated workspace ecosystems.",
+    longDescription:
+      "The Notion Development Specialist agent is your dedicated Notion architect, transforming the platform from a simple note-taking tool into a powerful operational backbone for your organization. It designs relational databases, builds sophisticated templates, creates automation workflows, and integrates Notion with external tools via the Notion API. Whether you need a project management system, a CRM, a knowledge base, or a client portal, this agent leverages every advanced Notion feature — relations, rollups, formulas, linked databases, and API integrations — to build solutions that scale with your business.",
+    capabilities: [
+      {
+        name: "Database Architecture",
+        description:
+          "Designs relational database structures with properties, relations, rollups, and formulas that model complex business data and enable powerful cross-database reporting.",
+      },
+      {
+        name: "Template Design",
+        description:
+          "Creates reusable page and database templates with structured layouts, pre-configured properties, and embedded instructions that standardize workflows across teams.",
+      },
+      {
+        name: "Notion API Integration",
+        description:
+          "Builds custom integrations using the Notion API to sync data bidirectionally with external systems including CRMs, project management tools, and internal databases.",
+      },
+      {
+        name: "Automation Workflows",
+        description:
+          "Configures Notion automations and connects with tools like Zapier, Make, and n8n to trigger actions, update records, and move data across platforms automatically.",
+      },
+      {
+        name: "Dashboard & Reporting Views",
+        description:
+          "Constructs executive dashboards using linked databases, filtered views, charts, and custom layouts that surface key metrics and operational status at a glance.",
+      },
+      {
+        name: "Workspace Organization",
+        description:
+          "Designs hierarchical workspace structures with teamspaces, permission models, and navigation systems that keep large organizations organized and information discoverable.",
+      },
+      {
+        name: "Formula & Rollup Engineering",
+        description:
+          "Engineers complex Notion formulas and rollup configurations that perform calculations, conditional formatting, and data aggregation across related databases.",
+      },
+      {
+        name: "Client Portal Development",
+        description:
+          "Builds client-facing Notion portals with controlled sharing, status dashboards, document repositories, and communication hubs that elevate the client experience.",
+      },
+      {
+        name: "Project Management Systems",
+        description:
+          "Creates end-to-end project management systems with task tracking, timeline views, sprint boards, resource allocation, and automated status reporting in Notion.",
+      },
+      {
+        name: "Knowledge Base Construction",
+        description:
+          "Develops searchable, well-organized knowledge bases with tagging systems, category hierarchies, and embedded media that make institutional knowledge accessible to all team members.",
+      },
+      {
+        name: "Migration & Import",
+        description:
+          "Plans and executes data migrations from other platforms into Notion, preserving data integrity, relationships, and formatting while minimizing workflow disruption.",
+      },
+      {
+        name: "Training & Documentation",
+        description:
+          "Produces user guides, video walkthroughs, and onboarding materials that help teams adopt Notion workspaces quickly and use them effectively from day one.",
+      },
+    ],
+    useCases: [
+      "Building a full CRM system in Notion with lead tracking, pipeline management, and automated follow-up reminders",
+      "Designing a company-wide project management workspace with cross-team visibility and executive reporting dashboards",
+      "Creating an API integration that syncs Notion databases with Salesforce, HubSpot, or Google Sheets in real time",
+      "Developing a client portal with project status tracking, deliverable sharing, and feedback collection",
+    ],
+    tier: "professional",
+  },
+  {
+    id: "airtable-development-specialist",
+    name: "Airtable Development Specialist",
+    shortName: "Airtable Dev",
+    category: "development",
+    icon: "BarChart3",
+    description:
+      "Airtable platform expert that builds scalable bases, automations, and custom interfaces for data-driven operations.",
+    longDescription:
+      "The Airtable Development Specialist agent transforms Airtable from a spreadsheet alternative into a fully customized business application platform. It architects complex base structures, builds automation workflows, designs custom interfaces, and integrates Airtable with your existing tech stack via scripting and APIs. From inventory management to content calendars to full-blown ERP systems, this agent leverages Airtable's relational data model, extensions, and interface designer to deliver solutions that non-technical teams can maintain while supporting enterprise-grade operational complexity.",
+    capabilities: [
+      {
+        name: "Base Architecture Design",
+        description:
+          "Architects multi-table Airtable bases with linked records, lookup fields, rollup calculations, and field-level permissions that model complex business relationships accurately.",
+      },
+      {
+        name: "Automation Builder",
+        description:
+          "Creates Airtable automations with triggers, conditions, and multi-step actions that eliminate manual data entry, send notifications, and keep records synchronized across tables.",
+      },
+      {
+        name: "Interface Designer",
+        description:
+          "Builds custom Airtable interfaces with forms, dashboards, record detail layouts, and filtered views that give different teams tailored experiences on shared data.",
+      },
+      {
+        name: "Scripting & Extensions",
+        description:
+          "Writes custom JavaScript scripts and configures extensions that extend Airtable's native capabilities with advanced logic, bulk operations, and external API calls.",
+      },
+      {
+        name: "API Integration Development",
+        description:
+          "Develops integrations between Airtable and external platforms using the Airtable REST API, webhooks, and middleware tools for seamless bidirectional data flow.",
+      },
+      {
+        name: "View & Filter Configuration",
+        description:
+          "Configures grid, kanban, calendar, gallery, Gantt, and form views with advanced filtering, grouping, and sorting that surface the right data for each workflow.",
+      },
+      {
+        name: "Data Import & Migration",
+        description:
+          "Plans and executes data migrations into Airtable from spreadsheets, databases, and other platforms while preserving relationships, data types, and historical records.",
+      },
+      {
+        name: "Sync & Cross-Base Integration",
+        description:
+          "Implements Airtable Sync to share data across bases and workspaces, enabling distributed teams to work from shared datasets without duplicating or conflicting records.",
+      },
+      {
+        name: "Workflow Optimization",
+        description:
+          "Analyzes existing Airtable workflows and redesigns them for efficiency, reducing manual steps, eliminating data silos, and improving data accuracy across operations.",
+      },
+      {
+        name: "Reporting & Analytics",
+        description:
+          "Builds reporting dashboards using Airtable's interface designer and chart extensions that provide real-time analytics on operational metrics, project status, and business KPIs.",
+      },
+      {
+        name: "Permission & Access Management",
+        description:
+          "Designs granular permission structures with creator, editor, commenter, and read-only access at base, table, view, and field levels to protect sensitive data.",
+      },
+      {
+        name: "Template Library Development",
+        description:
+          "Creates reusable Airtable base templates with pre-configured tables, automations, and interfaces that accelerate deployment for common business use cases.",
+      },
+    ],
+    useCases: [
+      "Building an inventory management system with automated reorder alerts, supplier tracking, and cost analytics",
+      "Creating a content calendar base with editorial workflows, approval automations, and publishing integrations",
+      "Designing a custom CRM with deal pipeline, activity tracking, and automated outreach sequences via API integration",
+      "Developing a multi-department project tracker with cross-base syncing, resource allocation, and executive dashboards",
+    ],
+    tier: "professional",
+  },
+  {
+    id: "coding-specialist",
+    name: "Coding Specialist",
+    shortName: "Coder",
+    category: "development",
+    icon: "Code",
+    description:
+      "Full-stack coding agent that writes, reviews, debugs, and optimizes code across languages and frameworks.",
+    longDescription:
+      "The Coding Specialist agent is a versatile software engineering partner that accelerates development across the entire stack. It writes production-quality code, performs thorough code reviews, debugs complex issues, and refactors legacy systems with precision. Supporting all major languages and frameworks — from Python, JavaScript, and TypeScript to React, Node.js, and Django — this agent follows industry best practices for clean architecture, testing, security, and performance. Whether you need a quick script, a complete API, or a full-featured web application, this agent delivers well-documented, maintainable code that meets professional engineering standards.",
+    capabilities: [
+      {
+        name: "Full-Stack Development",
+        description:
+          "Writes production-ready code across frontend, backend, and database layers using modern frameworks and best practices for clean, maintainable architecture.",
+      },
+      {
+        name: "Code Review & Quality",
+        description:
+          "Performs thorough code reviews that identify bugs, security vulnerabilities, performance issues, and style inconsistencies with actionable improvement recommendations.",
+      },
+      {
+        name: "Debugging & Troubleshooting",
+        description:
+          "Diagnoses and resolves complex software bugs using systematic debugging methodologies, log analysis, stack trace interpretation, and root cause analysis techniques.",
+      },
+      {
+        name: "API Development",
+        description:
+          "Designs and implements RESTful and GraphQL APIs with proper authentication, rate limiting, error handling, versioning, and comprehensive documentation.",
+      },
+      {
+        name: "Database Design & Queries",
+        description:
+          "Architects database schemas and writes optimized SQL and NoSQL queries for PostgreSQL, MySQL, MongoDB, and other database systems with proper indexing and normalization.",
+      },
+      {
+        name: "Testing & QA",
+        description:
+          "Writes comprehensive unit tests, integration tests, and end-to-end tests using frameworks like Jest, Pytest, Mocha, and Cypress to ensure code reliability.",
+      },
+      {
+        name: "Refactoring & Optimization",
+        description:
+          "Refactors legacy code and optimizes algorithms for performance, readability, and maintainability while preserving existing functionality and reducing technical debt.",
+      },
+      {
+        name: "DevOps & CI/CD",
+        description:
+          "Configures CI/CD pipelines, Docker containers, and deployment workflows using GitHub Actions, Jenkins, and cloud platforms to automate build, test, and release processes.",
+      },
+      {
+        name: "Security Best Practices",
+        description:
+          "Implements secure coding practices including input validation, authentication, authorization, encryption, and protection against OWASP Top 10 vulnerabilities.",
+      },
+      {
+        name: "Documentation & Technical Writing",
+        description:
+          "Produces clear technical documentation including README files, API docs, architecture decision records, and inline code comments that accelerate onboarding and maintenance.",
+      },
+      {
+        name: "Version Control & Git Workflows",
+        description:
+          "Manages Git workflows with branching strategies, merge conflict resolution, pull request processes, and release tagging that support collaborative development teams.",
+      },
+      {
+        name: "Script & Automation Development",
+        description:
+          "Builds automation scripts for data processing, file manipulation, web scraping, and system administration tasks that eliminate repetitive manual work.",
+      },
+    ],
+    useCases: [
+      "Building a full-stack web application with React frontend, Node.js backend, and PostgreSQL database from scratch",
+      "Debugging a production performance issue by analyzing logs, profiling code, and implementing targeted optimizations",
+      "Refactoring a legacy PHP codebase into a modern TypeScript microservices architecture with comprehensive test coverage",
+      "Developing a REST API with OAuth2 authentication, rate limiting, and auto-generated Swagger documentation",
+    ],
+    tier: "professional",
+  },
+  {
+    id: "application-specialist",
+    name: "Application Specialist",
+    shortName: "App Specialist",
+    category: "development",
+    icon: "Monitor",
+    description:
+      "Application lifecycle expert that designs, builds, deploys, and maintains custom software applications.",
+    longDescription:
+      "The Application Specialist agent manages the complete lifecycle of custom software applications from concept through production maintenance. It conducts requirements gathering, produces technical specifications, architects scalable solutions, and oversees development through deployment. This agent specializes in translating business requirements into functional applications — whether mobile apps, web platforms, internal tools, or SaaS products. It bridges the gap between non-technical stakeholders and engineering teams, ensuring applications are built right the first time and continue to evolve with the business.",
+    capabilities: [
+      {
+        name: "Requirements Analysis",
+        description:
+          "Gathers, documents, and prioritizes business requirements through stakeholder interviews, user story mapping, and workflow analysis to define clear application specifications.",
+      },
+      {
+        name: "Application Architecture",
+        description:
+          "Designs scalable application architectures with technology stack selection, microservices design, data modeling, and infrastructure planning that support long-term growth.",
+      },
+      {
+        name: "UI/UX Specification",
+        description:
+          "Creates detailed user interface specifications including wireframes, user flows, interaction patterns, and accessibility requirements that guide frontend development.",
+      },
+      {
+        name: "Vendor & Platform Evaluation",
+        description:
+          "Evaluates build-versus-buy decisions and assesses platforms, frameworks, and third-party services to recommend the most cost-effective and scalable technology approach.",
+      },
+      {
+        name: "MVP Development Strategy",
+        description:
+          "Defines minimum viable product scope with feature prioritization, phased release plans, and success metrics that validate market fit before committing to full development.",
+      },
+      {
+        name: "Integration Architecture",
+        description:
+          "Plans application integrations with existing enterprise systems, third-party APIs, and data sources to ensure seamless data flow and unified user experiences.",
+      },
+      {
+        name: "Quality Assurance Planning",
+        description:
+          "Develops QA strategies including test plans, acceptance criteria, regression testing protocols, and user acceptance testing processes that ensure application reliability.",
+      },
+      {
+        name: "Deployment & Release Management",
+        description:
+          "Plans deployment strategies with staging environments, rollback procedures, feature flags, and release scheduling that minimize risk and downtime during launches.",
+      },
+      {
+        name: "Performance Optimization",
+        description:
+          "Identifies and resolves application performance bottlenecks through load testing, profiling, caching strategies, and infrastructure optimization for production workloads.",
+      },
+      {
+        name: "Maintenance & Support Planning",
+        description:
+          "Establishes application maintenance procedures including monitoring, alerting, patch management, and incident response that ensure long-term reliability and uptime.",
+      },
+      {
+        name: "Mobile Application Strategy",
+        description:
+          "Evaluates native, hybrid, and cross-platform mobile approaches and defines mobile-specific requirements for responsive design, offline functionality, and push notifications.",
+      },
+      {
+        name: "SaaS Product Development",
+        description:
+          "Guides SaaS application development with multi-tenancy architecture, subscription management, usage metering, and self-service onboarding features.",
+      },
+    ],
+    useCases: [
+      "Defining requirements and architecture for a patient scheduling mobile application with EHR integration",
+      "Evaluating build-versus-buy options for an internal operations dashboard with cost-benefit analysis",
+      "Planning the MVP launch of a SaaS product with phased feature rollout and success metric tracking",
+      "Designing an integration architecture that connects a new application with five existing enterprise systems",
+    ],
+    tier: "advanced",
+  },
+
+  // ─────────────────────────────────────────────
+  // HOME HEALTHCARE & HOSPICE RESEARCH
+  // ─────────────────────────────────────────────
+  {
+    id: "home-healthcare-hospice-researcher",
+    name: "Home Healthcare & Hospice Researcher",
+    shortName: "Home Health",
+    category: "healthcare",
+    icon: "Heart",
+    description:
+      "Specialized researcher for home healthcare and hospice regulations, best practices, and operational intelligence.",
+    longDescription:
+      "The Home Healthcare & Hospice Researcher agent is a deep-domain expert in the home health and hospice industry. It tracks CMS regulatory changes, analyzes reimbursement models, researches evidence-based care protocols, and monitors industry trends that affect home-based care delivery. From OASIS assessments to CAHPS surveys, from PDGM payment models to hospice eligibility criteria, this agent provides the specialized intelligence that home health agencies and hospice providers need to maintain compliance, optimize operations, and deliver exceptional patient outcomes in the most personal care setting.",
+    capabilities: [
+      {
+        name: "CMS Regulatory Research",
+        description:
+          "Monitors and interprets CMS regulations, Conditions of Participation, and survey guidance specific to home health and hospice agencies to ensure operational compliance.",
+      },
+      {
+        name: "OASIS Assessment Guidance",
+        description:
+          "Provides detailed guidance on OASIS-E data collection, coding accuracy, and quality reporting to optimize clinical documentation and reimbursement accuracy.",
+      },
+      {
+        name: "PDGM Payment Analysis",
+        description:
+          "Analyzes Patient-Driven Groupings Model payment structures, admission source impacts, and clinical grouping optimization to maximize legitimate reimbursement.",
+      },
+      {
+        name: "Hospice Eligibility Research",
+        description:
+          "Researches and documents hospice eligibility criteria, LCD requirements, and prognostication frameworks for various disease trajectories to support appropriate admissions.",
+      },
+      {
+        name: "Quality Measure Tracking",
+        description:
+          "Monitors home health and hospice quality measures including star ratings, HHVBP performance, and CAHPS survey benchmarks with improvement recommendations.",
+      },
+      {
+        name: "Best Practice Research",
+        description:
+          "Identifies and synthesizes evidence-based best practices in home-based care delivery, wound care, fall prevention, and chronic disease management for community settings.",
+      },
+      {
+        name: "Workforce Analysis",
+        description:
+          "Researches home health aide and nursing workforce trends including recruitment strategies, retention programs, compensation benchmarks, and training requirements.",
+      },
+      {
+        name: "Accreditation Preparation",
+        description:
+          "Guides preparation for Joint Commission, ACHC, and CHAP accreditation surveys with gap analysis, policy templates, and mock survey preparation frameworks.",
+      },
+      {
+        name: "State Licensure Research",
+        description:
+          "Researches state-specific home health and hospice licensure requirements, CON regulations, and operational standards for multi-state expansion planning.",
+      },
+      {
+        name: "Technology & Telehealth Research",
+        description:
+          "Evaluates remote patient monitoring, telehealth platforms, and digital health tools specifically designed for home-based care delivery and patient engagement.",
+      },
+      {
+        name: "Palliative Care Models",
+        description:
+          "Researches community-based palliative care models, concurrent care programs, and advanced illness management approaches that bridge curative and hospice care.",
+      },
+      {
+        name: "Reimbursement Optimization",
+        description:
+          "Analyzes reimbursement trends, RAP elimination impacts, and billing best practices to help agencies maximize revenue while maintaining compliance.",
+      },
+    ],
+    useCases: [
+      "Analyzing the impact of new CMS Conditions of Participation on home health agency operational policies",
+      "Researching PDGM optimization strategies that improve case-mix accuracy and reimbursement per episode",
+      "Preparing a comprehensive accreditation readiness assessment with gap analysis and remediation timeline",
+      "Evaluating remote patient monitoring technology options for a home health agency serving rural populations",
+    ],
+    tier: "advanced",
+  },
+
+  // ─────────────────────────────────────────────
+  // BOOK RESEARCH & INSTRUCTIONAL VIDEO
+  // ─────────────────────────────────────────────
+  {
+    id: "book-research-specialist",
+    name: "Book Read & Research Specialist",
+    shortName: "Book Research",
+    category: "research",
+    icon: "BookOpen",
+    description:
+      "Deep reading and research agent that analyzes books, extracts key insights, and synthesizes knowledge into actionable summaries.",
+    longDescription:
+      "The Book Read & Research Specialist agent is an intellectual powerhouse that consumes, analyzes, and synthesizes written works at scale. It reads and processes books, academic papers, whitepapers, and long-form content to extract key themes, arguments, evidence, and actionable insights. Whether you need a comprehensive book summary for a leadership team, a comparative analysis of competing frameworks, or a curated reading list on a specific topic, this agent delivers the depth of a dedicated research librarian with the speed of modern AI. It connects ideas across sources, identifies patterns, and translates complex concepts into clear, practical knowledge your team can act on.",
+    capabilities: [
+      {
+        name: "Book Summarization",
+        description:
+          "Produces comprehensive multi-level book summaries from executive overviews to chapter-by-chapter analyses that capture key arguments, evidence, and takeaways.",
+      },
+      {
+        name: "Key Insight Extraction",
+        description:
+          "Identifies and organizes the most important concepts, frameworks, and actionable recommendations from books and long-form content into structured knowledge briefs.",
+      },
+      {
+        name: "Comparative Analysis",
+        description:
+          "Compares and contrasts ideas, methodologies, and recommendations across multiple books and sources to identify areas of agreement, disagreement, and synthesis.",
+      },
+      {
+        name: "Curated Reading Lists",
+        description:
+          "Develops curated, annotated reading lists on specific topics with relevance rankings, reading order recommendations, and key takeaway previews for each selection.",
+      },
+      {
+        name: "Thematic Synthesis",
+        description:
+          "Synthesizes themes and patterns across multiple sources into cohesive knowledge frameworks that connect disparate ideas into unified, actionable understanding.",
+      },
+      {
+        name: "Research Paper Analysis",
+        description:
+          "Analyzes academic and industry research papers with critical evaluation of methodology, findings, limitations, and practical implications for real-world application.",
+      },
+      {
+        name: "Annotated Bibliographies",
+        description:
+          "Creates annotated bibliographies with concise evaluations of each source's relevance, credibility, methodology, and contribution to the topic under investigation.",
+      },
+      {
+        name: "Knowledge Base Creation",
+        description:
+          "Transforms insights from multiple sources into structured knowledge bases with categorized concepts, cross-references, and searchable indexes for ongoing team reference.",
+      },
+      {
+        name: "Executive Book Briefs",
+        description:
+          "Distills entire books into concise executive briefs with key arguments, critical evidence, and specific recommendations formatted for time-constrained decision-makers.",
+      },
+      {
+        name: "Concept Mapping",
+        description:
+          "Creates visual concept maps that illustrate relationships between ideas, theories, and frameworks extracted from research sources to facilitate deeper understanding.",
+      },
+      {
+        name: "Source Credibility Assessment",
+        description:
+          "Evaluates the credibility, bias, and authority of sources through author background analysis, publisher reputation, citation patterns, and methodology rigor assessment.",
+      },
+      {
+        name: "Learning Path Development",
+        description:
+          "Designs sequenced learning paths from curated book and research content that progressively build expertise on complex topics from foundational to advanced levels.",
+      },
+    ],
+    useCases: [
+      "Summarizing the top ten business strategy books of the year with comparative analysis and key framework extraction",
+      "Building an executive knowledge base from 25 healthcare management books with cross-referenced insights and action items",
+      "Creating a curated learning path on AI and machine learning with annotated reading lists progressing from beginner to expert",
+      "Analyzing competing management frameworks from three leading authors and synthesizing a unified approach for your organization",
+    ],
+    tier: "professional",
+  },
+  {
+    id: "instructional-video-maker",
+    name: "Instructional Video Maker Specialist",
+    shortName: "Video Maker",
+    category: "marketing",
+    icon: "Play",
+    description:
+      "Video production specialist that scripts, storyboards, and produces instructional and training video content.",
+    longDescription:
+      "The Instructional Video Maker Specialist agent transforms complex topics into engaging, easy-to-follow video content. It handles the complete pre-production process — from topic research and script writing to storyboarding, shot list creation, and production planning. Whether you need employee training videos, product tutorials, customer onboarding walkthroughs, or educational course content, this agent produces professional-grade scripts and production plans that any video team can execute. It understands instructional design principles, audience engagement techniques, and visual storytelling best practices to create videos that educate effectively and keep viewers watching.",
+    capabilities: [
+      {
+        name: "Script Writing",
+        description:
+          "Writes clear, engaging video scripts with proper pacing, conversational tone, visual cues, and on-screen text callouts optimized for the target audience and learning objectives.",
+      },
+      {
+        name: "Storyboard Development",
+        description:
+          "Creates detailed storyboards with scene descriptions, camera angles, visual elements, transitions, and timing notes that guide production teams through every shot.",
+      },
+      {
+        name: "Instructional Design",
+        description:
+          "Applies instructional design principles including learning objectives, scaffolded content delivery, knowledge checks, and spaced repetition to maximize viewer retention.",
+      },
+      {
+        name: "Course Curriculum Planning",
+        description:
+          "Designs multi-module video course curricula with logical progression, prerequisite mapping, assessment strategies, and supplementary materials for comprehensive learning.",
+      },
+      {
+        name: "Tutorial & How-To Content",
+        description:
+          "Produces step-by-step tutorial scripts for software walkthroughs, process demonstrations, and how-to guides with clear narration and screen recording directions.",
+      },
+      {
+        name: "Production Planning",
+        description:
+          "Develops production plans including equipment lists, location requirements, talent needs, filming schedules, and post-production workflows for efficient video creation.",
+      },
+      {
+        name: "Talking Head Scripts",
+        description:
+          "Writes natural, teleprompter-friendly scripts for presenter-led videos with proper emphasis marks, pause indicators, and conversational phrasing that sound authentic on camera.",
+      },
+      {
+        name: "Animation & Motion Graphics Direction",
+        description:
+          "Creates detailed creative briefs and shot-by-shot direction for animated explainer videos and motion graphics sequences that simplify complex concepts visually.",
+      },
+      {
+        name: "Audience Engagement Optimization",
+        description:
+          "Incorporates proven engagement techniques including pattern interrupts, storytelling hooks, visual variety, and call-to-action placement that maximize watch time and completion rates.",
+      },
+      {
+        name: "Accessibility & Captioning",
+        description:
+          "Ensures video content meets accessibility standards with closed caption scripts, audio description tracks, and visual design considerations for diverse audiences.",
+      },
+      {
+        name: "Brand-Aligned Video Content",
+        description:
+          "Adapts video scripts and production direction to maintain brand voice, visual identity, and messaging consistency across all video content properties.",
+      },
+      {
+        name: "Video SEO & Distribution Strategy",
+        description:
+          "Optimizes video titles, descriptions, tags, and thumbnails for YouTube and other platforms, and develops distribution strategies that maximize reach and engagement.",
+      },
+    ],
+    useCases: [
+      "Scripting a 10-part employee onboarding video series covering company culture, tools, processes, and compliance",
+      "Creating storyboards and scripts for a SaaS product tutorial library with screen recordings and voiceover",
+      "Developing a customer education video course with quizzes, certificates, and progressive skill-building modules",
+      "Producing animated explainer video briefs that simplify complex healthcare procedures for patient education",
+    ],
+    tier: "professional",
+  },
+
+  // ─────────────────────────────────────────────
+  // CLAWBOT SKILLS
+  // ─────────────────────────────────────────────
+  {
+    id: "linkedin-client-clawbot",
+    name: "LinkedIn Client Clawbot",
+    shortName: "LinkedIn Bot",
+    category: "clawbots",
+    icon: "Linkedin",
+    description:
+      "Autonomous LinkedIn prospecting agent that identifies, engages, and nurtures ideal clients through strategic social selling.",
+    longDescription:
+      "The LinkedIn Client Clawbot is an autonomous social selling agent that transforms LinkedIn from a passive networking platform into an active client acquisition engine. It identifies ideal prospects based on detailed ICP criteria, crafts personalized connection requests and messaging sequences, engages with prospect content to build rapport, and nurtures relationships through value-driven touchpoints until prospects are ready for a sales conversation. Operating within LinkedIn's best practices, this Clawbot builds authentic professional relationships at scale while maintaining the personal touch that converts connections into clients.",
+    capabilities: [
+      {
+        name: "Ideal Client Profile (ICP) Targeting",
+        description:
+          "Defines and refines ideal client profiles using industry, company size, job title, geography, and behavioral signals to focus outreach on the highest-probability prospects.",
+      },
+      {
+        name: "Connection Request Personalization",
+        description:
+          "Crafts personalized connection request messages that reference shared interests, mutual connections, or prospect activity to achieve above-average acceptance rates.",
+      },
+      {
+        name: "Messaging Sequence Design",
+        description:
+          "Designs multi-touch messaging sequences with value-driven content, case study sharing, and soft call-to-action progression that nurture connections toward meetings.",
+      },
+      {
+        name: "Content Engagement Strategy",
+        description:
+          "Develops strategies for engaging with prospect posts through thoughtful comments, shares, and reactions that build visibility and credibility before direct outreach.",
+      },
+      {
+        name: "Thought Leadership Content",
+        description:
+          "Creates LinkedIn posts, articles, and carousel content that positions your brand as an industry authority and attracts inbound interest from target prospects.",
+      },
+      {
+        name: "Lead Qualification",
+        description:
+          "Qualifies prospects through conversational discovery, scoring engagement signals, and assessing fit against qualification criteria before routing to sales teams.",
+      },
+      {
+        name: "Profile Optimization",
+        description:
+          "Optimizes LinkedIn company and personal profiles with keyword-rich headlines, compelling summaries, featured content, and social proof that convert profile visitors into connections.",
+      },
+      {
+        name: "InMail Campaign Management",
+        description:
+          "Designs and manages LinkedIn InMail campaigns with A/B tested subject lines, personalized messaging, and follow-up sequences that maximize response rates.",
+      },
+      {
+        name: "LinkedIn Event & Webinar Promotion",
+        description:
+          "Promotes events and webinars through targeted LinkedIn outreach, event page optimization, and post-event follow-up sequences that convert attendees into leads.",
+      },
+      {
+        name: "Social Selling Analytics",
+        description:
+          "Tracks connection acceptance rates, message response rates, meeting conversion rates, and pipeline attribution to continuously optimize LinkedIn outreach performance.",
+      },
+      {
+        name: "CRM Integration Workflows",
+        description:
+          "Syncs LinkedIn prospect data and engagement history with CRM systems to maintain a unified view of the sales pipeline and enable seamless handoff to sales teams.",
+      },
+      {
+        name: "Compliance & Best Practices",
+        description:
+          "Operates within LinkedIn's Terms of Service and professional etiquette standards with rate limiting, authenticity guidelines, and reputation protection protocols.",
+      },
+    ],
+    useCases: [
+      "Building a targeted prospect list of 500 healthcare executives and executing a personalized outreach sequence",
+      "Creating a 30-day LinkedIn content calendar with thought leadership posts that drive inbound connection requests",
+      "Designing a five-touch messaging sequence that converts cold connections into discovery call bookings at 15% rate",
+      "Optimizing team LinkedIn profiles and launching a coordinated social selling program across ten sales representatives",
+    ],
+    tier: "advanced",
+  },
+  {
+    id: "google-client-search-clawbot",
+    name: "Google Client Search Clawbot",
+    shortName: "Google Search Bot",
+    category: "clawbots",
+    icon: "Search",
+    description:
+      "Autonomous web research agent that finds, qualifies, and compiles prospect data from Google and public web sources.",
+    longDescription:
+      "The Google Client Search Clawbot is an intelligent web research agent that systematically mines Google search results, business directories, industry databases, and public web sources to identify and qualify potential clients. It goes beyond basic searches by combining multiple data points — company information, contact details, technology stacks, hiring signals, funding announcements, and industry affiliations — to build comprehensive prospect profiles. This Clawbot turns the open web into a structured lead generation machine, delivering qualified prospect lists with rich contextual data that enable personalized, informed outreach.",
+    capabilities: [
+      {
+        name: "Advanced Search Query Design",
+        description:
+          "Constructs sophisticated Google search queries using boolean operators, site-specific searches, and advanced filters to surface highly targeted prospect results.",
+      },
+      {
+        name: "Business Directory Mining",
+        description:
+          "Extracts company information from Google Business profiles, industry directories, and association databases to build comprehensive prospect lists with contact details.",
+      },
+      {
+        name: "Company Intelligence Gathering",
+        description:
+          "Compiles detailed company profiles including size, revenue, technology stack, recent news, job postings, and executive team information from publicly available web sources.",
+      },
+      {
+        name: "Contact Discovery",
+        description:
+          "Identifies key decision-maker names, titles, and professional contact information through systematic web research across company websites, press releases, and professional profiles.",
+      },
+      {
+        name: "Industry & Market Mapping",
+        description:
+          "Maps industry landscapes by identifying all companies in a specific market segment, geography, or technology category through comprehensive web research.",
+      },
+      {
+        name: "Intent Signal Detection",
+        description:
+          "Identifies buying intent signals including job postings, technology changes, funding rounds, expansion announcements, and RFP publications that indicate prospect readiness.",
+      },
+      {
+        name: "Competitive Landscape Research",
+        description:
+          "Researches competitor customer bases, partnerships, and market positioning to identify underserved segments and competitive displacement opportunities.",
+      },
+      {
+        name: "Local Market Research",
+        description:
+          "Conducts geo-targeted searches to identify prospects in specific cities, regions, or service areas with local business intelligence and market density analysis.",
+      },
+      {
+        name: "Technology Stack Identification",
+        description:
+          "Identifies technologies used by prospect companies through job postings, website analysis, and technology directories to enable targeted solution selling.",
+      },
+      {
+        name: "Prospect Enrichment",
+        description:
+          "Enriches existing prospect lists with additional data points from web research including social profiles, company updates, and contextual information for personalized outreach.",
+      },
+      {
+        name: "Lead Scoring",
+        description:
+          "Scores and ranks discovered prospects based on firmographic fit, intent signals, engagement indicators, and custom qualification criteria to prioritize outreach efforts.",
+      },
+      {
+        name: "Automated Report Generation",
+        description:
+          "Compiles research findings into structured reports and spreadsheets with prospect profiles, qualification scores, and recommended outreach approaches for sales team action.",
+      },
+    ],
+    useCases: [
+      "Building a qualified prospect list of 200 home health agencies in the Southeast region with decision-maker contact details",
+      "Mapping the competitive landscape for healthcare SaaS companies and identifying underserved market segments",
+      "Identifying companies showing buying intent signals through recent job postings for roles that match your solution category",
+      "Enriching a CRM database of 1,000 prospects with updated company size, technology stack, and recent funding information",
+    ],
+    tier: "advanced",
+  },
+
+  // ─────────────────────────────────────────────
+  // INTELLIGENCE & SELF-IMPROVEMENT SKILLS
+  // ─────────────────────────────────────────────
+  {
+    id: "self-improving-skillset",
+    name: "Self-Improving Skillset",
+    shortName: "Self-Improve",
+    category: "intelligence",
+    icon: "RefreshCw",
+    description:
+      "Meta-cognitive agent that continuously analyzes, optimizes, and evolves the performance of all Dr. Claw agents.",
+    longDescription:
+      "The Self-Improving Skillset is the meta-intelligence layer of the Dr. Claw platform — an agent that watches, learns, and evolves. It continuously monitors the performance of all deployed agents, identifies patterns of success and failure, and autonomously recommends or implements improvements to prompts, workflows, and configurations. By analyzing user feedback, task completion rates, error patterns, and output quality metrics, this agent creates a flywheel of continuous improvement that makes every other agent in your ecosystem smarter over time. Think of it as the quality assurance and R&D department for your entire AI workforce.",
+    capabilities: [
+      {
+        name: "Agent Performance Monitoring",
+        description:
+          "Tracks key performance metrics for all deployed agents including task completion rates, accuracy scores, response times, and user satisfaction ratings across every interaction.",
+      },
+      {
+        name: "Prompt Optimization",
+        description:
+          "Analyzes prompt effectiveness and iteratively refines system prompts, instructions, and few-shot examples to improve agent output quality and consistency.",
+      },
+      {
+        name: "Error Pattern Detection",
+        description:
+          "Identifies recurring error patterns, edge cases, and failure modes across agents and develops targeted fixes, guardrails, and fallback strategies to prevent recurrence.",
+      },
+      {
+        name: "Feedback Loop Analysis",
+        description:
+          "Processes user feedback, correction patterns, and output ratings to identify systematic improvement opportunities and prioritize optimization efforts by impact.",
+      },
+      {
+        name: "A/B Testing Framework",
+        description:
+          "Designs and manages A/B tests for prompt variations, workflow configurations, and model selections to empirically determine the highest-performing agent configurations.",
+      },
+      {
+        name: "Knowledge Gap Identification",
+        description:
+          "Detects topics, scenarios, and question types where agents underperform and recommends knowledge base updates, training data additions, or capability expansions.",
+      },
+      {
+        name: "Workflow Optimization",
+        description:
+          "Analyzes multi-step agent workflows to identify bottlenecks, unnecessary steps, and inefficient handoffs, then recommends streamlined process improvements.",
+      },
+      {
+        name: "Model Selection & Tuning",
+        description:
+          "Evaluates which AI models perform best for specific agent tasks and recommends model switches, temperature adjustments, and parameter tuning for optimal results.",
+      },
+      {
+        name: "Capability Expansion Planning",
+        description:
+          "Identifies opportunities to expand agent capabilities based on user request patterns, unmet needs, and emerging use cases that would deliver high organizational value.",
+      },
+      {
+        name: "Quality Benchmarking",
+        description:
+          "Establishes quality benchmarks and rubrics for agent outputs, conducting periodic evaluations to ensure standards are maintained and improved over time.",
+      },
+      {
+        name: "Regression Detection",
+        description:
+          "Monitors for performance regressions after updates or changes, alerting operators when agent quality degrades and recommending rollback or remediation actions.",
+      },
+      {
+        name: "Evolution Roadmap",
+        description:
+          "Maintains a prioritized improvement roadmap for the agent ecosystem based on impact analysis, effort estimation, and strategic alignment with business objectives.",
+      },
+    ],
+    useCases: [
+      "Identifying that the front desk agent mishandles insurance questions 15% of the time and implementing a targeted prompt fix",
+      "Running A/B tests on three prompt variations for the clinical documentation agent and deploying the highest-performing version",
+      "Building a monthly agent performance report card that tracks improvement trends across all deployed agents",
+      "Detecting a regression in appointment scheduling accuracy after a model update and recommending a configuration rollback",
+    ],
+    tier: "enterprise",
+  },
+  {
+    id: "analytics-data-skillset",
+    name: "Analytics & Data Skillset",
+    shortName: "Analytics",
+    category: "intelligence",
+    icon: "BarChart3",
+    description:
+      "Data analytics agent that transforms raw operational data into actionable insights, dashboards, and strategic intelligence.",
+    longDescription:
+      "The Analytics & Data Skillset agent is the intelligence engine that powers data-driven decision-making across the entire Dr. Claw platform. It collects, processes, and analyzes operational data from all deployed agents, business systems, and external sources to surface insights that drive strategic action. From building executive dashboards to performing deep statistical analyses, from tracking KPIs to predicting future trends, this agent turns the mountain of data generated by your AI workforce into clear, actionable intelligence. It speaks the language of both data science and business strategy, bridging the gap between raw numbers and informed decisions.",
+    capabilities: [
+      {
+        name: "Dashboard Development",
+        description:
+          "Designs and builds interactive dashboards with real-time data visualizations, drill-down capabilities, and automated refresh schedules tailored to each stakeholder audience.",
+      },
+      {
+        name: "KPI Tracking & Reporting",
+        description:
+          "Defines, tracks, and reports on key performance indicators across business functions with automated alerting when metrics deviate from targets or historical trends.",
+      },
+      {
+        name: "Predictive Analytics",
+        description:
+          "Builds predictive models using historical data patterns to forecast revenue, patient volume, resource needs, and other business-critical metrics with confidence intervals.",
+      },
+      {
+        name: "Data Pipeline Design",
+        description:
+          "Architects data collection and processing pipelines that aggregate information from multiple sources into unified datasets ready for analysis and reporting.",
+      },
+      {
+        name: "Statistical Analysis",
+        description:
+          "Performs rigorous statistical analyses including hypothesis testing, correlation analysis, regression modeling, and significance testing to validate data-driven conclusions.",
+      },
+      {
+        name: "Cohort & Segmentation Analysis",
+        description:
+          "Segments data into meaningful cohorts based on demographics, behavior, timeline, or custom criteria to identify patterns and optimize strategies for each group.",
+      },
+      {
+        name: "ROI & Impact Measurement",
+        description:
+          "Quantifies the return on investment and business impact of agents, campaigns, and initiatives through before-and-after analysis, attribution modeling, and cost-benefit calculations.",
+      },
+      {
+        name: "Anomaly Detection",
+        description:
+          "Monitors data streams for anomalies, outliers, and unexpected patterns that may indicate operational issues, fraud, or emerging opportunities requiring immediate attention.",
+      },
+      {
+        name: "Data Visualization",
+        description:
+          "Creates clear, compelling data visualizations including charts, graphs, heat maps, and infographics that communicate complex analytical findings to non-technical audiences.",
+      },
+      {
+        name: "Trend Analysis & Forecasting",
+        description:
+          "Identifies historical trends and seasonal patterns in operational data and projects future performance using time-series analysis and forecasting methodologies.",
+      },
+      {
+        name: "Custom Report Generation",
+        description:
+          "Generates automated custom reports for different stakeholders — executive summaries, operational deep-dives, and compliance reports — on configurable schedules.",
+      },
+      {
+        name: "Data Quality Management",
+        description:
+          "Monitors data quality across all sources with validation rules, completeness checks, and consistency audits that ensure analytics are built on reliable foundations.",
+      },
+    ],
+    useCases: [
+      "Building an executive dashboard that tracks agent ROI, operational savings, and patient satisfaction across all deployed agents",
+      "Performing a predictive analysis of patient volume trends to optimize staffing and resource allocation for the next quarter",
+      "Creating automated weekly reports that measure agent performance, cost savings, and quality metrics for each department",
+      "Detecting anomalies in billing data that indicate potential coding errors or revenue leakage requiring immediate investigation",
+    ],
+    tier: "enterprise",
   },
 ];
 

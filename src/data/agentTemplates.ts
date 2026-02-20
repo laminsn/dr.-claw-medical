@@ -10,7 +10,10 @@ export interface AgentTemplate {
     | "marketing"
     | "operations"
     | "finance"
-    | "research";
+    | "research"
+    | "development"
+    | "clawbots"
+    | "intelligence";
   defaultSkills: string[]; // skill IDs
   suggestedModel: string;
   tier: "starter" | "professional" | "advanced" | "enterprise";
@@ -343,6 +346,202 @@ export const agentTemplates: AgentTemplate[] = [
       { label: "Competitors tracked", value: "25" },
       { label: "Market reports", value: "4/mo" },
       { label: "Trend alerts", value: "daily" },
+    ],
+  },
+
+  // ──────────────────────────────────────────────
+  // Development & Integration Agents
+  // ──────────────────────────────────────────────
+  {
+    id: "notion-workspace-architect",
+    name: "Notion Workspace Architect",
+    description:
+      "End-to-end Notion workspace design, database architecture, and API integration.",
+    longDescription:
+      "A dedicated Notion platform engineer that transforms your workspace into a fully integrated operational hub. This agent designs relational databases, builds automation workflows, creates client portals, and connects Notion with your existing tech stack. Ideal for organizations that want to centralize project management, knowledge bases, and CRMs inside Notion without hiring a dedicated Notion consultant.",
+    icon: "FileText",
+    category: "development",
+    defaultSkills: ["notion-development-specialist", "coding-specialist", "application-specialist"],
+    suggestedModel: "Claude",
+    tier: "professional",
+    metrics: [
+      { label: "Databases built", value: "50+" },
+      { label: "Automations", value: "25/mo" },
+      { label: "API integrations", value: "10+" },
+    ],
+  },
+  {
+    id: "airtable-operations-builder",
+    name: "Airtable Operations Builder",
+    description:
+      "Custom Airtable base development, automation configuration, and interface design.",
+    longDescription:
+      "A specialized Airtable developer that builds scalable business applications on the Airtable platform. From inventory management to content calendars, this agent architects bases with complex linked records, builds multi-step automations, designs custom interfaces, and integrates with external systems via the Airtable API. Perfect for teams that need spreadsheet-power with application-grade structure.",
+    icon: "BarChart3",
+    category: "development",
+    defaultSkills: ["airtable-development-specialist", "coding-specialist", "application-specialist"],
+    suggestedModel: "Claude",
+    tier: "professional",
+    metrics: [
+      { label: "Bases built", value: "30+" },
+      { label: "Automations/mo", value: "40" },
+      { label: "Interfaces", value: "15+" },
+    ],
+  },
+  {
+    id: "full-stack-developer",
+    name: "Full-Stack Developer",
+    description:
+      "Code generation, debugging, API development, and application architecture across the full stack.",
+    longDescription:
+      "A senior-level software engineering partner that accelerates development across frontend, backend, and infrastructure. This agent writes production-quality code, reviews pull requests, debugs complex issues, and architects scalable systems. It supports all major languages and frameworks, follows security best practices, and delivers well-tested, documented code that your team can maintain and extend.",
+    icon: "Code",
+    category: "development",
+    defaultSkills: ["coding-specialist", "application-specialist"],
+    suggestedModel: "Claude",
+    tier: "professional",
+    metrics: [
+      { label: "Languages", value: "15+" },
+      { label: "Code reviews/day", value: "20" },
+      { label: "Bug fix rate", value: "98%" },
+    ],
+  },
+
+  // ──────────────────────────────────────────────
+  // Clawbot Agents
+  // ──────────────────────────────────────────────
+  {
+    id: "linkedin-prospecting-clawbot",
+    name: "LinkedIn Prospecting Clawbot",
+    description:
+      "Automated LinkedIn outreach, content engagement, and social selling pipeline management.",
+    longDescription:
+      "An autonomous social selling machine that works LinkedIn 24/7. This Clawbot identifies ideal prospects, sends personalized connection requests, engages with target content, and nurtures relationships through multi-touch messaging sequences. It maintains your professional reputation while scaling outreach far beyond what any human SDR could manage, converting cold connections into warm sales conversations.",
+    icon: "Linkedin",
+    category: "clawbots",
+    defaultSkills: ["linkedin-client-clawbot", "google-client-search-clawbot"],
+    suggestedModel: "Claude",
+    tier: "advanced",
+    metrics: [
+      { label: "Prospects/week", value: "200" },
+      { label: "Connection rate", value: "45%" },
+      { label: "Meeting bookings", value: "15/mo" },
+    ],
+  },
+  {
+    id: "google-research-clawbot",
+    name: "Google Research Clawbot",
+    description:
+      "Intelligent web research, prospect discovery, and lead enrichment from public sources.",
+    longDescription:
+      "A tireless web researcher that systematically mines Google, business directories, and public databases to find and qualify your ideal clients. This Clawbot builds detailed prospect profiles with company intelligence, decision-maker contacts, technology stacks, and buying intent signals. It turns the open web into a structured lead generation pipeline that feeds directly into your outreach workflows.",
+    icon: "Search",
+    category: "clawbots",
+    defaultSkills: ["google-client-search-clawbot", "researcher"],
+    suggestedModel: "Gemini",
+    tier: "advanced",
+    metrics: [
+      { label: "Prospects found/day", value: "50" },
+      { label: "Enrichment accuracy", value: "94%" },
+      { label: "Intent signals", value: "daily" },
+    ],
+  },
+
+  // ──────────────────────────────────────────────
+  // Intelligence & Self-Improvement Agents
+  // ──────────────────────────────────────────────
+  {
+    id: "agent-optimizer",
+    name: "Agent Optimizer",
+    description:
+      "Continuous performance monitoring, prompt optimization, and agent evolution management.",
+    longDescription:
+      "The meta-intelligence layer of your Dr. Claw deployment. This agent monitors every other agent's performance, identifies improvement opportunities, runs A/B tests on configurations, and autonomously evolves prompts and workflows to maximize output quality. It transforms your agent ecosystem from a static deployment into a continuously learning, self-improving system that gets smarter with every interaction.",
+    icon: "RefreshCw",
+    category: "intelligence",
+    defaultSkills: ["self-improving-skillset", "analytics-data-skillset"],
+    suggestedModel: "Claude",
+    tier: "enterprise",
+    metrics: [
+      { label: "Agents monitored", value: "all" },
+      { label: "Improvements/mo", value: "30+" },
+      { label: "Quality uplift", value: "+25%" },
+    ],
+  },
+  {
+    id: "data-intelligence-hub",
+    name: "Data Intelligence Hub",
+    description:
+      "Cross-platform analytics, executive dashboards, and predictive business intelligence.",
+    longDescription:
+      "The central nervous system for data-driven decision-making across your organization. This agent aggregates operational data from all deployed agents and business systems, builds interactive dashboards, performs predictive analytics, and surfaces anomalies that require attention. It translates raw data into strategic insights that leadership can act on, ensuring every decision is backed by evidence.",
+    icon: "BarChart3",
+    category: "intelligence",
+    defaultSkills: ["analytics-data-skillset", "self-improving-skillset", "researcher"],
+    suggestedModel: "Claude",
+    tier: "enterprise",
+    metrics: [
+      { label: "Data sources", value: "25+" },
+      { label: "Dashboards", value: "10+" },
+      { label: "Predictions/mo", value: "50+" },
+    ],
+  },
+
+  // ──────────────────────────────────────────────
+  // Home Healthcare & Research Agents
+  // ──────────────────────────────────────────────
+  {
+    id: "home-health-compliance-agent",
+    name: "Home Health Compliance Agent",
+    description:
+      "Home healthcare regulatory monitoring, accreditation preparation, and compliance documentation.",
+    longDescription:
+      "A specialized compliance partner for home health and hospice agencies. This agent tracks CMS regulatory changes, monitors quality measures, prepares accreditation documentation, and ensures OASIS coding accuracy. It keeps your agency ahead of regulatory requirements while optimizing reimbursement through proper documentation and PDGM alignment.",
+    icon: "Heart",
+    category: "healthcare",
+    defaultSkills: ["home-healthcare-hospice-researcher", "clinical-documentation", "researcher"],
+    suggestedModel: "Claude",
+    tier: "advanced",
+    metrics: [
+      { label: "Regulations tracked", value: "100+" },
+      { label: "Compliance score", value: "99%" },
+      { label: "OASIS accuracy", value: "97%" },
+    ],
+  },
+  {
+    id: "research-librarian",
+    name: "Research Librarian",
+    description:
+      "Deep book analysis, knowledge synthesis, and curated learning path development.",
+    longDescription:
+      "An intellectual research partner that consumes and synthesizes books, papers, and long-form content at scale. This agent produces executive book briefs, builds annotated reading lists, creates knowledge bases from multiple sources, and designs learning paths that progressively build expertise. Perfect for leadership teams, training departments, and anyone who needs to extract maximum value from written knowledge.",
+    icon: "BookOpen",
+    category: "research",
+    defaultSkills: ["book-research-specialist", "researcher"],
+    suggestedModel: "Claude",
+    tier: "professional",
+    metrics: [
+      { label: "Books analyzed/mo", value: "20" },
+      { label: "Knowledge briefs", value: "40+" },
+      { label: "Learning paths", value: "5/mo" },
+    ],
+  },
+  {
+    id: "video-production-agent",
+    name: "Video Production Agent",
+    description:
+      "Instructional video scripting, storyboarding, and full production planning.",
+    longDescription:
+      "A complete pre-production partner for instructional and training video content. This agent writes scripts, creates storyboards, plans production logistics, and designs course curricula for video-based learning. From employee onboarding series to customer education libraries, it delivers professional-grade production plans that any video team can execute with confidence.",
+    icon: "Play",
+    category: "marketing",
+    defaultSkills: ["instructional-video-maker", "professional-copywriter"],
+    suggestedModel: "Claude",
+    tier: "professional",
+    metrics: [
+      { label: "Scripts/week", value: "10" },
+      { label: "Course modules", value: "20/mo" },
+      { label: "Completion rate", value: "92%" },
     ],
   },
 ];
