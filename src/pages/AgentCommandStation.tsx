@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { format, isPast, parseISO, isToday, isThisWeek } from "date-fns";
 import {
@@ -39,6 +39,24 @@ import {
   ArchiveRestore,
   BookmarkCheck,
   BarChart2,
+  Search,
+  Radio,
+  ChevronDown,
+  ChevronUp,
+  Heart,
+  Shield,
+  Wifi,
+  WifiOff,
+  Timer,
+  TrendingUp,
+  Pause,
+  Play,
+  RotateCcw,
+  Sparkles,
+  ServerCrash,
+  Server,
+  PanelRightOpen,
+  PanelRightClose,
 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -166,6 +184,61 @@ const MOCK_AGENTS: AgentState[] = [
     ],
     messages: [],
   },
+  {
+    id: "4",
+    name: "Compliance Bot",
+    model: "GPT-4o",
+    zone: "clinical",
+    active: true,
+    currentTask: "Auditing PHI access logs for Q1 compliance report",
+    tasksCompleted: 561,
+    tasksFailed: 2,
+    uptime: "4d 9h 17m",
+    cpu: 45,
+    memory: 62,
+    tokensUsed: 305800,
+    costToday: 3.47,
+    costMonth: 72.1,
+    avgResponseTime: "1.8s",
+    logs: [
+      { id: "l1", level: "success", message: "HIPAA audit trail verified — 0 violations detected", timestamp: "1m ago" },
+      { id: "l2", level: "info", message: "Scanning PHI access logs for unauthorized entries", timestamp: "6m ago" },
+      { id: "l3", level: "warn", message: "Unusual access pattern detected — Dr. Kim accessed 28 records in 5min", timestamp: "18m ago" },
+      { id: "l4", level: "success", message: "Monthly compliance checklist auto-generated", timestamp: "32m ago" },
+      { id: "l5", level: "info", message: "Updated HIPAA training completion tracker", timestamp: "45m ago" },
+    ],
+    messages: [
+      { id: "m1", from: "agent", content: "Audit in progress. Found unusual access pattern from Dr. Kim — flagged for review. No violations confirmed yet.", timestamp: "6m ago" },
+    ],
+  },
+  {
+    id: "5",
+    name: "Billing Guru",
+    model: "Claude 3.5",
+    zone: "operations",
+    active: true,
+    currentTask: "Reconciling insurance claims batch #2847 (34 claims)",
+    tasksCompleted: 1203,
+    tasksFailed: 19,
+    uptime: "9d 2h 51m",
+    cpu: 67,
+    memory: 73,
+    tokensUsed: 587400,
+    costToday: 5.89,
+    costMonth: 134.2,
+    avgResponseTime: "0.9s",
+    logs: [
+      { id: "l1", level: "success", message: "Claim #C-9841 approved — $2,340 reimbursement confirmed", timestamp: "30s ago" },
+      { id: "l2", level: "error", message: "Claim #C-9838 rejected — missing modifier code 25", timestamp: "3m ago" },
+      { id: "l3", level: "info", message: "Processing batch #2847: 34 claims, 12 completed", timestamp: "5m ago" },
+      { id: "l4", level: "warn", message: "Payer response delayed — Aetna API latency 4.1s", timestamp: "11m ago" },
+      { id: "l5", level: "success", message: "Auto-corrected 3 coding errors in batch #2846", timestamp: "20m ago" },
+      { id: "l6", level: "success", message: "Daily revenue report generated — $47,200 collected", timestamp: "1h ago" },
+    ],
+    messages: [
+      { id: "m1", from: "agent", content: "Processing claim batch #2847. One rejection detected on C-9838 — missing modifier. I'll queue it for manual review. Aetna API is slow today.", timestamp: "5m ago" },
+    ],
+  },
 ];
 
 // ── Column Configuration ────────────────────────────────────────────────────
@@ -261,6 +334,42 @@ const AgentCommandStation = () => {
   const [dragOverColumn, setDragOverColumn] = useState<KanbanColumn | null>(null);
   const [agentFilter, setAgentFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
+
+  // Enhanced UI state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showActivityFeed, setShowActivityFeed] = useState(false);
+  const [fleetBarExpanded, setFleetBarExpanded] = useState(true);
+  const activityFeedRef = useRef<HTMLDivElement>(null);
+
+  // ── Fleet health metrics (derived) ─────────────────────────────────────
+  const fleetHealth = useMemo(() => {
+    const activeAgents = agents.filter((a) => a.active);
+    const totalAgents = agents.length;
+    const avgCpu = activeAgents.length > 0 ? Math.round(activeAgents.reduce((s, a) => s + a.cpu, 0) / activeAgents.length) : 0;
+    const avgMemory = activeAgents.length > 0 ? Math.round(activeAgents.reduce((s, a) => s + a.memory, 0) / activeAgents.length) : 0;
+    const totalTokens = agents.reduce((s, a) => s + a.tokensUsed, 0);
+    const totalCostToday = agents.reduce((s, a) => s + a.costToday, 0);
+    const totalCostMonth = agents.reduce((s, a) => s + a.costMonth, 0);
+    const totalCompleted = agents.reduce((s, a) => s + a.tasksCompleted, 0);
+    const totalFailed = agents.reduce((s, a) => s + a.tasksFailed, 0);
+    const avgSuccessRate = totalCompleted + totalFailed > 0 ? Math.round((totalCompleted / (totalCompleted + totalFailed)) * 100) : 100;
+    const hasErrors = agents.some((a) => a.logs.some((l) => l.level === "error"));
+    const hasWarnings = agents.some((a) => a.logs.some((l) => l.level === "warn"));
+
+    let status: "healthy" | "warning" | "critical" = "healthy";
+    if (activeAgents.length === 0 || avgCpu > 85 || avgMemory > 90 || avgSuccessRate < 80) status = "critical";
+    else if (hasErrors || avgCpu > 70 || avgMemory > 75 || avgSuccessRate < 90 || hasWarnings) status = "warning";
+
+    return { activeAgents: activeAgents.length, totalAgents, avgCpu, avgMemory, totalTokens, totalCostToday, totalCostMonth, totalCompleted, totalFailed, avgSuccessRate, status };
+  }, [agents]);
+
+  // ── Combined activity feed ─────────────────────────────────────────────
+  const activityFeed = useMemo(() => {
+    const allLogs = agents.flatMap((a) =>
+      a.logs.map((log) => ({ ...log, agentName: a.name, agentZone: a.zone, agentId: a.id }))
+    );
+    return allLogs;
+  }, [agents]);
 
   // Task modal state — uses a local draft separate from DB
   const [taskModal, setTaskModal] = useState<{
@@ -418,6 +527,15 @@ const AgentCommandStation = () => {
     // Agent filter
     if (agentFilter !== "all") result = result.filter((t) => t.agent_id === agentFilter);
 
+    // Search filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((t) =>
+        t.title.toLowerCase().includes(q) ||
+        (t.description && t.description.toLowerCase().includes(q))
+      );
+    }
+
     // Date / type filter
     if (dateFilter === "overdue") {
       result = result.filter((t) => !t.is_archived && t.column_id !== "done" && t.due_date && isPast(parseISO(t.due_date)));
@@ -437,7 +555,7 @@ const AgentCommandStation = () => {
     }
 
     return result;
-  }, [tasks, agentFilter, dateFilter]);
+  }, [tasks, agentFilter, dateFilter, searchQuery]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // ── FULLSCREEN MODE ─────────────────────────────────────────────────────
@@ -473,6 +591,36 @@ const AgentCommandStation = () => {
               <Minimize2 className="h-3.5 w-3.5" />
               {t("commandStation.exitEsc")}
             </Button>
+          </div>
+        </div>
+
+        {/* Fleet summary bar */}
+        <div className="shrink-0 flex items-center gap-6 px-6 py-2 border-b border-green-900/40 bg-green-950/30">
+          <div className="flex items-center gap-2 text-[10px]">
+            <Server className="h-3 w-3 text-green-600" />
+            <span className="text-green-600">Fleet:</span>
+            <span className="text-green-400 font-bold">{agents.filter((a) => a.active).length}/{agents.length}</span>
+            <span className="text-green-700">active</span>
+          </div>
+          <div className="flex items-center gap-2 text-[10px]">
+            <Cpu className="h-3 w-3 text-green-600" />
+            <span className="text-green-600">Avg CPU:</span>
+            <span className={`font-bold tabular-nums ${fleetHealth.avgCpu > 70 ? "text-red-400" : fleetHealth.avgCpu > 50 ? "text-amber-400" : "text-green-400"}`}>{fleetHealth.avgCpu}%</span>
+          </div>
+          <div className="flex items-center gap-2 text-[10px]">
+            <Activity className="h-3 w-3 text-green-600" />
+            <span className="text-green-600">Avg MEM:</span>
+            <span className={`font-bold tabular-nums ${fleetHealth.avgMemory > 75 ? "text-red-400" : fleetHealth.avgMemory > 50 ? "text-amber-400" : "text-cyan-400"}`}>{fleetHealth.avgMemory}%</span>
+          </div>
+          <div className="flex items-center gap-2 text-[10px]">
+            <TrendingUp className="h-3 w-3 text-green-600" />
+            <span className="text-green-600">Success:</span>
+            <span className={`font-bold tabular-nums ${fleetHealth.avgSuccessRate >= 95 ? "text-green-400" : fleetHealth.avgSuccessRate >= 80 ? "text-amber-400" : "text-red-400"}`}>{fleetHealth.avgSuccessRate}%</span>
+          </div>
+          <div className="ml-auto flex items-center gap-2 text-[10px]">
+            <DollarSign className="h-3 w-3 text-green-600" />
+            <span className="text-green-600">Month:</span>
+            <span className="text-amber-400 font-bold tabular-nums">${fleetHealth.totalCostMonth.toFixed(2)}</span>
           </div>
         </div>
 
@@ -575,8 +723,9 @@ const AgentCommandStation = () => {
   // ── SPLIT VIEW ──────────────────────────────────────────────────────────
   const renderSplitScreen = () => {
     const screenAgents = splitScreenIds.map((id) => agents.find((a) => a.id === id)).filter(Boolean) as AgentState[];
+    const gridCols = screenAgents.length <= 2 ? "md:grid-cols-2" : screenAgents.length <= 4 ? "md:grid-cols-2 xl:grid-cols-2" : "md:grid-cols-2 xl:grid-cols-3";
     return (
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-0 overflow-hidden">
+      <div className={`flex-1 grid grid-cols-1 ${gridCols} gap-0 overflow-hidden`}>
         {screenAgents.map((agent) => {
           const sr = getSuccessRate(agent);
           return (
@@ -593,8 +742,39 @@ const AgentCommandStation = () => {
                     {agent.zone}
                   </Badge>
                 </div>
-                <span className="text-[10px] text-muted-foreground">{agent.model}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-muted-foreground">{agent.model}</span>
+                  <button
+                    onClick={() => setSplitScreenIds((prev) => prev.filter((id) => id !== agent.id))}
+                    className="p-1 rounded hover:bg-white/10 text-muted-foreground/40 hover:text-red-400 transition-colors"
+                    title="Remove from split view"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
               </div>
+
+              {/* Resource bars */}
+              <div className="flex items-center gap-3 px-4 py-2 bg-card/30 border-b border-border/50 shrink-0">
+                <div className="flex-1 flex items-center gap-2">
+                  <Cpu className="h-3 w-3 text-muted-foreground/50" />
+                  <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                    <div className={`h-full rounded-full transition-all duration-1000 ${agent.cpu > 75 ? "bg-red-500" : agent.cpu > 50 ? "bg-amber-500" : "bg-emerald-500"}`} style={{ width: `${agent.cpu}%` }} />
+                  </div>
+                  <span className="text-[10px] text-muted-foreground tabular-nums w-8 text-right">{agent.cpu}%</span>
+                </div>
+                <div className="flex-1 flex items-center gap-2">
+                  <Activity className="h-3 w-3 text-muted-foreground/50" />
+                  <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                    <div className={`h-full rounded-full transition-all duration-1000 ${agent.memory > 75 ? "bg-red-500" : agent.memory > 50 ? "bg-amber-500" : "bg-cyan-500"}`} style={{ width: `${agent.memory}%` }} />
+                  </div>
+                  <span className="text-[10px] text-muted-foreground tabular-nums w-8 text-right">{agent.memory}%</span>
+                </div>
+                <Badge variant="outline" className={`text-[9px] px-1.5 py-0 ${sr >= 95 ? "text-emerald-400 border-emerald-500/30" : sr >= 80 ? "text-amber-400 border-amber-500/30" : "text-red-400 border-red-500/30"}`}>
+                  {sr}%
+                </Badge>
+              </div>
+
               <div className="flex-1 bg-black/90 overflow-y-auto p-4 font-mono text-xs space-y-1.5 min-h-0">
                 <p className="text-white/30">--- {agent.name} --- {agent.model} --- {new Date().toLocaleTimeString()} ---</p>
                 {agent.active ? (
@@ -617,6 +797,7 @@ const AgentCommandStation = () => {
               </div>
               <div className="flex items-center justify-between px-4 py-2 bg-card/40 border-t border-border text-[10px] text-muted-foreground shrink-0">
                 <span className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-emerald-400" />{agent.tasksCompleted} done</span>
+                <span className="flex items-center gap-2"><AlertTriangle className="h-3 w-3 text-red-400/60" />{agent.tasksFailed} failed</span>
                 <span className="flex items-center gap-2"><Zap className="h-3 w-3 text-amber-400" />{(agent.tokensUsed / 1000).toFixed(1)}k tokens</span>
                 <span className="flex items-center gap-2"><DollarSign className="h-3 w-3 text-amber-400" />${agent.costToday.toFixed(2)}</span>
               </div>
@@ -625,10 +806,14 @@ const AgentCommandStation = () => {
         })}
         {splitScreenIds.length < agents.length && (
           <div className="flex flex-col items-center justify-center border-r border-b border-border bg-card/20 min-h-[300px]">
+            <Bot className="h-8 w-8 text-muted-foreground/15 mb-3" />
             <p className="text-sm text-muted-foreground mb-3">Add agent screen</p>
             <div className="flex gap-2 flex-wrap justify-center px-4">
               {agents.filter((a) => !splitScreenIds.includes(a.id)).map((a) => (
-                <button key={a.id} onClick={() => setSplitScreenIds((prev) => [...prev, a.id])} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card hover:border-primary/40 transition-colors text-sm">
+                <button key={a.id} onClick={() => setSplitScreenIds((prev) => [...prev, a.id])} className={`flex items-center gap-2 px-3 py-2 rounded-lg border bg-card hover:border-primary/40 transition-colors text-sm ${a.active ? "border-border" : "border-border/50 opacity-60"}`}>
+                  <span className="relative flex h-2 w-2">
+                    <span className={`relative inline-flex rounded-full h-2 w-2 ${a.active ? "bg-emerald-500" : "bg-gray-600"}`} />
+                  </span>
                   <Bot className="h-3.5 w-3.5 text-primary" />
                   {a.name}
                 </button>
@@ -850,6 +1035,7 @@ const AgentCommandStation = () => {
     const filteredTasks = getFilteredTasks();
     const getAgentById = (agentId: string) => MOCK_AGENTS.find((a) => a.id === agentId);
     const getColumnTasks = (column: KanbanColumn) => filteredTasks.filter((t) => t.column_id === column);
+    const totalFiltered = filteredTasks.length;
 
     return (
       <div className="flex-1 flex flex-col min-h-0">
@@ -864,7 +1050,25 @@ const AgentCommandStation = () => {
                 {MOCK_AGENTS.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
               </select>
             </div>
+
+            {/* Search input */}
+            <div className="relative flex items-center">
+              <Search className="absolute left-2.5 h-3.5 w-3.5 text-muted-foreground/40 pointer-events-none" />
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search tasks..."
+                className="bg-background border border-border rounded-lg pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 w-48"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} className="absolute right-2 p-0.5 rounded hover:bg-white/10 text-muted-foreground/40 hover:text-foreground transition-colors">
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+
             <div className="flex items-center gap-4 text-[11px] text-muted-foreground/60 ml-2">
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-blue-400" />{totalFiltered} total</span>
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-400" />{getColumnTasks("in_progress").length} in progress</span>
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-purple-400" />{getColumnTasks("review").length} in review</span>
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400" />{getColumnTasks("done").length} done</span>
@@ -1036,17 +1240,181 @@ const AgentCommandStation = () => {
     );
   };
 
+  // ── ACTIVITY FEED PANEL ────────────────────────────────────────────────────
+  const renderActivityFeed = () => {
+    if (!showActivityFeed) return null;
+    return (
+      <div className="w-80 border-l border-border bg-card/30 flex flex-col shrink-0 overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-card/60 shrink-0">
+          <div className="flex items-center gap-2">
+            <Radio className="h-4 w-4 text-emerald-400" />
+            <span className="text-sm font-semibold text-foreground">Live Activity</span>
+            <span className="text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded-full animate-pulse">LIVE</span>
+          </div>
+          <button onClick={() => setShowActivityFeed(false)} className="p-1.5 rounded-lg hover:bg-white/10 text-muted-foreground/40 hover:text-foreground transition-colors">
+            <PanelRightClose className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div ref={activityFeedRef} className="flex-1 overflow-y-auto p-3 space-y-1">
+          {activityFeed.map((log, idx) => {
+            const zoneColor = log.agentZone === "clinical" ? "text-red-400" : log.agentZone === "operations" ? "text-amber-400" : "text-blue-400";
+            return (
+              <div key={`${log.agentId}-${log.id}-${idx}`} className="flex gap-2 p-2 rounded-lg hover:bg-white/[0.03] transition-colors">
+                <div className={`mt-0.5 shrink-0 ${log.level === "error" ? "text-red-400" : log.level === "warn" ? "text-amber-400" : log.level === "success" ? "text-emerald-400" : "text-blue-400"}`}>
+                  {log.level === "error" ? <AlertTriangle className="h-3 w-3" /> :
+                   log.level === "warn" ? <AlertTriangle className="h-3 w-3" /> :
+                   log.level === "success" ? <CheckCircle2 className="h-3 w-3" /> :
+                   <Radio className="h-3 w-3" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className={`text-[10px] font-semibold ${zoneColor}`}>{log.agentName}</span>
+                    <span className="text-[9px] text-muted-foreground/30">{log.timestamp}</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground/70 leading-snug">{log.message}</p>
+                </div>
+              </div>
+            );
+          })}
+          {activityFeed.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Radio className="h-6 w-6 text-muted-foreground/15 mb-2" />
+              <p className="text-xs text-muted-foreground/30">No activity yet</p>
+            </div>
+          )}
+        </div>
+
+        {/* Feed summary footer */}
+        <div className="px-4 py-2 border-t border-border/50 bg-card/40 flex items-center justify-between text-[10px] text-muted-foreground/50 shrink-0">
+          <span>{activityFeed.length} events</span>
+          <span>{activityFeed.filter((l) => l.level === "error").length} errors · {activityFeed.filter((l) => l.level === "warn").length} warnings</span>
+        </div>
+      </div>
+    );
+  };
+
+  // ── FLEET STATUS BAR ─────────────────────────────────────────────────────
+  const renderFleetStatusBar = () => {
+    return (
+      <div className={`border-b border-border/50 bg-card/20 shrink-0 transition-all duration-300 ${fleetBarExpanded ? "" : ""}`}>
+        <button
+          onClick={() => setFleetBarExpanded((p) => !p)}
+          className="w-full flex items-center justify-between px-6 py-2 hover:bg-white/[0.02] transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <Server className="h-3.5 w-3.5 text-muted-foreground/40" />
+            <span className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Agent Fleet</span>
+            <div className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1 text-[10px] text-emerald-400">
+                <Wifi className="h-3 w-3" /> {fleetHealth.activeAgents}
+              </span>
+              <span className="text-muted-foreground/20">/</span>
+              <span className="flex items-center gap-1 text-[10px] text-muted-foreground/40">
+                {fleetHealth.totalAgents} total
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            {!fleetBarExpanded && (
+              <div className="flex items-center gap-4 text-[10px] text-muted-foreground/50">
+                <span className="flex items-center gap-1"><Cpu className="h-3 w-3" /> {fleetHealth.avgCpu}%</span>
+                <span className="flex items-center gap-1"><Zap className="h-3 w-3" /> {fleetHealth.totalTokens.toLocaleString()}</span>
+                <span className="flex items-center gap-1"><DollarSign className="h-3 w-3" /> ${fleetHealth.totalCostToday.toFixed(2)}</span>
+              </div>
+            )}
+            {fleetBarExpanded ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground/30" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/30" />}
+          </div>
+        </button>
+
+        {fleetBarExpanded && (
+          <div className="px-6 pb-3 flex gap-3 overflow-x-auto">
+            {agents.map((agent) => {
+              const sr = getSuccessRate(agent);
+              const zoneColor = agent.zone === "clinical" ? "border-red-500/30 bg-red-500/5" : agent.zone === "operations" ? "border-amber-500/30 bg-amber-500/5" : "border-blue-500/30 bg-blue-500/5";
+              const zoneText = agent.zone === "clinical" ? "text-red-400" : agent.zone === "operations" ? "text-amber-400" : "text-blue-400";
+              return (
+                <button
+                  key={agent.id}
+                  onClick={(e) => { e.stopPropagation(); setAgentFilter(agentFilter === agent.id ? "all" : agent.id); }}
+                  className={cn(
+                    "flex-shrink-0 w-52 rounded-xl border p-3 transition-all hover:scale-[1.02]",
+                    zoneColor,
+                    agentFilter === agent.id ? "ring-1 ring-primary/40 shadow-md" : "hover:shadow-sm"
+                  )}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="relative flex h-2 w-2">
+                        {agent.active && <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${agent.zone === "clinical" ? "bg-red-400" : agent.zone === "operations" ? "bg-amber-400" : "bg-blue-400"} opacity-75`} />}
+                        <span className={`relative inline-flex rounded-full h-2 w-2 ${agent.active ? (agent.zone === "clinical" ? "bg-red-400" : agent.zone === "operations" ? "bg-amber-400" : "bg-blue-400") : "bg-gray-600"}`} />
+                      </span>
+                      <span className="text-xs font-semibold text-foreground truncate">{agent.name}</span>
+                    </div>
+                    <span className={`text-[8px] px-1.5 py-0.5 rounded-full border ${zoneColor} ${zoneText} font-medium`}>{agent.zone}</span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <Cpu className="h-2.5 w-2.5 text-muted-foreground/30" />
+                      <div className="flex-1 h-1 rounded-full bg-white/5 overflow-hidden">
+                        <div className={`h-full rounded-full transition-all duration-1000 ${agent.cpu > 75 ? "bg-red-500" : agent.cpu > 50 ? "bg-amber-500" : "bg-emerald-500"}`} style={{ width: `${agent.cpu}%` }} />
+                      </div>
+                      <span className="text-[9px] text-muted-foreground/40 tabular-nums w-7 text-right">{agent.cpu}%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Activity className="h-2.5 w-2.5 text-muted-foreground/30" />
+                      <div className="flex-1 h-1 rounded-full bg-white/5 overflow-hidden">
+                        <div className={`h-full rounded-full transition-all duration-1000 ${agent.memory > 75 ? "bg-red-500" : agent.memory > 50 ? "bg-amber-500" : "bg-cyan-500"}`} style={{ width: `${agent.memory}%` }} />
+                      </div>
+                      <span className="text-[9px] text-muted-foreground/40 tabular-nums w-7 text-right">{agent.memory}%</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
+                    <span className="text-[9px] text-muted-foreground/40 flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-emerald-400/60" />{agent.tasksCompleted}</span>
+                    <span className={`text-[9px] font-medium tabular-nums ${sr >= 95 ? "text-emerald-400/70" : sr >= 80 ? "text-amber-400/70" : "text-red-400/70"}`}>{sr}%</span>
+                    <span className="text-[9px] text-muted-foreground/40 flex items-center gap-1"><DollarSign className="h-2.5 w-2.5 text-amber-400/60" />${agent.costToday.toFixed(2)}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // ── MAIN LAYOUT ─────────────────────────────────────────────────────────────
   return (
     <div className="flex min-h-screen bg-background">
       <DashboardSidebar overdueTaskCount={overdueCount} />
 
       <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Page Header */}
         <div className="px-8 pt-8 pb-4 border-b border-border shrink-0">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold font-heading gradient-hero-text">{t("commandStation.title")}</h1>
-              <p className="text-muted-foreground mt-1">{t("commandStation.subtitle")}</p>
+            <div className="flex items-center gap-4">
+              <div>
+                <h1 className="text-3xl font-bold font-heading gradient-hero-text">{t("commandStation.title")}</h1>
+                <p className="text-muted-foreground mt-1">{t("commandStation.subtitle")}</p>
+              </div>
+              {/* System Health Badge */}
+              <div className={cn(
+                "flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium",
+                fleetHealth.status === "healthy"
+                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                  : fleetHealth.status === "warning"
+                  ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
+                  : "bg-red-500/10 border-red-500/30 text-red-400"
+              )}>
+                {fleetHealth.status === "healthy" ? <Heart className="h-3.5 w-3.5" /> :
+                 fleetHealth.status === "warning" ? <AlertTriangle className="h-3.5 w-3.5" /> :
+                 <ServerCrash className="h-3.5 w-3.5" />}
+                {fleetHealth.status === "healthy" ? "Fleet Healthy" :
+                 fleetHealth.status === "warning" ? "Needs Attention" :
+                 "Critical Issues"}
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center rounded-xl border border-border bg-card overflow-hidden">
@@ -1060,6 +1428,17 @@ const AgentCommandStation = () => {
                   <LayoutGrid className="h-4 w-4" /> Multi-Screen
                 </button>
               </div>
+              <button
+                onClick={() => setShowActivityFeed((p) => !p)}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-colors",
+                  showActivityFeed
+                    ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400"
+                    : "border-border text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                )}
+              >
+                <PanelRightOpen className="h-4 w-4" /> Feed
+              </button>
               <Button variant="outline" size="sm" onClick={() => setFullscreenMode(true)} className="gap-1.5 text-muted-foreground hover:text-foreground">
                 <Fullscreen className="h-4 w-4" /> {t("commandStation.agentScreen")}
               </Button>
@@ -1067,9 +1446,18 @@ const AgentCommandStation = () => {
           </div>
         </div>
 
-        {viewMode === "split" && renderSplitScreen()}
-        {viewMode === "board" && renderTaskBoard()}
-        {viewMode === "analytics" && <TaskAnalyticsDashboard tasks={tasks} />}
+        {/* Fleet Status Bar */}
+        {renderFleetStatusBar()}
+
+        {/* Main content area with optional activity feed */}
+        <div className="flex-1 flex overflow-hidden min-h-0">
+          <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+            {viewMode === "split" && renderSplitScreen()}
+            {viewMode === "board" && renderTaskBoard()}
+            {viewMode === "analytics" && <TaskAnalyticsDashboard tasks={tasks} agents={agents} />}
+          </div>
+          {renderActivityFeed()}
+        </div>
       </main>
 
       {renderTaskModal()}
