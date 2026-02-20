@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { format, isPast, parseISO } from "date-fns";
+import { format, isPast, parseISO, isToday, isThisWeek } from "date-fns";
 import {
   Bot,
   Activity,
@@ -33,6 +33,11 @@ import {
   MessageSquare,
   Send,
   Clock3,
+  RefreshCw,
+  Bookmark,
+  Archive,
+  ArchiveRestore,
+  BookmarkCheck,
 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -40,6 +45,8 @@ import { cn } from "@/lib/utils";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useKanbanTasks, KanbanTask, KanbanColumn, KanbanTaskInput, TaskComment, DateFilter } from "@/hooks/useKanbanTasks";
+import { useAuth } from "@/hooks/useAuth";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface AgentMessage {
@@ -74,29 +81,6 @@ interface AgentState {
   avgResponseTime: string;
   logs: AgentLog[];
   messages: AgentMessage[];
-}
-
-type KanbanColumn = "backlog" | "todo" | "in_progress" | "review" | "done";
-
-interface TaskComment {
-  id: string;
-  author: string;
-  content: string;
-  timestamp: string;
-  avatarColor: string;
-}
-
-interface KanbanTask {
-  id: string;
-  title: string;
-  description: string;
-  agentId: string;
-  priority: "high" | "medium" | "low";
-  zone: "clinical" | "operations" | "external";
-  column: KanbanColumn;
-  createdAt: string;
-  dueDate?: string;
-  comments: TaskComment[];
 }
 
 type ViewMode = "board" | "split";
@@ -182,31 +166,6 @@ const MOCK_AGENTS: AgentState[] = [
   },
 ];
 
-const MOCK_TASKS: KanbanTask[] = [
-  // Backlog
-  { id: "t1", title: "Prepare monthly patient satisfaction report", description: "Compile and analyze patient feedback data for January", agentId: "1", priority: "medium", zone: "clinical", column: "backlog", createdAt: "2d ago", dueDate: "2026-03-10", comments: [{ id: "c1", author: "Dr. Torres", content: "Please include NPS scores from the Q4 survey.", timestamp: "1d ago", avatarColor: "bg-purple-500/20 text-purple-400" }] },
-  { id: "t2", title: "Update insurance provider database", description: "Add new Cigna and Aetna plan codes for 2026", agentId: "1", priority: "low", zone: "clinical", column: "backlog", createdAt: "3d ago", comments: [] },
-  { id: "t3", title: "Plan flu clinic outreach campaign", description: "Design multi-channel outreach for spring flu vaccinations", agentId: "2", priority: "medium", zone: "external", column: "backlog", createdAt: "1d ago", dueDate: "2026-03-15", comments: [] },
-  // To Do
-  { id: "t4", title: "Review pending referral letters", description: "12 referral letters awaiting review and signature", agentId: "1", priority: "high", zone: "clinical", column: "todo", createdAt: "1d ago", dueDate: "2026-02-21", comments: [{ id: "c2", author: "Dr. Front Desk", content: "Referrals flagged for Cardiology and Neurology. Need sign-off today.", timestamp: "3h ago", avatarColor: "bg-red-500/20 text-red-400" }] },
-  { id: "t5", title: "Draft social media calendar for March", description: "Create content calendar with health awareness themes", agentId: "2", priority: "medium", zone: "external", column: "todo", createdAt: "4h ago", comments: [] },
-  { id: "t6", title: "Research NIH grant renewal requirements", description: "Compile documentation needed for R01 renewal application", agentId: "3", priority: "high", zone: "operations", column: "todo", createdAt: "6h ago", dueDate: "2026-02-19", comments: [{ id: "c3", author: "Grant Pro", content: "NIH portal updated their checklist. I'll cross-reference with our current docs.", timestamp: "2h ago", avatarColor: "bg-amber-500/20 text-amber-400" }] },
-  // In Progress
-  { id: "t7", title: "Insurance verification — patient #4821", description: "Verifying coverage through Availity API for upcoming procedure", agentId: "1", priority: "high", zone: "clinical", column: "in_progress", createdAt: "30m ago", comments: [] },
-  { id: "t8", title: "Q1 cardiovascular awareness campaign", description: "Writing copy for Heart Health Month across all channels", agentId: "2", priority: "high", zone: "external", column: "in_progress", createdAt: "2h ago", dueDate: "2026-02-28", comments: [{ id: "c4", author: "Marketing Maven", content: "First draft ready. Compliance review flagged the social post — will revise.", timestamp: "1h ago", avatarColor: "bg-blue-500/20 text-blue-400" }] },
-  { id: "t9", title: "NIH R01 proposal budget revision", description: "Adjusting budget allocations per reviewer feedback", agentId: "3", priority: "medium", zone: "operations", column: "in_progress", createdAt: "1h ago", comments: [] },
-  // Review
-  { id: "t10", title: "Appointment reminder batch (14 patients)", description: "SMS and email reminders for next week's appointments", agentId: "1", priority: "medium", zone: "clinical", column: "review", createdAt: "45m ago", comments: [] },
-  { id: "t11", title: "Blog post: Heart Health Month Tips", description: "850-word article on cardiovascular wellness, ready for compliance check", agentId: "2", priority: "low", zone: "external", column: "review", createdAt: "1h ago", comments: [{ id: "c5", author: "Dr. Torres", content: "Looks good overall. Remove the statistic on line 3 — needs a citation.", timestamp: "30m ago", avatarColor: "bg-purple-500/20 text-purple-400" }] },
-  { id: "t12", title: "PCORI funding opportunity analysis", description: "Research summary of Patient-Centered Outcomes Research funding", agentId: "3", priority: "medium", zone: "operations", column: "review", createdAt: "3h ago", comments: [] },
-  // Done
-  { id: "t13", title: "Lab result notification — J. Chen", description: "Patient notified of lab results via secure portal", agentId: "1", priority: "high", zone: "clinical", column: "done", createdAt: "1h ago", comments: [] },
-  { id: "t14", title: "Email newsletter draft (850 words)", description: "February newsletter completed and sent to editor", agentId: "2", priority: "medium", zone: "external", column: "done", createdAt: "2h ago", comments: [] },
-  { id: "t15", title: "NIH R01 proposal draft ($1.2M)", description: "Full proposal draft submitted for internal review", agentId: "3", priority: "high", zone: "operations", column: "done", createdAt: "4h ago", comments: [] },
-];
-
-
-
 // ── Column Configuration ────────────────────────────────────────────────────
 const COLUMN_CONFIG: {
   id: KanbanColumn;
@@ -225,11 +184,8 @@ const COLUMN_CONFIG: {
 
 const COLUMN_ORDER: KanbanColumn[] = ["backlog", "todo", "in_progress", "review", "done"];
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
-const clamp = (v: number, min: number, max: number) =>
-  Math.max(min, Math.min(max, v));
+const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
-// ── Fullscreen Tasks Mock ───────────────────────────────────────────────────
 const FULLSCREEN_TASKS = [
   { id: "ft1", label: "Insurance verification #4822", progress: 72 },
   { id: "ft2", label: "Appointment reminder batch (14 patients)", progress: 45 },
@@ -246,7 +202,17 @@ const LOG_LEVEL_STYLES = {
   success: "text-emerald-400",
 };
 
-// ── CommentInput (isolated so it keeps its own state) ───────────────────────
+const DATE_FILTERS: { id: DateFilter; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: "all", label: "All Tasks", icon: LayoutList },
+  { id: "overdue", label: "Overdue", icon: AlertTriangle },
+  { id: "today", label: "Due Today", icon: Clock3 },
+  { id: "this_week", label: "This Week", icon: CalendarIcon },
+  { id: "saved", label: "Saved", icon: Bookmark },
+  { id: "recurring", label: "Recurring", icon: RefreshCw },
+  { id: "archived", label: "Archived", icon: Archive },
+];
+
+// ── CommentInput ─────────────────────────────────────────────────────────────
 function CommentInput({ taskId, onAdd }: { taskId: string; onAdd: (taskId: string, content: string) => void }) {
   const [text, setText] = useState("");
   const handleSend = () => {
@@ -277,34 +243,34 @@ function CommentInput({ taskId, onAdd }: { taskId: string; onAdd: (taskId: strin
 // ── Component ───────────────────────────────────────────────────────────────
 const AgentCommandStation = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [agents, setAgents] = useState<AgentState[]>(MOCK_AGENTS);
   const [viewMode, setViewMode] = useState<ViewMode>("board");
   const [fullscreenMode, setFullscreenMode] = useState(false);
-
-  // Multi-screen state
   const [splitScreenIds, setSplitScreenIds] = useState<string[]>(["1", "2"]);
-
-  // Fullscreen live state
   const [fsTasks, setFsTasks] = useState(FULLSCREEN_TASKS.map((t) => ({ ...t })));
   const [fsTick, setFsTick] = useState(0);
 
-  // Kanban board state
-  const [tasks, setTasks] = useState<KanbanTask[]>(MOCK_TASKS);
+  // DB-backed task state
+  const { tasks, loading, createTask, updateTask, deleteTask, moveTask, addComment, touchLastSeen, overdueCount } = useKanbanTasks();
+
+  // Board state
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<KanbanColumn | null>(null);
   const [agentFilter, setAgentFilter] = useState<string>("all");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("all");
 
-  // Task CRUD modal state
+  // Task modal state — uses a local draft separate from DB
   const [taskModal, setTaskModal] = useState<{
     open: boolean;
     mode: "add" | "edit";
-    task: Partial<KanbanTask> | null;
+    draft: Partial<KanbanTask>;
     targetColumn?: KanbanColumn;
-  }>({ open: false, mode: "add", task: null });
+  }>({ open: false, mode: "add", draft: {} });
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const titleRef = useRef<HTMLInputElement>(null);
 
-  // ── Drag-and-drop handlers ──────────────────────────────────────────────
+  // ── Drag-and-drop ──────────────────────────────────────────────────────
   const handleDragStart = useCallback((e: React.DragEvent, taskId: string) => {
     setDraggedTaskId(taskId);
     e.dataTransfer.effectAllowed = "move";
@@ -317,111 +283,80 @@ const AgentCommandStation = () => {
     setDragOverColumn(column);
   }, []);
 
-  const handleDragLeave = useCallback(() => {
-    setDragOverColumn(null);
-  }, []);
+  const handleDragLeave = useCallback(() => { setDragOverColumn(null); }, []);
 
   const handleDrop = useCallback((e: React.DragEvent, targetColumn: KanbanColumn) => {
     e.preventDefault();
-    if (draggedTaskId) {
-      setTasks((prev) =>
-        prev.map((t) =>
-          t.id === draggedTaskId ? { ...t, column: targetColumn } : t
-        )
-      );
-    }
+    if (draggedTaskId) moveTask(draggedTaskId, targetColumn);
     setDraggedTaskId(null);
     setDragOverColumn(null);
-  }, [draggedTaskId]);
+  }, [draggedTaskId, moveTask]);
 
   const handleDragEnd = useCallback(() => {
     setDraggedTaskId(null);
     setDragOverColumn(null);
   }, []);
 
-  const moveTaskForward = useCallback((taskId: string) => {
-    setTasks((prev) =>
-      prev.map((t) => {
-        if (t.id !== taskId) return t;
-        const currentIdx = COLUMN_ORDER.indexOf(t.column);
-        if (currentIdx < COLUMN_ORDER.length - 1) {
-          return { ...t, column: COLUMN_ORDER[currentIdx + 1] };
-        }
-        return t;
-      })
-    );
-  }, []);
+  const moveTaskForward = useCallback((task: KanbanTask) => {
+    const idx = COLUMN_ORDER.indexOf(task.column_id);
+    if (idx < COLUMN_ORDER.length - 1) moveTask(task.id, COLUMN_ORDER[idx + 1]);
+  }, [moveTask]);
 
-  // ── CRUD handlers ────────────────────────────────────────────────────────
+  // ── Modal helpers ────────────────────────────────────────────────────────
   const openAddModal = useCallback((column: KanbanColumn = "backlog") => {
-    setTaskModal({
-      open: true,
-      mode: "add",
-      task: { column, priority: "medium", zone: "clinical", agentId: "1" },
-      targetColumn: column,
-    });
+    setTaskModal({ open: true, mode: "add", draft: { column_id: column, priority: "medium", zone: "clinical", agent_id: "1", is_recurring: false, is_saved: false, is_archived: false }, targetColumn: column });
   }, []);
 
   const openEditModal = useCallback((task: KanbanTask) => {
-    setTaskModal({ open: true, mode: "edit", task: { ...task } });
-  }, []);
+    touchLastSeen(task.id);
+    setTaskModal({ open: true, mode: "edit", draft: { ...task } });
+  }, [touchLastSeen]);
 
   const closeModal = useCallback(() => {
-    setTaskModal({ open: false, mode: "add", task: null });
+    setTaskModal({ open: false, mode: "add", draft: {} });
   }, []);
 
-  const saveTask = useCallback((data: Partial<KanbanTask>) => {
-    if (!data.title?.trim()) return;
-    if (taskModal.mode === "add") {
-      const newTask: KanbanTask = {
-        id: `t${Date.now()}`,
-        title: data.title.trim(),
-        description: data.description?.trim() ?? "",
-        agentId: data.agentId ?? "1",
-        priority: data.priority ?? "medium",
-        zone: data.zone ?? "clinical",
-        column: data.column ?? "backlog",
-        createdAt: "just now",
-        dueDate: data.dueDate,
-        comments: [],
-      };
-      setTasks((prev) => [...prev, newTask]);
+  const updateDraft = useCallback((field: string, value: unknown) => {
+    setTaskModal((prev) => ({ ...prev, draft: { ...prev.draft, [field]: value } }));
+  }, []);
+
+  const saveTask = useCallback(async () => {
+    const { mode, draft } = taskModal;
+    if (!draft.title?.trim()) return;
+    if (mode === "add") {
+      await createTask(draft as Partial<KanbanTaskInput>);
     } else {
-      setTasks((prev) =>
-        prev.map((t) => (t.id === data.id ? { ...t, ...data, title: data.title!.trim() } : t))
-      );
+      const { id, comments, user_id, created_at, updated_at, ...changes } = draft as KanbanTask;
+      await updateTask(id, changes as Partial<KanbanTaskInput>);
     }
     closeModal();
-  }, [taskModal.mode, closeModal]);
+  }, [taskModal, createTask, updateTask, closeModal]);
 
-  const deleteTask = useCallback((taskId: string) => {
-    setTasks((prev) => prev.filter((t) => t.id !== taskId));
+  const handleDeleteTask = useCallback(async (id: string) => {
+    await deleteTask(id);
     setDeleteConfirm(null);
-  }, []);
+  }, [deleteTask]);
 
-  const addComment = useCallback((taskId: string, content: string) => {
-    if (!content.trim()) return;
-    const newComment: TaskComment = {
-      id: `cm${Date.now()}`,
-      author: "You",
-      content: content.trim(),
-      timestamp: "just now",
-      avatarColor: "bg-cyan-500/20 text-cyan-400",
-    };
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId ? { ...t, comments: [...t.comments, newComment] } : t
-      )
-    );
-    // Also update taskModal draft if open
+  const handleAddComment = useCallback(async (taskId: string, content: string) => {
+    const profileName = user?.email?.split("@")[0] ?? "You";
+    await addComment(taskId, content, profileName);
+    // Refresh modal draft comments
     setTaskModal((prev) => {
-      if (!prev.task || prev.task.id !== taskId) return prev;
-      const existing = (prev.task.comments as TaskComment[]) ?? [];
-      return { ...prev, task: { ...prev.task, comments: [...existing, newComment] } };
+      if (!prev.draft || prev.draft.id !== taskId) return prev;
+      const existing = (prev.draft.comments as TaskComment[]) ?? [];
+      const newC: TaskComment = {
+        id: `tmp-${Date.now()}`,
+        task_id: taskId,
+        author: profileName,
+        content,
+        avatar_color: "bg-cyan-500/20 text-cyan-400",
+        created_at: new Date().toISOString(),
+      };
+      return { ...prev, draft: { ...prev.draft, comments: [...existing, newC] } };
     });
-  }, []);
+  }, [addComment, user]);
 
-  // ── Fullscreen auto-refresh ─────────────────────────────────────────────
+  // ── Fullscreen auto-refresh ──────────────────────────────────────────────
   useEffect(() => {
     if (!fullscreenMode) return;
     const interval = setInterval(() => {
@@ -429,22 +364,11 @@ const AgentCommandStation = () => {
       setAgents((prev) =>
         prev.map((a) => ({
           ...a,
-          cpu: a.active
-            ? clamp(a.cpu + Math.floor(Math.random() * 13) - 6, 5, 95)
-            : 0,
-          memory: a.active
-            ? clamp(a.memory + Math.floor(Math.random() * 9) - 4, 10, 92)
-            : a.memory,
-          tokensUsed: a.active
-            ? a.tokensUsed + Math.floor(Math.random() * 800) + 100
-            : a.tokensUsed,
-          costToday: a.active
-            ? Math.round((a.costToday + Math.random() * 0.08) * 100) / 100
-            : a.costToday,
-          tasksCompleted:
-            a.active && Math.random() > 0.7
-              ? a.tasksCompleted + 1
-              : a.tasksCompleted,
+          cpu: a.active ? clamp(a.cpu + Math.floor(Math.random() * 13) - 6, 5, 95) : 0,
+          memory: a.active ? clamp(a.memory + Math.floor(Math.random() * 9) - 4, 10, 92) : a.memory,
+          tokensUsed: a.active ? a.tokensUsed + Math.floor(Math.random() * 800) + 100 : a.tokensUsed,
+          costToday: a.active ? Math.round((a.costToday + Math.random() * 0.08) * 100) / 100 : a.costToday,
+          tasksCompleted: a.active && Math.random() > 0.7 ? a.tasksCompleted + 1 : a.tasksCompleted,
         }))
       );
       setFsTasks((prev) =>
@@ -458,32 +382,22 @@ const AgentCommandStation = () => {
     return () => clearInterval(interval);
   }, [fullscreenMode]);
 
-  // ── Escape key ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!fullscreenMode) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setFullscreenMode(false);
-    };
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setFullscreenMode(false); };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [fullscreenMode]);
 
-  // ── Metric auto-refresh (gentle fluctuation) ───────────────────────────
   useEffect(() => {
     if (fullscreenMode) return;
     const interval = setInterval(() => {
       setAgents((prev) =>
         prev.map((a) => ({
           ...a,
-          cpu: a.active
-            ? clamp(a.cpu + Math.floor(Math.random() * 7) - 3, 5, 95)
-            : 0,
-          memory: a.active
-            ? clamp(a.memory + Math.floor(Math.random() * 5) - 2, 10, 92)
-            : a.memory,
-          tokensUsed: a.active
-            ? a.tokensUsed + Math.floor(Math.random() * 200)
-            : a.tokensUsed,
+          cpu: a.active ? clamp(a.cpu + Math.floor(Math.random() * 7) - 3, 5, 95) : 0,
+          memory: a.active ? clamp(a.memory + Math.floor(Math.random() * 5) - 2, 10, 92) : a.memory,
+          tokensUsed: a.active ? a.tokensUsed + Math.floor(Math.random() * 200) : a.tokensUsed,
         }))
       );
     }, 8000);
@@ -492,10 +406,36 @@ const AgentCommandStation = () => {
 
   const getSuccessRate = (a: AgentState) =>
     a.tasksCompleted + a.tasksFailed > 0
-      ? Math.round(
-          (a.tasksCompleted / (a.tasksCompleted + a.tasksFailed)) * 100
-        )
+      ? Math.round((a.tasksCompleted / (a.tasksCompleted + a.tasksFailed)) * 100)
       : 0;
+
+  // ── Filter logic ────────────────────────────────────────────────────────
+  const getFilteredTasks = useCallback(() => {
+    let result = tasks;
+
+    // Agent filter
+    if (agentFilter !== "all") result = result.filter((t) => t.agent_id === agentFilter);
+
+    // Date / type filter
+    if (dateFilter === "overdue") {
+      result = result.filter((t) => !t.is_archived && t.column_id !== "done" && t.due_date && isPast(parseISO(t.due_date)));
+    } else if (dateFilter === "today") {
+      result = result.filter((t) => t.due_date && isToday(parseISO(t.due_date)));
+    } else if (dateFilter === "this_week") {
+      result = result.filter((t) => t.due_date && isThisWeek(parseISO(t.due_date)));
+    } else if (dateFilter === "saved") {
+      result = result.filter((t) => t.is_saved);
+    } else if (dateFilter === "recurring") {
+      result = result.filter((t) => t.is_recurring);
+    } else if (dateFilter === "archived") {
+      result = result.filter((t) => t.is_archived);
+    } else {
+      // "all" — hide archived unless explicitly selected
+      result = result.filter((t) => !t.is_archived);
+    }
+
+    return result;
+  }, [tasks, agentFilter, dateFilter]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // ── FULLSCREEN MODE ─────────────────────────────────────────────────────
@@ -510,39 +450,24 @@ const AgentCommandStation = () => {
         <div className="flex items-center justify-between px-6 py-3 border-b border-green-900/60 bg-black/95 shrink-0">
           <div className="flex items-center gap-4">
             <MonitorPlay className="h-5 w-5 text-cyan-400" />
-            <span className="text-sm font-bold tracking-widest text-cyan-400 uppercase">
-              {t("commandStation.agentScreen")}
-            </span>
-            <span className="text-xs text-green-600 animate-pulse">
-              {t("commandStation.live")}
-            </span>
+            <span className="text-sm font-bold tracking-widest text-cyan-400 uppercase">{t("commandStation.agentScreen")}</span>
+            <span className="text-xs text-green-600 animate-pulse">{t("commandStation.live")}</span>
             <span className="text-xs text-green-700">Tick #{fsTick}</span>
           </div>
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2 text-xs">
               <Zap className="h-3.5 w-3.5 text-amber-400" />
-              <span className="text-amber-400 tabular-nums">
-                {totalTokens.toLocaleString()} tokens
-              </span>
+              <span className="text-amber-400 tabular-nums">{totalTokens.toLocaleString()} tokens</span>
             </div>
             <div className="flex items-center gap-2 text-xs">
               <DollarSign className="h-3.5 w-3.5 text-amber-400" />
-              <span className="text-amber-400 tabular-nums">
-                ${totalCost.toFixed(2)} today
-              </span>
+              <span className="text-amber-400 tabular-nums">${totalCost.toFixed(2)} today</span>
             </div>
             <div className="flex items-center gap-2 text-xs">
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-              <span className="text-emerald-400 tabular-nums">
-                {totalTasks.toLocaleString()} tasks done
-              </span>
+              <span className="text-emerald-400 tabular-nums">{totalTasks.toLocaleString()} tasks done</span>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setFullscreenMode(false)}
-              className="border-green-800 text-green-400 bg-transparent hover:bg-green-950 hover:text-green-300 text-xs gap-1"
-            >
+            <Button variant="outline" size="sm" onClick={() => setFullscreenMode(false)} className="border-green-800 text-green-400 bg-transparent hover:bg-green-950 hover:text-green-300 text-xs gap-1">
               <Minimize2 className="h-3.5 w-3.5" />
               {t("commandStation.exitEsc")}
             </Button>
@@ -554,128 +479,46 @@ const AgentCommandStation = () => {
             const sr = getSuccessRate(ag);
             const agTasks = fsTasks.slice(0, ag.active ? 3 : 1);
             return (
-              <div
-                key={ag.id}
-                className="border border-green-900/40 p-4 flex flex-col gap-3 relative overflow-hidden"
-              >
+              <div key={ag.id} className="border border-green-900/40 p-4 flex flex-col gap-3 relative overflow-hidden">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="relative flex h-2.5 w-2.5">
-                      {ag.active && (
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                      )}
-                      <span
-                        className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
-                          ag.active ? "bg-green-500" : "bg-gray-600"
-                        }`}
-                      />
+                      {ag.active && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />}
+                      <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${ag.active ? "bg-green-500" : "bg-gray-600"}`} />
                     </span>
-                    <span className="text-sm font-bold text-cyan-400">
-                      {ag.name}
-                    </span>
+                    <span className="text-sm font-bold text-cyan-400">{ag.name}</span>
                     <span className="text-[10px] text-green-700">{ag.model}</span>
                   </div>
-                  <span
-                    className={`text-[10px] px-1.5 py-0.5 rounded border ${
-                      ag.active
-                        ? "border-green-700 text-green-400 bg-green-950/50"
-                        : "border-gray-700 text-gray-500 bg-gray-900/50"
-                    }`}
-                  >
-                    {ag.active
-                      ? t("commandStation.online")
-                      : t("commandStation.offline")}
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded border ${ag.active ? "border-green-700 text-green-400 bg-green-950/50" : "border-gray-700 text-gray-500 bg-gray-900/50"}`}>
+                    {ag.active ? t("commandStation.online") : t("commandStation.offline")}
                   </span>
                 </div>
 
-                <p className="text-xs text-green-500/80 leading-relaxed">
-                  &gt; {ag.currentTask}
-                </p>
+                <p className="text-xs text-green-500/80 leading-relaxed">&gt; {ag.currentTask}</p>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] text-green-700 flex items-center gap-1">
-                        <Cpu className="h-3 w-3" /> CPU
-                      </span>
-                      <span className="text-[10px] text-green-400 tabular-nums">
-                        {ag.cpu}%
-                      </span>
+                  {[{ label: "CPU", value: ag.cpu, icon: Cpu }, { label: "MEM", value: ag.memory, icon: Activity }].map(({ label, value, icon: Icon }) => (
+                    <div key={label}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] text-green-700 flex items-center gap-1"><Icon className="h-3 w-3" /> {label}</span>
+                        <span className="text-[10px] text-green-400 tabular-nums">{value}%</span>
+                      </div>
+                      <div className="h-2 rounded bg-green-950 overflow-hidden">
+                        <div className={`h-full rounded transition-all duration-1000 ease-in-out ${value > 75 ? "bg-red-500" : value > 50 ? "bg-amber-500" : label === "CPU" ? "bg-green-500" : "bg-cyan-500"}`} style={{ width: `${value}%` }} />
+                      </div>
                     </div>
-                    <div className="h-2 rounded bg-green-950 overflow-hidden">
-                      <div
-                        className={`h-full rounded transition-all duration-1000 ease-in-out ${
-                          ag.cpu > 75
-                            ? "bg-red-500"
-                            : ag.cpu > 50
-                            ? "bg-amber-500"
-                            : "bg-green-500"
-                        }`}
-                        style={{ width: `${ag.cpu}%` }}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] text-green-700 flex items-center gap-1">
-                        <Activity className="h-3 w-3" /> MEM
-                      </span>
-                      <span className="text-[10px] text-green-400 tabular-nums">
-                        {ag.memory}%
-                      </span>
-                    </div>
-                    <div className="h-2 rounded bg-green-950 overflow-hidden">
-                      <div
-                        className={`h-full rounded transition-all duration-1000 ease-in-out ${
-                          ag.memory > 75
-                            ? "bg-red-500"
-                            : ag.memory > 50
-                            ? "bg-amber-500"
-                            : "bg-cyan-500"
-                        }`}
-                        style={{ width: `${ag.memory}%` }}
-                      />
-                    </div>
-                  </div>
+                  ))}
                 </div>
 
                 <div className="grid grid-cols-4 gap-2">
                   {[
-                    {
-                      label: "Tasks",
-                      value: ag.tasksCompleted.toLocaleString(),
-                      color: "text-green-400",
-                    },
-                    {
-                      label: "Failed",
-                      value: String(ag.tasksFailed),
-                      color:
-                        ag.tasksFailed > 5
-                          ? "text-red-400"
-                          : "text-green-400",
-                    },
-                    {
-                      label: "Rate",
-                      value: `${sr}%`,
-                      color:
-                        sr >= 95
-                          ? "text-green-400"
-                          : sr >= 80
-                          ? "text-amber-400"
-                          : "text-red-400",
-                    },
-                    {
-                      label: "Cost",
-                      value: `$${ag.costToday.toFixed(2)}`,
-                      color: "text-amber-400",
-                    },
+                    { label: "Tasks", value: ag.tasksCompleted.toLocaleString(), color: "text-green-400" },
+                    { label: "Failed", value: String(ag.tasksFailed), color: ag.tasksFailed > 5 ? "text-red-400" : "text-green-400" },
+                    { label: "Rate", value: `${sr}%`, color: sr >= 95 ? "text-green-400" : sr >= 80 ? "text-amber-400" : "text-red-400" },
+                    { label: "Cost", value: `$${ag.costToday.toFixed(2)}`, color: "text-amber-400" },
                   ].map((s) => (
                     <div key={s.label} className="text-center">
-                      <p
-                        className={`text-xs font-bold tabular-nums ${s.color}`}
-                      >
-                        {s.value}
-                      </p>
+                      <p className={`text-xs font-bold tabular-nums ${s.color}`}>{s.value}</p>
                       <p className="text-[9px] text-green-800">{s.label}</p>
                     </div>
                   ))}
@@ -684,37 +527,22 @@ const AgentCommandStation = () => {
                 <div className="flex items-center justify-between text-[10px] border-t border-green-900/40 pt-2">
                   <span className="text-green-700 flex items-center gap-1">
                     <Zap className="h-3 w-3" />
-                    <span className="text-green-400 tabular-nums transition-all duration-700">
-                      {ag.tokensUsed.toLocaleString()}
-                    </span>{" "}
-                    tokens
+                    <span className="text-green-400 tabular-nums transition-all duration-700">{ag.tokensUsed.toLocaleString()}</span> tokens
                   </span>
-                  <span className="text-green-700">
-                    Uptime:{" "}
-                    <span className="text-green-400">{ag.uptime}</span>
-                  </span>
+                  <span className="text-green-700">Uptime: <span className="text-green-400">{ag.uptime}</span></span>
                 </div>
 
                 {ag.active && (
                   <div className="space-y-1.5 border-t border-green-900/40 pt-2">
-                    <p className="text-[10px] text-green-700 uppercase tracking-wider">
-                      {t("commandStation.taskQueue")}
-                    </p>
+                    <p className="text-[10px] text-green-700 uppercase tracking-wider">{t("commandStation.taskQueue")}</p>
                     {agTasks.map((tk, i) => (
-                      <div key={tk.id + "-" + ag.id + "-" + i} className="space-y-0.5">
+                      <div key={tk.id + ag.id + i} className="space-y-0.5">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-green-600 truncate max-w-[70%]">
-                            {tk.label}
-                          </span>
-                          <span className="text-[10px] text-green-400 tabular-nums">
-                            {tk.progress}%
-                          </span>
+                          <span className="text-[10px] text-green-600 truncate max-w-[70%]">{tk.label}</span>
+                          <span className="text-[10px] text-green-400 tabular-nums">{tk.progress}%</span>
                         </div>
                         <div className="h-1.5 rounded bg-green-950 overflow-hidden">
-                          <div
-                            className="h-full rounded bg-gradient-to-r from-green-600 to-cyan-500 transition-all duration-1000 ease-in-out"
-                            style={{ width: `${tk.progress}%` }}
-                          />
+                          <div className="h-full rounded bg-gradient-to-r from-green-600 to-cyan-500 transition-all duration-1000 ease-in-out" style={{ width: `${tk.progress}%` }} />
                         </div>
                       </div>
                     ))}
@@ -722,30 +550,10 @@ const AgentCommandStation = () => {
                 )}
 
                 <div className="space-y-1 border-t border-green-900/40 pt-2 max-h-[100px] overflow-y-auto">
-                  <p className="text-[10px] text-green-700 uppercase tracking-wider">
-                    {t("commandStation.recentActivity")}
-                  </p>
+                  <p className="text-[10px] text-green-700 uppercase tracking-wider">{t("commandStation.recentActivity")}</p>
                   {ag.logs.slice(0, 3).map((log) => (
-                    <p
-                      key={log.id}
-                      className={`text-[10px] leading-snug ${
-                        log.level === "error"
-                          ? "text-red-400"
-                          : log.level === "warn"
-                          ? "text-amber-400"
-                          : log.level === "success"
-                          ? "text-green-500"
-                          : "text-green-600"
-                      }`}
-                    >
-                      {log.level === "error"
-                        ? "ERR"
-                        : log.level === "warn"
-                        ? "WRN"
-                        : log.level === "success"
-                        ? "OK "
-                        : "INF"}{" "}
-                      {log.message}
+                    <p key={log.id} className={`text-[10px] leading-snug ${log.level === "error" ? "text-red-400" : log.level === "warn" ? "text-amber-400" : log.level === "success" ? "text-green-500" : "text-green-600"}`}>
+                      {log.level === "error" ? "ERR" : log.level === "warn" ? "WRN" : log.level === "success" ? "OK " : "INF"} {log.message}
                     </p>
                   ))}
                 </div>
@@ -756,157 +564,73 @@ const AgentCommandStation = () => {
 
         <div className="shrink-0 flex items-center justify-between px-6 py-2 border-t border-green-900/60 bg-black/95 text-[10px] text-green-700">
           <span>{t("commandStation.autoRefresh")}</span>
-          <span className="text-green-600">
-            {new Date().toLocaleTimeString()} |{" "}
-            {agents.filter((a) => a.active).length}/{agents.length}{" "}
-            {t("commandStation.agentsOnline")}
-          </span>
+          <span className="text-green-600">{new Date().toLocaleTimeString()} | {agents.filter((a) => a.active).length}/{agents.length} {t("commandStation.agentsOnline")}</span>
         </div>
       </div>
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // ── MULTI-SCREEN SPLIT VIEW ─────────────────────────────────────────────
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ── SPLIT VIEW ──────────────────────────────────────────────────────────
   const renderSplitScreen = () => {
-    const screenAgents = splitScreenIds
-      .map((id) => agents.find((a) => a.id === id))
-      .filter(Boolean) as AgentState[];
-
+    const screenAgents = splitScreenIds.map((id) => agents.find((a) => a.id === id)).filter(Boolean) as AgentState[];
     return (
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-0 overflow-hidden">
         {screenAgents.map((agent) => {
           const sr = getSuccessRate(agent);
           return (
-            <div
-              key={agent.id}
-              className="flex flex-col border-r border-b border-border overflow-hidden"
-            >
-              {/* Screen header */}
+            <div key={agent.id} className="flex flex-col border-r border-b border-border overflow-hidden">
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-card/60 shrink-0">
                 <div className="flex items-center gap-2">
                   <span className="relative flex h-2.5 w-2.5">
-                    {agent.active && (
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    )}
-                    <span
-                      className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
-                        agent.active
-                          ? "bg-emerald-500"
-                          : "bg-muted-foreground/40"
-                      }`}
-                    />
+                    {agent.active && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />}
+                    <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${agent.active ? "bg-emerald-500" : "bg-gray-600"}`} />
                   </span>
                   <Bot className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-semibold text-foreground">
-                    {agent.name}
-                  </span>
-                  <Badge
-                    variant="outline"
-                    className={`text-[10px] ${
-                      agent.zone === "clinical"
-                        ? "text-red-400 bg-red-500/10 border-red-500/30"
-                        : agent.zone === "operations"
-                        ? "text-amber-400 bg-amber-500/10 border-amber-500/30"
-                        : "text-blue-400 bg-blue-500/10 border-blue-500/30"
-                    }`}
-                  >
+                  <span className="text-sm font-semibold text-foreground">{agent.name}</span>
+                  <Badge variant="outline" className={`text-[10px] ${agent.zone === "clinical" ? "text-red-400 bg-red-500/10 border-red-500/30" : agent.zone === "operations" ? "text-amber-400 bg-amber-500/10 border-amber-500/30" : "text-blue-400 bg-blue-500/10 border-blue-500/30"}`}>
                     {agent.zone}
                   </Badge>
                 </div>
-                <span className="text-[10px] text-muted-foreground">
-                  {agent.model}
-                </span>
+                <span className="text-[10px] text-muted-foreground">{agent.model}</span>
               </div>
-
-              {/* Terminal */}
               <div className="flex-1 bg-black/90 overflow-y-auto p-4 font-mono text-xs space-y-1.5 min-h-0">
-                <p className="text-white/30">
-                  --- {agent.name} --- {agent.model} ---{" "}
-                  {new Date().toLocaleTimeString()} ---
-                </p>
+                <p className="text-white/30">--- {agent.name} --- {agent.model} --- {new Date().toLocaleTimeString()} ---</p>
                 {agent.active ? (
                   <>
-                    <p className="text-emerald-400">
-                      &gt; {agent.currentTask}
-                    </p>
-                    <p className="text-white/50">
-                      {" "}
-                      CPU: {agent.cpu}% | Memory: {agent.memory}% | Tokens:{" "}
-                      {agent.tokensUsed.toLocaleString()}
-                    </p>
-                    <p className="text-cyan-400">
-                      {" "}
-                      Success Rate: {sr}% | Cost: $
-                      {agent.costToday.toFixed(2)} | Uptime: {agent.uptime}
-                    </p>
+                    <p className="text-emerald-400">&gt; {agent.currentTask}</p>
+                    <p className="text-white/50"> CPU: {agent.cpu}% | Memory: {agent.memory}% | Tokens: {agent.tokensUsed.toLocaleString()}</p>
+                    <p className="text-cyan-400"> Success Rate: {sr}% | Cost: ${agent.costToday.toFixed(2)} | Uptime: {agent.uptime}</p>
                     <p className="text-white/30 mt-2">-- Recent Activity --</p>
                     {agent.logs.map((log) => (
-                      <p
-                        key={log.id}
-                        className={`${
-                          LOG_LEVEL_STYLES[log.level]
-                        } leading-snug`}
-                      >
-                        [{log.level.toUpperCase()}] {log.message}{" "}
-                        <span className="text-white/20">({log.timestamp})</span>
-                      </p>
+                      <p key={log.id} className={`${LOG_LEVEL_STYLES[log.level]} leading-snug`}>[{log.level.toUpperCase()}] {log.message} <span className="text-white/20">({log.timestamp})</span></p>
                     ))}
                     <p className="text-white/20 animate-pulse mt-3">_</p>
                   </>
                 ) : (
                   <>
-                    <p className="text-white/40">
-                      Agent is offline --- last active 2h ago
-                    </p>
-                    <p className="text-white/30">
-                      Context preserved. Tasks queued: 0
-                    </p>
+                    <p className="text-white/40">Agent is offline --- last active 2h ago</p>
+                    <p className="text-white/30">Context preserved. Tasks queued: 0</p>
                   </>
                 )}
               </div>
-
-              {/* Stats bar */}
               <div className="flex items-center justify-between px-4 py-2 bg-card/40 border-t border-border text-[10px] text-muted-foreground shrink-0">
-                <span className="flex items-center gap-2">
-                  <CheckCircle2 className="h-3 w-3 text-emerald-400" />
-                  {agent.tasksCompleted} done
-                </span>
-                <span className="flex items-center gap-2">
-                  <Zap className="h-3 w-3 text-amber-400" />
-                  {(agent.tokensUsed / 1000).toFixed(1)}k tokens
-                </span>
-                <span className="flex items-center gap-2">
-                  <DollarSign className="h-3 w-3 text-amber-400" />$
-                  {agent.costToday.toFixed(2)}
-                </span>
+                <span className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-emerald-400" />{agent.tasksCompleted} done</span>
+                <span className="flex items-center gap-2"><Zap className="h-3 w-3 text-amber-400" />{(agent.tokensUsed / 1000).toFixed(1)}k tokens</span>
+                <span className="flex items-center gap-2"><DollarSign className="h-3 w-3 text-amber-400" />${agent.costToday.toFixed(2)}</span>
               </div>
             </div>
           );
         })}
-
-        {/* Add more screens */}
         {splitScreenIds.length < agents.length && (
           <div className="flex flex-col items-center justify-center border-r border-b border-border bg-card/20 min-h-[300px]">
-            <p className="text-sm text-muted-foreground mb-3">
-              Add agent screen
-            </p>
+            <p className="text-sm text-muted-foreground mb-3">Add agent screen</p>
             <div className="flex gap-2 flex-wrap justify-center px-4">
-              {agents
-                .filter((a) => !splitScreenIds.includes(a.id))
-                .map((a) => (
-                  <button
-                    key={a.id}
-                    onClick={() =>
-                      setSplitScreenIds((prev) => [...prev, a.id])
-                    }
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card hover:border-primary/40 transition-colors text-sm"
-                  >
-                    <Bot className="h-3.5 w-3.5 text-primary" />
-                    {a.name}
-                  </button>
-                ))}
+              {agents.filter((a) => !splitScreenIds.includes(a.id)).map((a) => (
+                <button key={a.id} onClick={() => setSplitScreenIds((prev) => [...prev, a.id])} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card hover:border-primary/40 transition-colors text-sm">
+                  <Bot className="h-3.5 w-3.5 text-primary" />
+                  {a.name}
+                </button>
+              ))}
             </div>
           </div>
         )}
@@ -914,139 +638,72 @@ const AgentCommandStation = () => {
     );
   };
 
-  // ═══════════════════════════════════════════════════════════════════════════
   // ── TASK MODAL ────────────────────────────────────────────────────────────
-  // ═══════════════════════════════════════════════════════════════════════════
   const renderTaskModal = () => {
-    if (!taskModal.open || !taskModal.task) return null;
+    if (!taskModal.open) return null;
     const isEdit = taskModal.mode === "edit";
-    const draft = taskModal.task;
+    const draft = taskModal.draft;
     const draftComments = (draft.comments as TaskComment[]) ?? [];
-
-    const update = (field: string, value: unknown) =>
-      setTaskModal((prev) => ({ ...prev, task: { ...prev.task, [field]: value } }));
-
-    const selectedDate = draft.dueDate ? parseISO(draft.dueDate) : undefined;
+    const selectedDate = draft.due_date ? parseISO(draft.due_date) : undefined;
 
     return (
       <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-        {/* Backdrop */}
         <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={closeModal} />
-
-        {/* Modal */}
         <div className="relative w-full max-w-lg rounded-2xl border border-cyan-500/30 bg-[hsl(220,20%,7%)] shadow-[0_0_60px_-10px_rgba(6,182,212,0.3)] overflow-hidden flex flex-col max-h-[90vh]">
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-gradient-to-r from-cyan-500/10 to-blue-500/5 shrink-0">
             <div className="flex items-center gap-2">
-              {isEdit ? (
-                <Pencil className="h-4 w-4 text-cyan-400" />
-              ) : (
-                <Plus className="h-4 w-4 text-cyan-400" />
-              )}
-              <span className="text-sm font-semibold text-cyan-400">
-                {isEdit ? "Edit Task" : "Add Task"}
-              </span>
+              {isEdit ? <Pencil className="h-4 w-4 text-cyan-400" /> : <Plus className="h-4 w-4 text-cyan-400" />}
+              <span className="text-sm font-semibold text-cyan-400">{isEdit ? "Edit Task" : "Add Task"}</span>
             </div>
-            <button
-              onClick={closeModal}
-              className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-white/80 transition-colors"
-            >
+            <button onClick={closeModal} className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-white/80 transition-colors">
               <X className="h-4 w-4" />
             </button>
           </div>
 
-          {/* Scrollable Body */}
           <div className="overflow-y-auto flex-1">
             <div className="p-6 space-y-4">
               {/* Title */}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-white/50 flex items-center gap-1.5">
-                  <Pencil className="h-3 w-3" /> Title
-                </label>
-                <input
-                  ref={titleRef}
-                  autoFocus
-                  value={draft.title ?? ""}
-                  onChange={(e) => update("title", e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && !isEdit && saveTask(draft)}
-                  placeholder="Task title..."
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-cyan-500/40"
-                />
+                <label className="text-xs font-medium text-white/50 flex items-center gap-1.5"><Pencil className="h-3 w-3" /> Title</label>
+                <input ref={titleRef} autoFocus value={draft.title ?? ""} onChange={(e) => updateDraft("title", e.target.value)} placeholder="Task title..." className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-cyan-500/40" />
               </div>
 
               {/* Description */}
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-white/50">Description</label>
-                <textarea
-                  value={draft.description ?? ""}
-                  onChange={(e) => update("description", e.target.value)}
-                  placeholder="What needs to be done..."
-                  rows={3}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-cyan-500/40 resize-none"
-                />
+                <textarea value={draft.description ?? ""} onChange={(e) => updateDraft("description", e.target.value)} placeholder="What needs to be done..." rows={3} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-cyan-500/40 resize-none" />
               </div>
 
-              {/* Row: Agent + Column */}
+              {/* Agent + Column */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-white/50 flex items-center gap-1.5">
-                    <User className="h-3 w-3" /> Assigned Agent
-                  </label>
-                  <select
-                    value={draft.agentId ?? "1"}
-                    onChange={(e) => update("agentId", e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500/40"
-                  >
-                    {agents.map((a) => (
-                      <option key={a.id} value={a.id} className="bg-[hsl(220,20%,10%)]">
-                        {a.name}
-                      </option>
-                    ))}
+                  <label className="text-xs font-medium text-white/50 flex items-center gap-1.5"><User className="h-3 w-3" /> Assigned Agent</label>
+                  <select value={draft.agent_id ?? "1"} onChange={(e) => updateDraft("agent_id", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500/40">
+                    {MOCK_AGENTS.map((a) => <option key={a.id} value={a.id} className="bg-[hsl(220,20%,10%)]">{a.name}</option>)}
                   </select>
                 </div>
-
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-white/50">Column</label>
-                  <select
-                    value={draft.column ?? "backlog"}
-                    onChange={(e) => update("column", e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500/40"
-                  >
-                    {COLUMN_CONFIG.map((c) => (
-                      <option key={c.id} value={c.id} className="bg-[hsl(220,20%,10%)]">
-                        {c.label}
-                      </option>
-                    ))}
+                  <select value={draft.column_id ?? "backlog"} onChange={(e) => updateDraft("column_id", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500/40">
+                    {COLUMN_CONFIG.map((c) => <option key={c.id} value={c.id} className="bg-[hsl(220,20%,10%)]">{c.label}</option>)}
                   </select>
                 </div>
               </div>
 
-              {/* Row: Priority + Zone */}
+              {/* Priority + Zone */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-white/50 flex items-center gap-1.5">
-                    <Flag className="h-3 w-3" /> Priority
-                  </label>
-                  <select
-                    value={draft.priority ?? "medium"}
-                    onChange={(e) => update("priority", e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500/40"
-                  >
+                  <label className="text-xs font-medium text-white/50 flex items-center gap-1.5"><Flag className="h-3 w-3" /> Priority</label>
+                  <select value={draft.priority ?? "medium"} onChange={(e) => updateDraft("priority", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500/40">
                     <option value="high" className="bg-[hsl(220,20%,10%)]">High</option>
                     <option value="medium" className="bg-[hsl(220,20%,10%)]">Medium</option>
                     <option value="low" className="bg-[hsl(220,20%,10%)]">Low</option>
                   </select>
                 </div>
-
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-white/50 flex items-center gap-1.5">
-                    <Globe className="h-3 w-3" /> Zone
-                  </label>
-                  <select
-                    value={draft.zone ?? "clinical"}
-                    onChange={(e) => update("zone", e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500/40"
-                  >
+                  <label className="text-xs font-medium text-white/50 flex items-center gap-1.5"><Globe className="h-3 w-3" /> Zone</label>
+                  <select value={draft.zone ?? "clinical"} onChange={(e) => updateDraft("zone", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500/40">
                     <option value="clinical" className="bg-[hsl(220,20%,10%)]">Clinical</option>
                     <option value="operations" className="bg-[hsl(220,20%,10%)]">Operations</option>
                     <option value="external" className="bg-[hsl(220,20%,10%)]">External</option>
@@ -1056,78 +713,85 @@ const AgentCommandStation = () => {
 
               {/* Due Date */}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-white/50 flex items-center gap-1.5">
-                  <Clock3 className="h-3 w-3" /> Due Date
-                </label>
+                <label className="text-xs font-medium text-white/50 flex items-center gap-1.5"><Clock3 className="h-3 w-3" /> Due Date</label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <button
-                      className={cn(
-                        "w-full flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-left transition-colors hover:border-cyan-500/30 focus:outline-none",
-                        selectedDate ? "text-white" : "text-white/30"
-                      )}
-                    >
+                    <button className={cn("w-full flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-left transition-colors hover:border-cyan-500/30 focus:outline-none", selectedDate ? "text-white" : "text-white/30")}>
                       <CalendarIcon className="h-3.5 w-3.5 text-white/30" />
                       {selectedDate ? format(selectedDate, "MMM d, yyyy") : "Pick a due date..."}
                       {selectedDate && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); update("dueDate", undefined); }}
-                          className="ml-auto p-0.5 rounded hover:bg-white/10 text-white/30 hover:text-white/60"
-                        >
+                        <button onClick={(e) => { e.stopPropagation(); updateDraft("due_date", null); }} className="ml-auto p-0.5 rounded hover:bg-white/10 text-white/30 hover:text-white/60">
                           <X className="h-3 w-3" />
                         </button>
                       )}
                     </button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 bg-[hsl(220,20%,9%)] border-cyan-500/20 z-[10000]" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={(d) => update("dueDate", d ? format(d, "yyyy-MM-dd") : undefined)}
-                      initialFocus
-                      className={cn("p-3 pointer-events-auto text-white")}
-                    />
+                    <Calendar mode="single" selected={selectedDate} onSelect={(d) => updateDraft("due_date", d ? format(d, "yyyy-MM-dd") : null)} initialFocus className={cn("p-3 pointer-events-auto text-white")} />
                   </PopoverContent>
                 </Popover>
               </div>
 
-              {/* ── Activity / Comments (edit mode only) ─────────────────── */}
+              {/* Toggles: Recurring, Saved, Archived */}
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { key: "is_recurring", label: "Recurring", icon: RefreshCw, activeColor: "border-purple-500/40 bg-purple-500/10 text-purple-400" },
+                  { key: "is_saved", label: "Saved", icon: Bookmark, activeColor: "border-amber-500/40 bg-amber-500/10 text-amber-400" },
+                  { key: "is_archived", label: "Archived", icon: Archive, activeColor: "border-slate-500/40 bg-slate-500/10 text-slate-400" },
+                ].map(({ key, label, icon: Icon, activeColor }) => {
+                  const active = !!(draft as Record<string, unknown>)[key];
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => updateDraft(key, !active)}
+                      className={cn("flex flex-col items-center gap-1 py-2.5 rounded-xl border transition-all text-xs font-medium", active ? activeColor : "border-white/10 bg-white/5 text-white/30 hover:border-white/20 hover:text-white/50")}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Recurrence pattern (shown when recurring) */}
+              {draft.is_recurring && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-white/50 flex items-center gap-1.5"><RefreshCw className="h-3 w-3" /> Recurrence Pattern</label>
+                  <select value={draft.recurrence_pattern ?? "weekly"} onChange={(e) => updateDraft("recurrence_pattern", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500/40">
+                    <option value="daily" className="bg-[hsl(220,20%,10%)]">Daily</option>
+                    <option value="weekly" className="bg-[hsl(220,20%,10%)]">Weekly</option>
+                    <option value="monthly" className="bg-[hsl(220,20%,10%)]">Monthly</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Activity / Comments (edit mode) */}
               {isEdit && (
                 <div className="space-y-3 pt-2 border-t border-white/5">
                   <div className="flex items-center gap-2">
                     <MessageSquare className="h-3.5 w-3.5 text-cyan-400/70" />
-                    <span className="text-xs font-semibold text-white/50 uppercase tracking-wider">
-                      Activity ({draftComments.length})
-                    </span>
+                    <span className="text-xs font-semibold text-white/50 uppercase tracking-wider">Activity ({draftComments.length})</span>
                   </div>
-
-                  {/* Comment thread */}
                   <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
                     {draftComments.length === 0 && (
-                      <p className="text-[11px] text-white/20 text-center py-4">
-                        No comments yet. Start the conversation.
-                      </p>
+                      <p className="text-[11px] text-white/20 text-center py-4">No comments yet. Start the conversation.</p>
                     )}
                     {draftComments.map((c) => (
                       <div key={c.id} className="flex gap-2.5">
-                        <div className={`h-6 w-6 rounded-full shrink-0 flex items-center justify-center text-[9px] font-bold ${c.avatarColor}`}>
-                          {c.author.charAt(0)}
+                        <div className={`h-6 w-6 rounded-full shrink-0 flex items-center justify-center text-[9px] font-bold ${c.avatar_color}`}>
+                          {c.author.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">
                             <span className="text-[10px] font-semibold text-white/70">{c.author}</span>
-                            <span className="text-[9px] text-white/25">{c.timestamp}</span>
+                            <span className="text-[9px] text-white/25">{format(new Date(c.created_at), "MMM d, h:mm a")}</span>
                           </div>
-                          <p className="text-xs text-white/55 leading-relaxed bg-white/[0.03] rounded-lg px-2.5 py-1.5 border border-white/5">
-                            {c.content}
-                          </p>
+                          <p className="text-xs text-white/55 leading-relaxed bg-white/[0.03] rounded-lg px-2.5 py-1.5 border border-white/5">{c.content}</p>
                         </div>
                       </div>
                     ))}
                   </div>
-
-                  {/* Add comment input */}
-                  <CommentInput taskId={draft.id!} onAdd={addComment} />
+                  <CommentInput taskId={draft.id!} onAdd={handleAddComment} />
                 </div>
               )}
             </div>
@@ -1136,28 +800,13 @@ const AgentCommandStation = () => {
           {/* Footer */}
           <div className="flex items-center justify-between px-6 py-4 border-t border-white/5 shrink-0">
             {isEdit ? (
-              <button
-                onClick={() => { setDeleteConfirm(draft.id!); closeModal(); }}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 text-xs transition-colors"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Delete
+              <button onClick={() => { setDeleteConfirm(draft.id!); closeModal(); }} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 text-xs transition-colors">
+                <Trash2 className="h-3.5 w-3.5" /> Delete
               </button>
-            ) : (
-              <div />
-            )}
+            ) : <div />}
             <div className="flex items-center gap-2">
-              <button
-                onClick={closeModal}
-                className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/60 hover:bg-white/10 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => saveTask(draft)}
-                disabled={!draft.title?.trim()}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/30 text-sm font-medium transition-colors disabled:opacity-40"
-              >
+              <button onClick={closeModal} className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/60 hover:bg-white/10 transition-colors">Cancel</button>
+              <button onClick={saveTask} disabled={!draft.title?.trim()} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/30 text-sm font-medium transition-colors disabled:opacity-40">
                 <Save className="h-3.5 w-3.5" />
                 {isEdit ? "Save Changes" : "Add Task"}
               </button>
@@ -1168,7 +817,7 @@ const AgentCommandStation = () => {
     );
   };
 
-  // ── Delete confirm overlay ────────────────────────────────────────────────
+  // ── Delete confirm ─────────────────────────────────────────────────────────
   const renderDeleteConfirm = () => {
     if (!deleteConfirm) return null;
     const task = tasks.find((t) => t.id === deleteConfirm);
@@ -1178,373 +827,245 @@ const AgentCommandStation = () => {
         <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)} />
         <div className="relative w-full max-w-sm rounded-2xl border border-red-500/30 bg-[hsl(220,20%,7%)] p-6 shadow-[0_0_40px_-10px_rgba(239,68,68,0.3)]">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
-              <Trash2 className="h-5 w-5 text-red-400" />
-            </div>
+            <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center"><Trash2 className="h-5 w-5 text-red-400" /></div>
             <div>
               <p className="text-sm font-semibold text-white">Delete Task?</p>
               <p className="text-xs text-white/40 mt-0.5">This cannot be undone</p>
             </div>
           </div>
-          <p className="text-xs text-white/60 mb-5 bg-white/5 rounded-lg px-3 py-2 border border-white/5 line-clamp-2">
-            "{task.title}"
-          </p>
+          <p className="text-xs text-white/60 mb-5 bg-white/5 rounded-lg px-3 py-2 border border-white/5 line-clamp-2">"{task.title}"</p>
           <div className="flex gap-2">
-            <button
-              onClick={() => setDeleteConfirm(null)}
-              className="flex-1 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/60 hover:bg-white/10 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => deleteTask(deleteConfirm)}
-              className="flex-1 py-2 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 text-sm font-medium transition-colors"
-            >
-              Delete
-            </button>
+            <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/60 hover:bg-white/10 transition-colors">Cancel</button>
+            <button onClick={() => handleDeleteTask(deleteConfirm)} className="flex-1 py-2 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 text-sm font-medium transition-colors">Delete</button>
           </div>
         </div>
       </div>
     );
   };
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // ── TASK BOARD VIEW ───────────────────────────────────────────────────────
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ── TASK BOARD ─────────────────────────────────────────────────────────────
   const renderTaskBoard = () => {
-    const filteredTasks =
-      agentFilter === "all"
-        ? tasks
-        : tasks.filter((t) => t.agentId === agentFilter);
-
-    const getAgentById = (agentId: string) =>
-      agents.find((a) => a.id === agentId);
-
-    const getColumnTasks = (column: KanbanColumn) =>
-      filteredTasks.filter((t) => t.column === column);
+    const filteredTasks = getFilteredTasks();
+    const getAgentById = (agentId: string) => MOCK_AGENTS.find((a) => a.id === agentId);
+    const getColumnTasks = (column: KanbanColumn) => filteredTasks.filter((t) => t.column_id === column);
 
     return (
       <div className="flex-1 flex flex-col min-h-0">
         {/* Toolbar */}
-        <div className="flex items-center gap-3 px-6 py-3 border-b border-border/50 bg-card/30 shrink-0">
-          {/* Agent filter */}
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground/50" />
-            <select
-              value={agentFilter}
-              onChange={(e) => setAgentFilter(e.target.value)}
-              className="bg-background border border-border rounded-lg px-3 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary/50"
-            >
-              <option value="all">All Agents</option>
-              {agents.map((a) => (
-                <option key={a.id} value={a.id}>{a.name}</option>
-              ))}
-            </select>
+        <div className="flex flex-col gap-0 border-b border-border/50 bg-card/30 shrink-0">
+          {/* Top row */}
+          <div className="flex items-center gap-3 px-6 py-3">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground/50" />
+              <select value={agentFilter} onChange={(e) => setAgentFilter(e.target.value)} className="bg-background border border-border rounded-lg px-3 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary/50">
+                <option value="all">All Agents</option>
+                {MOCK_AGENTS.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+              </select>
+            </div>
+            <div className="flex items-center gap-4 text-[11px] text-muted-foreground/60 ml-2">
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-400" />{getColumnTasks("in_progress").length} in progress</span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-purple-400" />{getColumnTasks("review").length} in review</span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400" />{getColumnTasks("done").length} done</span>
+              {overdueCount > 0 && <span className="flex items-center gap-1.5 text-red-400 animate-pulse"><AlertTriangle className="h-3 w-3" />{overdueCount} overdue</span>}
+            </div>
+            <button onClick={() => openAddModal("backlog")} className="ml-auto flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/30 text-xs font-medium transition-colors">
+              <Plus className="h-3.5 w-3.5" /> Add Task
+            </button>
           </div>
 
-          {/* Stats */}
-          <div className="flex items-center gap-4 text-[11px] text-muted-foreground/60 ml-2">
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-amber-400" />
-              {getColumnTasks("in_progress").length} in progress
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-purple-400" />
-              {getColumnTasks("review").length} in review
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              {getColumnTasks("done").length} done
-            </span>
-            <span className="text-muted-foreground/40">|</span>
-            <span>{filteredTasks.length} total tasks</span>
+          {/* Date filter chips */}
+          <div className="flex items-center gap-2 px-6 pb-3 overflow-x-auto">
+            {DATE_FILTERS.map((df) => {
+              const Icon = df.icon;
+              const active = dateFilter === df.id;
+              const isOverdue = df.id === "overdue";
+              return (
+                <button
+                  key={df.id}
+                  onClick={() => setDateFilter(df.id)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all whitespace-nowrap shrink-0",
+                    active
+                      ? isOverdue
+                        ? "bg-red-500/20 border-red-500/40 text-red-400"
+                        : "bg-primary/15 border-primary/30 text-primary"
+                      : "bg-card/50 border-border/40 text-muted-foreground hover:border-border/70 hover:text-foreground"
+                  )}
+                >
+                  <Icon className="h-3 w-3" />
+                  {df.label}
+                  {df.id === "overdue" && overdueCount > 0 && (
+                    <span className="ml-1 bg-red-500/30 text-red-400 text-[9px] font-bold px-1.5 py-0.5 rounded-full">{overdueCount}</span>
+                  )}
+                </button>
+              );
+            })}
           </div>
-
-          {/* Add Task button */}
-          <button
-            onClick={() => openAddModal("backlog")}
-            className="ml-auto flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/30 text-xs font-medium transition-colors"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Add Task
-          </button>
         </div>
 
-        {/* Kanban Columns */}
-        <div className="flex-1 flex gap-4 p-6 overflow-x-auto min-h-0">
-          {COLUMN_CONFIG.map((col) => {
-            const ColIcon = col.Icon;
-            const columnTasks = getColumnTasks(col.id);
-            const isDragOver = dragOverColumn === col.id;
+        {loading ? (
+          <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm gap-2">
+            <RefreshCw className="h-4 w-4 animate-spin" /> Loading tasks...
+          </div>
+        ) : (
+          <div className="flex-1 flex gap-4 p-6 overflow-x-auto min-h-0">
+            {COLUMN_CONFIG.map((col) => {
+              const ColIcon = col.Icon;
+              const columnTasks = getColumnTasks(col.id);
+              const isDragOver = dragOverColumn === col.id;
 
-            return (
-              <div
-                key={col.id}
-                className={`flex flex-col w-72 shrink-0 rounded-2xl border transition-all duration-200 ${
-                  isDragOver
-                    ? `${col.borderClass} bg-card/60 scale-[1.01]`
-                    : "border-border/40 bg-card/30"
-                }`}
-                onDragOver={(e) => handleDragOver(e, col.id)}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, col.id)}
-              >
-                {/* Column Header */}
-                <div className={`flex items-center justify-between px-4 py-3 border-b border-border/30 ${col.bgClass} rounded-t-2xl`}>
-                  <div className="flex items-center gap-2">
-                    <ColIcon className={`h-4 w-4 ${col.colorClass}`} />
-                    <span className={`text-xs font-semibold ${col.colorClass}`}>{col.label}</span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${col.bgClass} ${col.colorClass} border ${col.borderClass} font-medium`}>
-                      {columnTasks.length}
-                    </span>
-                  </div>
-                  {/* Add to column button */}
-                  <button
-                    onClick={() => openAddModal(col.id)}
-                    className={`p-1 rounded-md hover:bg-white/10 ${col.colorClass} opacity-50 hover:opacity-100 transition-all`}
-                    title={`Add task to ${col.label}`}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-
-                {/* Tasks */}
-                <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                  {columnTasks.length === 0 && (
-                    <button
-                      onClick={() => openAddModal(col.id)}
-                      className="w-full flex flex-col items-center justify-center py-8 text-center border border-dashed border-border/30 rounded-xl hover:border-border/60 hover:bg-white/3 transition-colors group"
-                    >
-                      <Plus className="h-5 w-5 text-muted-foreground/20 mb-1 group-hover:text-muted-foreground/50 transition-colors" />
-                      <p className="text-[10px] text-muted-foreground/30 group-hover:text-muted-foreground/50 transition-colors">Add a task</p>
+              return (
+                <div
+                  key={col.id}
+                  className={`flex flex-col w-72 shrink-0 rounded-2xl border transition-all duration-200 ${isDragOver ? `${col.borderClass} bg-card/60 scale-[1.01]` : "border-border/40 bg-card/30"}`}
+                  onDragOver={(e) => handleDragOver(e, col.id)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, col.id)}
+                >
+                  <div className={`flex items-center justify-between px-4 py-3 border-b border-border/30 ${col.bgClass} rounded-t-2xl`}>
+                    <div className="flex items-center gap-2">
+                      <ColIcon className={`h-4 w-4 ${col.colorClass}`} />
+                      <span className={`text-xs font-semibold ${col.colorClass}`}>{col.label}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${col.bgClass} ${col.colorClass} border ${col.borderClass} font-medium`}>{columnTasks.length}</span>
+                    </div>
+                    <button onClick={() => openAddModal(col.id)} className={`p-1 rounded-md hover:bg-white/10 ${col.colorClass} opacity-50 hover:opacity-100 transition-all`} title={`Add task to ${col.label}`}>
+                      <Plus className="h-3.5 w-3.5" />
                     </button>
-                  )}
-                  {columnTasks.map((task) => {
-                    const agent = getAgentById(task.agentId);
-                    const nextColIdx = COLUMN_ORDER.indexOf(task.column);
-                    const canMoveForward = nextColIdx < COLUMN_ORDER.length - 1;
+                  </div>
 
-                    return (
-                      <div
-                        key={task.id}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, task.id)}
-                        onDragEnd={handleDragEnd}
-                        className={`group relative rounded-xl border bg-card/50 p-3 cursor-grab active:cursor-grabbing transition-all duration-150 hover:bg-card/80 hover:shadow-md ${
-                          draggedTaskId === task.id ? "opacity-40 scale-95" : "opacity-100"
-                        } ${
-                          task.dueDate && task.column !== "done" && isPast(parseISO(task.dueDate))
-                            ? "border-red-500/40 hover:border-red-500/60 shadow-[0_0_12px_-4px_rgba(239,68,68,0.3)]"
-                            : task.priority === "high"
-                            ? "border-red-500/20 hover:border-border/70"
-                            : task.priority === "medium"
-                            ? "border-border/40 hover:border-border/70"
-                            : "border-border/20 hover:border-border/70"
-                        }`}
-                      >
-                        {/* Title row with drag handle, edit, and forward button */}
-                        <div className="flex items-start gap-2">
-                          <GripVertical className="h-4 w-4 text-muted-foreground/20 mt-0.5 shrink-0 group-hover:text-muted-foreground/50 transition-colors" />
-                          <p className="text-sm font-medium text-foreground leading-snug flex-1">
-                            {task.title}
-                          </p>
-                          {/* Action buttons */}
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); openEditModal(task); }}
-                              className="p-1 rounded hover:bg-white/10 text-muted-foreground/40 hover:text-cyan-400 transition-colors"
-                              title="Edit task"
-                            >
-                              <Pencil className="h-3 w-3" />
-                            </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setDeleteConfirm(task.id); }}
-                              className="p-1 rounded hover:bg-white/10 text-muted-foreground/40 hover:text-red-400 transition-colors"
-                              title="Delete task"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </button>
-                            {canMoveForward && (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); moveTaskForward(task.id); }}
-                                className="p-1 rounded hover:bg-white/10 text-muted-foreground/40 hover:text-emerald-400 transition-colors"
-                                title="Move to next stage"
-                              >
-                                <ArrowRight className="h-3 w-3" />
+                  <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                    {columnTasks.length === 0 && (
+                      <button onClick={() => openAddModal(col.id)} className="w-full flex flex-col items-center justify-center py-8 text-center border border-dashed border-border/30 rounded-xl hover:border-border/60 hover:bg-white/3 transition-colors group">
+                        <Plus className="h-5 w-5 text-muted-foreground/20 mb-1 group-hover:text-muted-foreground/50 transition-colors" />
+                        <p className="text-[10px] text-muted-foreground/30 group-hover:text-muted-foreground/50 transition-colors">Add a task</p>
+                      </button>
+                    )}
+                    {columnTasks.map((task) => {
+                      const agent = getAgentById(task.agent_id);
+                      const canMoveForward = COLUMN_ORDER.indexOf(task.column_id) < COLUMN_ORDER.length - 1;
+                      const isOverdue = task.due_date && task.column_id !== "done" && isPast(parseISO(task.due_date));
+                      const isNew = !task.last_seen_at;
+
+                      return (
+                        <div
+                          key={task.id}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, task.id)}
+                          onDragEnd={handleDragEnd}
+                          className={`group relative rounded-xl border bg-card/50 p-3 cursor-grab active:cursor-grabbing transition-all duration-150 hover:bg-card/80 hover:shadow-md ${draggedTaskId === task.id ? "opacity-40 scale-95" : "opacity-100"} ${
+                            isOverdue
+                              ? "border-red-500/40 hover:border-red-500/60 shadow-[0_0_12px_-4px_rgba(239,68,68,0.3)]"
+                              : task.priority === "high"
+                              ? "border-red-500/20 hover:border-border/70"
+                              : task.priority === "medium"
+                              ? "border-border/40 hover:border-border/70"
+                              : "border-border/20 hover:border-border/70"
+                          }`}
+                        >
+                          {/* New dot indicator */}
+                          {isNew && <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />}
+
+                          <div className="flex items-start gap-2">
+                            <GripVertical className="h-4 w-4 text-muted-foreground/20 mt-0.5 shrink-0 group-hover:text-muted-foreground/50 transition-colors" />
+                            <p className="text-sm font-medium text-foreground leading-snug flex-1">{task.title}</p>
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                              <button onClick={(e) => { e.stopPropagation(); openEditModal(task); }} className="p-1 rounded hover:bg-white/10 text-muted-foreground/40 hover:text-cyan-400 transition-colors" title="Edit task"><Pencil className="h-3 w-3" /></button>
+                              <button onClick={(e) => { e.stopPropagation(); updateTask(task.id, { is_saved: !task.is_saved }); }} className={`p-1 rounded hover:bg-white/10 transition-colors ${task.is_saved ? "text-amber-400" : "text-muted-foreground/40 hover:text-amber-400"}`} title={task.is_saved ? "Unsave" : "Save"}>
+                                {task.is_saved ? <BookmarkCheck className="h-3 w-3" /> : <Bookmark className="h-3 w-3" />}
                               </button>
+                              <button onClick={(e) => { e.stopPropagation(); updateTask(task.id, { is_archived: !task.is_archived }); }} className={`p-1 rounded hover:bg-white/10 transition-colors ${task.is_archived ? "text-slate-400" : "text-muted-foreground/40 hover:text-slate-400"}`} title={task.is_archived ? "Unarchive" : "Archive"}>
+                                {task.is_archived ? <ArchiveRestore className="h-3 w-3" /> : <Archive className="h-3 w-3" />}
+                              </button>
+                              <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(task.id); }} className="p-1 rounded hover:bg-white/10 text-muted-foreground/40 hover:text-red-400 transition-colors" title="Delete task"><Trash2 className="h-3 w-3" /></button>
+                              {canMoveForward && <button onClick={(e) => { e.stopPropagation(); moveTaskForward(task); }} className="p-1 rounded hover:bg-white/10 text-muted-foreground/40 hover:text-emerald-400 transition-colors" title="Move to next stage"><ArrowRight className="h-3 w-3" /></button>}
+                            </div>
+                          </div>
+
+                          {task.description && <p className="text-[11px] text-muted-foreground/50 leading-relaxed mt-2 ml-6 line-clamp-2">{task.description}</p>}
+
+                          <div className="flex items-center gap-2 mt-3 ml-6 flex-wrap">
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${task.priority === "high" ? "text-red-400 bg-red-500/10 border-red-500/20" : task.priority === "medium" ? "text-amber-400 bg-amber-500/10 border-amber-500/20" : "text-slate-400 bg-slate-500/10 border-slate-500/20"}`}>{task.priority}</span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${task.zone === "clinical" ? "text-red-300/70 bg-red-500/5 border-red-500/15" : task.zone === "operations" ? "text-amber-300/70 bg-amber-500/5 border-amber-500/15" : "text-blue-300/70 bg-blue-500/5 border-blue-500/15"}`}>{task.zone}</span>
+                            {task.is_recurring && <span className="flex items-center gap-0.5 text-[10px] text-purple-400/70"><RefreshCw className="h-2.5 w-2.5" />{task.recurrence_pattern}</span>}
+                            {task.is_saved && <Bookmark className="h-3 w-3 text-amber-400/70" />}
+                            {task.comments.length > 0 && <div className="flex items-center gap-1 text-[10px] text-muted-foreground/40"><MessageSquare className="h-2.5 w-2.5" />{task.comments.length}</div>}
+                            {agent && (
+                              <div className="ml-auto flex items-center gap-1">
+                                <div className={`h-5 w-5 rounded-full flex items-center justify-center text-[8px] font-bold ${agent.zone === "clinical" ? "bg-red-500/20 text-red-400" : agent.zone === "operations" ? "bg-amber-500/20 text-amber-400" : "bg-blue-500/20 text-blue-400"}`}>
+                                  {agent.name.charAt(0)}
+                                </div>
+                                <span className="text-[10px] text-muted-foreground/40">{agent.name.split(" ")[0]}</span>
+                              </div>
                             )}
                           </div>
-                        </div>
 
-                        {/* Description */}
-                        {task.description && (
-                          <p className="text-[11px] text-muted-foreground/50 leading-relaxed mt-2 ml-6 line-clamp-2">
-                            {task.description}
-                          </p>
-                        )}
-
-                        {/* Footer row */}
-                        <div className="flex items-center gap-2 mt-3 ml-6 flex-wrap">
-                          {/* Priority badge */}
-                          <span
-                            className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${
-                              task.priority === "high"
-                                ? "text-red-400 bg-red-500/10 border-red-500/20"
-                                : task.priority === "medium"
-                                ? "text-amber-400 bg-amber-500/10 border-amber-500/20"
-                                : "text-slate-400 bg-slate-500/10 border-slate-500/20"
-                            }`}
-                          >
-                            {task.priority}
-                          </span>
-
-                          {/* Zone badge */}
-                          <span
-                            className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${
-                              task.zone === "clinical"
-                                ? "text-red-300/70 bg-red-500/5 border-red-500/15"
-                                : task.zone === "operations"
-                                ? "text-amber-300/70 bg-amber-500/5 border-amber-500/15"
-                                : "text-blue-300/70 bg-blue-500/5 border-blue-500/15"
-                            }`}
-                          >
-                            {task.zone}
-                          </span>
-
-                          {/* Comments count */}
-                          {task.comments.length > 0 && (
-                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground/40">
-                              <MessageSquare className="h-2.5 w-2.5" />
-                              {task.comments.length}
+                          <div className="flex items-center justify-between mt-2 ml-6">
+                            <div className="flex items-center gap-2">
+                              <p className="text-[9px] text-muted-foreground/25">{format(new Date(task.created_at), "MMM d")}</p>
+                              {task.last_seen_at && <p className="text-[9px] text-muted-foreground/20">· seen {format(new Date(task.last_seen_at), "h:mm a")}</p>}
                             </div>
-                          )}
-
-                          {/* Agent avatar */}
-                          {agent && (
-                            <div className="ml-auto flex items-center gap-1">
-                              <div className={`h-5 w-5 rounded-full flex items-center justify-center text-[8px] font-bold ${
-                                agent.zone === "clinical" ? "bg-red-500/20 text-red-400" :
-                                agent.zone === "operations" ? "bg-amber-500/20 text-amber-400" :
-                                "bg-blue-500/20 text-blue-400"
-                              }`}>
-                                {agent.name.charAt(0)}
-                              </div>
-                              <span className="text-[10px] text-muted-foreground/40">{agent.name.split(" ")[0]}</span>
-                            </div>
-                          )}
+                            {task.due_date && (() => {
+                              const due = parseISO(task.due_date);
+                              const overdue = task.column_id !== "done" && isPast(due);
+                              return (
+                                <div className={cn("flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded border", overdue ? "text-red-400 bg-red-500/15 border-red-500/30 animate-pulse" : isToday(due) ? "text-amber-400 bg-amber-500/15 border-amber-500/30" : "text-white/30 bg-white/5 border-white/10")}>
+                                  <Clock3 className="h-2.5 w-2.5" />
+                                  {overdue ? "Overdue · " : isToday(due) ? "Today · " : ""}{format(due, "MMM d")}
+                                </div>
+                              );
+                            })()}
+                          </div>
                         </div>
+                      );
+                    })}
+                  </div>
 
-                        {/* Due date + Created at */}
-                        <div className="flex items-center justify-between mt-2 ml-6">
-                          <p className="text-[9px] text-muted-foreground/25">{task.createdAt}</p>
-                          {task.dueDate && (() => {
-                            const due = parseISO(task.dueDate);
-                            const overdue = task.column !== "done" && isPast(due);
-                            return (
-                              <div className={cn(
-                                "flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded border",
-                                overdue
-                                  ? "text-red-400 bg-red-500/15 border-red-500/30 animate-pulse"
-                                  : "text-white/30 bg-white/5 border-white/10"
-                              )}>
-                                <Clock3 className="h-2.5 w-2.5" />
-                                {overdue ? "Overdue · " : ""}{format(due, "MMM d")}
-                              </div>
-                            );
-                          })()}
-                        </div>
-                      </div>
-                    );
-                  })}
+                  <div className="px-3 pb-3 pt-1">
+                    <button onClick={() => openAddModal(col.id)} className={`w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed ${col.borderClass} ${col.colorClass} opacity-30 hover:opacity-70 transition-opacity text-xs`}>
+                      <Plus className="h-3.5 w-3.5" /> Add to {col.label}
+                    </button>
+                  </div>
                 </div>
-
-                {/* Column footer — add button */}
-                <div className="px-3 pb-3 pt-1">
-                  <button
-                    onClick={() => openAddModal(col.id)}
-                    className={`w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed ${col.borderClass} ${col.colorClass} opacity-30 hover:opacity-70 transition-opacity text-xs`}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    Add to {col.label}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   };
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // ── MAIN LAYOUT ────────────────────────────────────────────────────────
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ── MAIN LAYOUT ─────────────────────────────────────────────────────────────
   return (
     <div className="flex min-h-screen bg-background">
-      <DashboardSidebar />
+      <DashboardSidebar overdueTaskCount={overdueCount} />
 
       <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
         <div className="px-8 pt-8 pb-4 border-b border-border shrink-0">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold font-heading gradient-hero-text">
-                {t("commandStation.title")}
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                {t("commandStation.subtitle")}
-              </p>
+              <h1 className="text-3xl font-bold font-heading gradient-hero-text">{t("commandStation.title")}</h1>
+              <p className="text-muted-foreground mt-1">{t("commandStation.subtitle")}</p>
             </div>
-
             <div className="flex items-center gap-3">
-              {/* View toggles */}
               <div className="flex items-center rounded-xl border border-border bg-card overflow-hidden">
-                <button
-                  onClick={() => setViewMode("board")}
-                  className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium transition-colors ${
-                    viewMode === "board"
-                      ? "bg-primary/15 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
-                  }`}
-                >
-                  <LayoutList className="h-4 w-4" />
-                  Task Board
+                <button onClick={() => setViewMode("board")} className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium transition-colors ${viewMode === "board" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/40"}`}>
+                  <LayoutList className="h-4 w-4" /> Task Board
                 </button>
-                <button
-                  onClick={() => setViewMode("split")}
-                  className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium transition-colors ${
-                    viewMode === "split"
-                      ? "bg-primary/15 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
-                  }`}
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                  Multi-Screen
+                <button onClick={() => setViewMode("split")} className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium transition-colors ${viewMode === "split" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/40"}`}>
+                  <LayoutGrid className="h-4 w-4" /> Multi-Screen
                 </button>
               </div>
-
-              {/* Fullscreen */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setFullscreenMode(true)}
-                className="gap-1.5 text-muted-foreground hover:text-foreground"
-              >
-                <Fullscreen className="h-4 w-4" />
-                {t("commandStation.agentScreen")}
+              <Button variant="outline" size="sm" onClick={() => setFullscreenMode(true)} className="gap-1.5 text-muted-foreground hover:text-foreground">
+                <Fullscreen className="h-4 w-4" /> {t("commandStation.agentScreen")}
               </Button>
             </div>
           </div>
         </div>
 
-        {/* ── SPLIT VIEW ─────────────────────────────────────────── */}
         {viewMode === "split" && renderSplitScreen()}
-
-        {/* ── TASK BOARD VIEW ──────────────────────────────────────── */}
         {viewMode === "board" && renderTaskBoard()}
       </main>
 
-      {/* Task modals rendered at root level */}
       {renderTaskModal()}
       {renderDeleteConfirm()}
     </div>

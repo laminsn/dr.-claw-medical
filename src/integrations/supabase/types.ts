@@ -193,6 +193,63 @@ export type Database = {
         }
         Relationships: []
       }
+      kanban_tasks: {
+        Row: {
+          agent_id: string
+          column_id: string
+          created_at: string
+          description: string
+          due_date: string | null
+          id: string
+          is_archived: boolean
+          is_recurring: boolean
+          is_saved: boolean
+          last_seen_at: string | null
+          priority: string
+          recurrence_pattern: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          zone: string
+        }
+        Insert: {
+          agent_id?: string
+          column_id?: string
+          created_at?: string
+          description?: string
+          due_date?: string | null
+          id?: string
+          is_archived?: boolean
+          is_recurring?: boolean
+          is_saved?: boolean
+          last_seen_at?: string | null
+          priority?: string
+          recurrence_pattern?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          zone?: string
+        }
+        Update: {
+          agent_id?: string
+          column_id?: string
+          created_at?: string
+          description?: string
+          due_date?: string | null
+          id?: string
+          is_archived?: boolean
+          is_recurring?: boolean
+          is_saved?: boolean
+          last_seen_at?: string | null
+          priority?: string
+          recurrence_pattern?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          zone?: string
+        }
+        Relationships: []
+      }
       marketplace_skills: {
         Row: {
           author_id: string
@@ -332,6 +389,44 @@ export type Database = {
             columns: ["skill_id"]
             isOneToOne: false
             referencedRelation: "marketplace_skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_comments: {
+        Row: {
+          author: string
+          avatar_color: string
+          content: string
+          created_at: string
+          id: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          author?: string
+          avatar_color?: string
+          content: string
+          created_at?: string
+          id?: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          author?: string
+          avatar_color?: string
+          content?: string
+          created_at?: string
+          id?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_comments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "kanban_tasks"
             referencedColumns: ["id"]
           },
         ]
