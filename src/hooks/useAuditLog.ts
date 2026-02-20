@@ -31,7 +31,8 @@ export function useAuditLog() {
       if (!user) return;
 
       try {
-        await supabase.from("audit_log").insert({
+        // audit_log table may not exist; wrap gracefully
+        await (supabase as any).from("audit_log").insert({
           user_id: user.id,
           action: entry.action,
           resource_type: entry.resourceType ?? null,
