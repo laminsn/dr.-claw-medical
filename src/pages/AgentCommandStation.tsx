@@ -38,6 +38,7 @@ import {
   Archive,
   ArchiveRestore,
   BookmarkCheck,
+  BarChart2,
 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -47,6 +48,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useKanbanTasks, KanbanTask, KanbanColumn, KanbanTaskInput, TaskComment, DateFilter } from "@/hooks/useKanbanTasks";
 import { useAuth } from "@/hooks/useAuth";
+import { TaskAnalyticsDashboard } from "@/components/command-station/TaskAnalyticsDashboard";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface AgentMessage {
@@ -83,7 +85,7 @@ interface AgentState {
   messages: AgentMessage[];
 }
 
-type ViewMode = "board" | "split";
+type ViewMode = "board" | "split" | "analytics";
 
 // ── Mock Data ───────────────────────────────────────────────────────────────
 const MOCK_AGENTS: AgentState[] = [
@@ -1051,6 +1053,9 @@ const AgentCommandStation = () => {
                 <button onClick={() => setViewMode("board")} className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium transition-colors ${viewMode === "board" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/40"}`}>
                   <LayoutList className="h-4 w-4" /> Task Board
                 </button>
+                <button onClick={() => setViewMode("analytics")} className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium transition-colors ${viewMode === "analytics" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/40"}`}>
+                  <BarChart2 className="h-4 w-4" /> Analytics
+                </button>
                 <button onClick={() => setViewMode("split")} className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium transition-colors ${viewMode === "split" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/40"}`}>
                   <LayoutGrid className="h-4 w-4" /> Multi-Screen
                 </button>
@@ -1064,6 +1069,7 @@ const AgentCommandStation = () => {
 
         {viewMode === "split" && renderSplitScreen()}
         {viewMode === "board" && renderTaskBoard()}
+        {viewMode === "analytics" && <TaskAnalyticsDashboard tasks={tasks} />}
       </main>
 
       {renderTaskModal()}
