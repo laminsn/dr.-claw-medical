@@ -28,6 +28,22 @@ import {
   Trash2,
   ArrowRight,
   Download,
+  Code,
+  Linkedin,
+  Sparkles,
+  ChevronsUpDown,
+  Power,
+  PowerOff,
+  Edit3,
+  Save,
+  AlertTriangle,
+  FileJson,
+  Activity,
+  DollarSign,
+  Clock,
+  Target,
+  BarChart3,
+  RefreshCw,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
@@ -123,6 +139,9 @@ const DEPARTMENT_ICONS: Record<string, string> = {
   "Human Resources": "users",
   "Research & Development": "git-branch",
   "IT & Security": "settings",
+  "Development & Integration": "code",
+  "Clawbots": "linkedin",
+  "Intelligence & Analytics": "sparkles",
 };
 
 // ── Default Capabilities for new agents ─────────────────────────────────────
@@ -215,6 +234,44 @@ const DEPARTMENT_TEMPLATES: DepartmentTemplate[] = [
       { name: "Compliance Guard", role: "Compliance Officer", zone: "operations", active: true, model: "claude", skills: ["HIPAA Compliance", "Audit Preparation", "Policy Enforcement"], level: "worker" },
     ],
   },
+  {
+    id: "tpl-dev",
+    name: "Development & Integration",
+    icon: "code",
+    description: "Notion specialist, Airtable specialist, coding specialist, and application specialist for platform development.",
+    agents: [
+      { name: "Dev Lead", role: "Development Director", zone: "operations", active: true, model: "claude", skills: ["Architecture Planning", "Code Review", "Technical Strategy"], level: "department-head" },
+      { name: "Notion Architect", role: "Notion Development Specialist", zone: "operations", active: true, model: "claude", skills: ["Database Architecture", "Notion API", "Template Design", "Automation Workflows"], level: "worker" },
+      { name: "Airtable Builder", role: "Airtable Development Specialist", zone: "operations", active: true, model: "claude", skills: ["Base Architecture", "Scripting & Extensions", "Interface Designer", "API Integration"], level: "worker" },
+      { name: "Code Engine", role: "Coding Specialist", zone: "operations", active: true, model: "claude", skills: ["Full-Stack Development", "API Development", "Testing & QA", "DevOps"], level: "worker" },
+      { name: "App Strategist", role: "Application Specialist", zone: "operations", active: true, model: "claude", skills: ["Requirements Analysis", "Application Architecture", "MVP Strategy", "Deployment Management"], level: "worker" },
+    ],
+  },
+  {
+    id: "tpl-clawbots",
+    name: "Clawbots",
+    icon: "linkedin",
+    description: "LinkedIn Clawbot and Google Search Clawbot for autonomous client prospecting and lead generation.",
+    agents: [
+      { name: "Clawbot Commander", role: "Lead Generation Director", zone: "external", active: true, model: "claude", skills: ["Prospect Strategy", "Pipeline Management", "Lead Scoring"], level: "department-head" },
+      { name: "LinkedIn Clawbot", role: "LinkedIn Client Clawbot", zone: "external", active: true, model: "claude", skills: ["ICP Targeting", "Connection Personalization", "Messaging Sequences", "Thought Leadership"], level: "worker" },
+      { name: "Google Search Clawbot", role: "Google Client Search Clawbot", zone: "external", active: true, model: "gemini", skills: ["Advanced Search Queries", "Company Intelligence", "Intent Signal Detection", "Lead Scoring"], level: "worker" },
+      { name: "Book Research Bot", role: "Book Read & Research Specialist", zone: "external", active: true, model: "claude", skills: ["Book Summarization", "Key Insight Extraction", "Curated Reading Lists", "Thematic Synthesis"], level: "worker" },
+      { name: "Video Producer Bot", role: "Instructional Video Maker", zone: "external", active: true, model: "openai", skills: ["Script Writing", "Storyboard Development", "Course Curriculum", "Production Planning"], level: "worker" },
+    ],
+  },
+  {
+    id: "tpl-intelligence",
+    name: "Intelligence & Analytics",
+    icon: "sparkles",
+    description: "Self-improving agent optimizer and analytics hub for continuous platform evolution and data-driven insights.",
+    agents: [
+      { name: "Intelligence Prime", role: "Chief Intelligence Officer", zone: "operations", active: true, model: "claude", skills: ["Performance Strategy", "Optimization Planning", "Quality Governance"], level: "department-head" },
+      { name: "Self-Improve Engine", role: "Self-Improving Agent", zone: "operations", active: true, model: "claude", skills: ["Agent Monitoring", "Prompt Optimization", "A/B Testing", "Regression Detection"], level: "worker" },
+      { name: "Analytics Hub", role: "Analytics & Data Specialist", zone: "operations", active: true, model: "claude", skills: ["Dashboard Development", "Predictive Analytics", "KPI Tracking", "Anomaly Detection"], level: "worker" },
+      { name: "Home Health Researcher", role: "Home Healthcare & Hospice Researcher", zone: "clinical", active: true, model: "claude", skills: ["CMS Regulatory Research", "OASIS Guidance", "Quality Measures", "Accreditation Prep"], level: "worker" },
+    ],
+  },
 ];
 
 // ── Initial Access ──────────────────────────────────────────────────────────
@@ -227,6 +284,9 @@ const INITIAL_ACCESS: DepartmentAccess[] = [
   { departmentName: "Human Resources", accessLevel: "department-only" },
   { departmentName: "Research & Development", accessLevel: "all-staff" },
   { departmentName: "IT & Security", accessLevel: "admin-only" },
+  { departmentName: "Development & Integration", accessLevel: "department-only" },
+  { departmentName: "Clawbots", accessLevel: "department-only" },
+  { departmentName: "Intelligence & Analytics", accessLevel: "admin-only" },
 ];
 
 // ── Helper Functions ────────────────────────────────────────────────────────
@@ -240,6 +300,9 @@ function getDeptIcon(iconKey: string) {
     case "users": return <Users className="h-5 w-5" />;
     case "git-branch": return <GitBranch className="h-5 w-5" />;
     case "settings": return <Settings className="h-5 w-5" />;
+    case "code": return <Code className="h-5 w-5" />;
+    case "linkedin": return <Linkedin className="h-5 w-5" />;
+    case "sparkles": return <Sparkles className="h-5 w-5" />;
     default: return <Building2 className="h-5 w-5" />;
   }
 }
@@ -294,7 +357,16 @@ const AgentOrgChart = () => {
   const [expandedDepts, setExpandedDepts] = useState<Set<string>>(new Set([
     "Executive", "Clinical Operations", "Marketing & Growth",
     "Finance & Accounting", "Human Resources", "Research & Development", "IT & Security",
+    "Development & Integration", "Clawbots", "Intelligence & Analytics",
   ]));
+
+  // Detail dialog editing state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editRole, setEditRole] = useState("");
+  const [editModel, setEditModel] = useState("");
+  const [editSkills, setEditSkills] = useState("");
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
 
   // New agent form state
   const [newName, setNewName] = useState("");
@@ -344,6 +416,38 @@ const AgentOrgChart = () => {
   const openAgentDetail = (agent: MyAgent) => {
     setSelectedAgent(agent);
     setDetailOpen(true);
+    setIsEditing(false);
+    setConfirmRemoveId(null);
+  };
+
+  const startEditing = (agent: MyAgent) => {
+    setEditName(agent.name);
+    setEditRole(agent.role);
+    setEditModel(agent.model);
+    setEditSkills(agent.skills.join(", "));
+    setIsEditing(true);
+  };
+
+  const saveEdit = () => {
+    if (!selectedAgent || !editName.trim() || !editRole.trim()) {
+      toast({ title: "Missing Fields", description: "Name and role are required." });
+      return;
+    }
+    updateAgent(selectedAgent.id, {
+      name: editName.trim(),
+      role: editRole.trim(),
+      model: editModel,
+      skills: editSkills.split(",").map((s) => s.trim()).filter(Boolean),
+    });
+    setSelectedAgent({
+      ...selectedAgent,
+      name: editName.trim(),
+      role: editRole.trim(),
+      model: editModel,
+      skills: editSkills.split(",").map((s) => s.trim()).filter(Boolean),
+    });
+    setIsEditing(false);
+    toast({ title: "Agent Updated", description: `${editName.trim()} has been updated.` });
   };
 
   const removeAgent = (agentId: string) => {
@@ -356,6 +460,7 @@ const AgentOrgChart = () => {
     deleteAgentFromContext(agentId);
     setDetailOpen(false);
     setSelectedAgent(null);
+    setConfirmRemoveId(null);
     toast({ title: "Agent Removed", description: `${agent.name} has been removed from the org chart.` });
   };
 
@@ -570,6 +675,48 @@ const AgentOrgChart = () => {
   const zoomOut = () => setZoom((z) => Math.max(z - 10, 60));
   const resetZoom = () => setZoom(100);
 
+  const expandAll = () => setExpandedDepts(new Set(departments));
+  const collapseAll = () => setExpandedDepts(new Set());
+
+  const bulkToggleDept = (deptName: string, activate: boolean) => {
+    const deptAgents = agents.filter((a) => a.department === deptName);
+    deptAgents.forEach((a) => updateAgent(a.id, { active: activate }));
+    toast({
+      title: activate ? "Department Activated" : "Department Deactivated",
+      description: `${deptAgents.length} agent${deptAgents.length !== 1 ? "s" : ""} in ${deptName} ${activate ? "activated" : "deactivated"}.`,
+    });
+  };
+
+  const exportOrgChart = () => {
+    const exportData = {
+      exportedAt: new Date().toISOString(),
+      totalAgents: agents.length,
+      departments: departments.map((dept) => ({
+        name: dept,
+        agents: agents.filter((a) => a.department === dept).map((a) => ({
+          id: a.id,
+          name: a.name,
+          role: a.role,
+          level: a.level,
+          zone: a.zone,
+          model: a.model,
+          active: a.active,
+          skills: a.skills,
+          successRate: a.successRate,
+          costMonth: a.costMonth,
+        })),
+      })),
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `dr-claw-org-chart-${new Date().toISOString().split("T")[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Exported", description: "Org chart data exported as JSON." });
+  };
+
   // ── Sub-Components ──────────────────────────────────────────────────────
 
   const AccessBadge = ({ level }: { level: AccessLevel }) => {
@@ -744,7 +891,27 @@ const AgentOrgChart = () => {
             <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-border text-muted-foreground">
               {deptAgents.length}
             </Badge>
+            <Badge variant="outline" className="text-[10px] px-1 py-0 border-emerald-500/30 text-emerald-400">
+              {deptAgents.filter((a) => a.active).length} active
+            </Badge>
             {isRestricted && <Lock className="h-3.5 w-3.5 text-red-400/70" />}
+            {/* Bulk toggle buttons */}
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={(e) => { e.stopPropagation(); bulkToggleDept(deptName, true); }}
+                className="p-1 rounded hover:bg-emerald-500/10 text-emerald-400"
+                title="Activate all agents"
+              >
+                <Power className="h-3 w-3" />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); bulkToggleDept(deptName, false); }}
+                className="p-1 rounded hover:bg-red-500/10 text-red-400"
+                title="Deactivate all agents"
+              >
+                <PowerOff className="h-3 w-3" />
+              </button>
+            </span>
             {isDeptDropTarget && (
               <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/40 text-[10px] animate-pulse">
                 Drop here
@@ -966,6 +1133,34 @@ const AgentOrgChart = () => {
                   </button>
                 </div>
 
+                <div className="flex items-center gap-1 bg-card/50 border border-border rounded-lg p-1">
+                  <button
+                    onClick={expandAll}
+                    className="p-2 rounded-md text-muted-foreground hover:text-foreground transition-colors"
+                    title="Expand All"
+                  >
+                    <ChevronsUpDown className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={collapseAll}
+                    className="p-2 rounded-md text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    title="Collapse All"
+                  >
+                    Collapse
+                  </button>
+                </div>
+
+                <Button
+                  onClick={exportOrgChart}
+                  variant="outline"
+                  size="sm"
+                  className="border-border text-muted-foreground hover:text-foreground"
+                  title="Export org chart as JSON"
+                >
+                  <FileJson className="h-4 w-4 mr-1" />
+                  Export
+                </Button>
+
                 <Button
                   onClick={() => setAddAgentOpen(true)}
                   className="gradient-primary text-primary-foreground shadow-glow-sm"
@@ -1022,22 +1217,59 @@ const AgentOrgChart = () => {
                 className="glass-card rounded-2xl border border-border p-6 overflow-auto"
                 style={{ transform: `scale(${zoom / 100})`, transformOrigin: "top left" }}
               >
-                {viewMode === "tree" ? (
+                {agents.length === 0 ? (
+                  /* Empty state */
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-card border border-border flex items-center justify-center mb-4">
+                      <Network className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No Agents in Org Chart</h3>
+                    <p className="text-sm text-muted-foreground max-w-md mb-6">
+                      Your organization chart is empty. Add agents manually or use the Templates tab to deploy pre-configured departments with agents.
+                    </p>
+                    <div className="flex gap-3">
+                      <Button
+                        onClick={() => setAddAgentOpen(true)}
+                        className="gradient-primary text-primary-foreground shadow-glow-sm"
+                        size="sm"
+                      >
+                        <Plus className="h-4 w-4 mr-1" /> Add Agent
+                      </Button>
+                      <Button
+                        onClick={() => setActiveTab("templates")}
+                        variant="outline"
+                        size="sm"
+                        className="border-border text-foreground"
+                      >
+                        <Download className="h-4 w-4 mr-1" /> Browse Templates
+                      </Button>
+                    </div>
+                  </div>
+                ) : viewMode === "tree" ? (
                   <div className="space-y-6">
                     {/* CEO */}
                     {(() => {
                       const ceo = getCeo();
-                      return ceo ? (
+                      if (!ceo) return (
+                        <div className="max-w-lg mx-auto mb-2 p-4 rounded-xl border border-dashed border-amber-500/30 bg-amber-500/5 text-center">
+                          <AlertTriangle className="h-5 w-5 text-amber-400 mx-auto mb-2" />
+                          <p className="text-sm text-amber-400 font-medium">No CEO Agent</p>
+                          <p className="text-xs text-muted-foreground mt-1">Assign a CEO-level agent to anchor the org chart hierarchy.</p>
+                        </div>
+                      );
+                      return (
                         <div className="max-w-lg mx-auto mb-2">
                           <AgentNode agent={ceo} />
                         </div>
-                      ) : null;
+                      );
                     })()}
 
                     {/* Connector from CEO */}
-                    <div className="flex justify-center">
-                      <div className="w-px h-6 border-l-2 border-dashed border-border/50" />
-                    </div>
+                    {getCeo() && (
+                      <div className="flex justify-center">
+                        <div className="w-px h-6 border-l-2 border-dashed border-border/50" />
+                      </div>
+                    )}
 
                     {/* Department Columns */}
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -1392,8 +1624,8 @@ const AgentOrgChart = () => {
       ═══════════════════════════════════════════════════════════════════ */}
 
       {/* Agent Detail Dialog */}
-      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="bg-card border-border max-w-md">
+      <Dialog open={detailOpen} onOpenChange={(open) => { setDetailOpen(open); if (!open) { setIsEditing(false); setConfirmRemoveId(null); } }}>
+        <DialogContent className="bg-card border-border max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-foreground">
               {selectedAgent && (
@@ -1405,18 +1637,60 @@ const AgentOrgChart = () => {
                       <Bot className={`h-4 w-4 ${ZONE_STYLES[selectedAgent.zone].text}`} />
                     )}
                   </div>
-                  {selectedAgent.name}
+                  {isEditing ? (
+                    <Input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="h-8 text-sm bg-card/50 border-border max-w-[200px]"
+                    />
+                  ) : (
+                    selectedAgent.name
+                  )}
+                  {!isEditing && selectedAgent.level !== "ceo" && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => startEditing(selectedAgent)}
+                      className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                    >
+                      <Edit3 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                 </>
               )}
             </DialogTitle>
           </DialogHeader>
           {selectedAgent && (
             <div className="space-y-4">
-              {/* Role & Zone */}
+              {/* Performance Metrics */}
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { label: "Tasks Today", value: selectedAgent.tasksToday, icon: Activity, color: "text-blue-400" },
+                  { label: "Success Rate", value: `${selectedAgent.successRate}%`, icon: Target, color: "text-emerald-400" },
+                  { label: "Cost Today", value: `$${selectedAgent.costToday.toFixed(2)}`, icon: DollarSign, color: "text-amber-400" },
+                  { label: "Tokens", value: selectedAgent.tokensUsed > 0 ? `${(selectedAgent.tokensUsed / 1000).toFixed(0)}K` : "0", icon: BarChart3, color: "text-violet-400" },
+                ].map((metric) => (
+                  <div key={metric.label} className="rounded-lg border border-border/50 bg-card/30 p-2 text-center">
+                    <metric.icon className={`h-3.5 w-3.5 ${metric.color} mx-auto mb-1`} />
+                    <div className="text-sm font-bold text-foreground">{metric.value}</div>
+                    <div className="text-[9px] text-muted-foreground leading-tight">{metric.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Role & Department */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs text-muted-foreground">Role</Label>
-                  <p className="text-sm text-foreground">{selectedAgent.role}</p>
+                  {isEditing ? (
+                    <Input
+                      value={editRole}
+                      onChange={(e) => setEditRole(e.target.value)}
+                      className="mt-1 h-8 text-sm bg-card/50 border-border"
+                    />
+                  ) : (
+                    <p className="text-sm text-foreground">{selectedAgent.role}</p>
+                  )}
                 </div>
                 <div>
                   <Label className="text-xs text-muted-foreground">Department</Label>
@@ -1435,9 +1709,27 @@ const AgentOrgChart = () => {
                 </div>
                 <div>
                   <Label className="text-xs text-muted-foreground">Model</Label>
-                  <p className={`text-sm ${getModelColor(selectedAgent.model)}`}>
-                    {getModelLabel(selectedAgent.model)}
-                  </p>
+                  {isEditing ? (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {MODEL_OPTIONS.map((model) => (
+                        <button
+                          key={model.id}
+                          onClick={() => setEditModel(model.id)}
+                          className={`px-2 py-1 rounded text-[10px] font-medium transition-all border ${
+                            editModel === model.id
+                              ? `${model.color} bg-card border-border`
+                              : "border-border/50 text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          {model.label.split(" ").pop()}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className={`text-sm ${getModelColor(selectedAgent.model)}`}>
+                      {getModelLabel(selectedAgent.model)}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -1457,53 +1749,150 @@ const AgentOrgChart = () => {
                 </div>
               </div>
 
-              {/* Skills */}
-              <div>
-                <Label className="text-xs text-muted-foreground">Skills</Label>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {selectedAgent.skills.map((skill) => (
-                    <Badge key={skill} variant="outline" className="text-[10px] border-border text-foreground">
-                      {skill}
-                    </Badge>
-                  ))}
+              {/* Extra metrics row */}
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Avg Response</Label>
+                  <div className="flex items-center gap-1 mt-1">
+                    <Clock className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-sm text-foreground">{selectedAgent.avgResponseTime}</span>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Cost/Month</Label>
+                  <div className="flex items-center gap-1 mt-1">
+                    <DollarSign className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-sm text-foreground">${selectedAgent.costMonth.toFixed(2)}</span>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Total Tasks</Label>
+                  <div className="flex items-center gap-1 mt-1">
+                    <Activity className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-sm text-foreground">{selectedAgent.taskCount}</span>
+                  </div>
                 </div>
               </div>
 
+              {/* Skills */}
+              <div>
+                <Label className="text-xs text-muted-foreground">Skills</Label>
+                {isEditing ? (
+                  <Input
+                    value={editSkills}
+                    onChange={(e) => setEditSkills(e.target.value)}
+                    placeholder="Comma-separated skills"
+                    className="mt-1 h-8 text-sm bg-card/50 border-border"
+                  />
+                ) : (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {selectedAgent.skills.map((skill) => (
+                      <Badge key={skill} variant="outline" className="text-[10px] border-border text-foreground">
+                        {skill}
+                      </Badge>
+                    ))}
+                    {selectedAgent.skills.length === 0 && (
+                      <span className="text-xs text-muted-foreground italic">No skills assigned</span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Removal Confirmation */}
+              {confirmRemoveId === selectedAgent.id && (
+                <div className="p-3 rounded-xl border border-red-500/30 bg-red-500/5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle className="h-4 w-4 text-red-400" />
+                    <span className="text-sm font-medium text-red-400">Confirm Removal</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Are you sure you want to remove <strong className="text-foreground">{selectedAgent.name}</strong> from the org chart? This action cannot be undone.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => removeAgent(selectedAgent.id)}
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 mr-1" /> Yes, Remove
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setConfirmRemoveId(null)}
+                      className="border-border text-foreground"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Actions */}
               <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    toggleAgentStatus(selectedAgent.id);
-                    setSelectedAgent({ ...selectedAgent, active: !selectedAgent.active });
-                  }}
-                  className="border-border text-foreground"
-                >
-                  {selectedAgent.active ? (
-                    <><EyeOff className="h-3.5 w-3.5 mr-1" /> Deactivate</>
-                  ) : (
-                    <><Eye className="h-3.5 w-3.5 mr-1" /> Activate</>
-                  )}
-                </Button>
-                {selectedAgent.level !== "ceo" && (
+                {isEditing ? (
+                  <>
+                    <Button
+                      size="sm"
+                      onClick={saveEdit}
+                      className="gradient-primary text-primary-foreground shadow-glow-sm"
+                    >
+                      <Save className="h-3.5 w-3.5 mr-1" /> Save Changes
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIsEditing(false)}
+                      className="border-border text-foreground"
+                    >
+                      <X className="h-3.5 w-3.5 mr-1" /> Cancel
+                    </Button>
+                  </>
+                ) : (
                   <>
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => startMoveAgent(selectedAgent.id)}
-                      className="border-violet-500/30 text-violet-400 hover:bg-violet-500/10"
+                      onClick={() => {
+                        toggleAgentStatus(selectedAgent.id);
+                        setSelectedAgent({ ...selectedAgent, active: !selectedAgent.active });
+                      }}
+                      className="border-border text-foreground"
                     >
-                      <ArrowRight className="h-3.5 w-3.5 mr-1" /> Move
+                      {selectedAgent.active ? (
+                        <><PowerOff className="h-3.5 w-3.5 mr-1" /> Deactivate</>
+                      ) : (
+                        <><Power className="h-3.5 w-3.5 mr-1" /> Activate</>
+                      )}
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => removeAgent(selectedAgent.id)}
-                      className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                    >
-                      <Trash2 className="h-3.5 w-3.5 mr-1" /> Remove
-                    </Button>
+                    {selectedAgent.level !== "ceo" && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => startEditing(selectedAgent)}
+                          className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+                        >
+                          <Edit3 className="h-3.5 w-3.5 mr-1" /> Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => startMoveAgent(selectedAgent.id)}
+                          className="border-violet-500/30 text-violet-400 hover:bg-violet-500/10"
+                        >
+                          <ArrowRight className="h-3.5 w-3.5 mr-1" /> Move
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setConfirmRemoveId(selectedAgent.id)}
+                          className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                        >
+                          <Trash2 className="h-3.5 w-3.5 mr-1" /> Remove
+                        </Button>
+                      </>
+                    )}
                   </>
                 )}
               </div>
@@ -1551,6 +1940,7 @@ const AgentOrgChart = () => {
                 {[
                   "Clinical Operations", "Marketing & Growth", "Finance & Accounting",
                   "Human Resources", "Research & Development", "IT & Security",
+                  "Development & Integration", "Clawbots", "Intelligence & Analytics",
                 ].map((dept) => (
                   <button
                     key={dept}
