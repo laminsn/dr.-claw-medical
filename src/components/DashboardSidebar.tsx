@@ -50,7 +50,7 @@ const DashboardSidebar = ({ overdueTaskCount = 0 }: { overdueTaskCount?: number 
   const menuItems = [
     { icon: LayoutDashboard, label: t("sidebar.clinicalOverview"), path: "/dashboard" },
     { icon: Bot, label: t("sidebar.healthcareAgents"), path: "/dashboard/agents" },
-    { icon: Terminal, label: "Command Station", path: "/dashboard/command", badge: overdueTaskCount > 0 ? overdueTaskCount : undefined },
+    { icon: Terminal, label: t("sidebar.commandStation"), path: "/dashboard/command", badge: overdueTaskCount > 0 ? overdueTaskCount : undefined },
     { icon: Network, label: t("sidebar.agentOrgChart"), path: "/dashboard/org-chart" },
     { icon: Database, label: t("sidebar.agentDataCenter"), path: "/dashboard/data-center" },
     { icon: MessageCircle, label: t("sidebar.agentPlayground"), path: "/dashboard/playground" },
