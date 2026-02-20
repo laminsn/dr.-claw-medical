@@ -55,6 +55,13 @@ import {
   RefreshCw,
   BookOpen,
   Linkedin,
+  Rocket,
+  Handshake,
+  Mail,
+  Share2,
+  Send,
+  UserPlus,
+  Database,
   type LucideIcon,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
@@ -123,6 +130,13 @@ const iconMap: Record<string, LucideIcon> = {
   RefreshCw,
   BookOpen,
   Linkedin,
+  Rocket,
+  Handshake,
+  Mail,
+  Share2,
+  Send,
+  UserPlus,
+  Database,
 };
 
 function resolveIcon(name: string): LucideIcon {
@@ -149,6 +163,8 @@ const categoryColors: Record<string, string> = {
   development: "bg-indigo-500/15 text-indigo-400 border-indigo-500/30",
   clawbots: "bg-orange-500/15 text-orange-400 border-orange-500/30",
   intelligence: "bg-purple-500/15 text-purple-400 border-purple-500/30",
+  "marketing-suite": "bg-fuchsia-500/15 text-fuchsia-400 border-fuchsia-500/30",
+  sales: "bg-teal-500/15 text-teal-400 border-teal-500/30",
 };
 
 // ---------------------------------------------------------------------------
@@ -731,7 +747,7 @@ const SkillsCenter = () => {
                               variant="outline"
                               className={`text-[10px] capitalize ${categoryColors[skill.category] ?? ""}`}
                             >
-                              {skill.category}
+                              {skill.category === "marketing-suite" ? "Marketing Suite" : skill.category === "sales" ? "Sales Suite" : skill.category}
                             </Badge>
                             <Badge
                               variant="outline"
@@ -739,6 +755,14 @@ const SkillsCenter = () => {
                             >
                               {skill.tier}
                             </Badge>
+                            {(skill.category === "marketing-suite" || skill.category === "sales") && (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-300 border-amber-500/40"
+                              >
+                                Top-Tier
+                              </Badge>
+                            )}
                           </div>
                         </div>
 
@@ -967,7 +991,7 @@ const SkillsCenter = () => {
                 variant="outline"
                 className={`text-[10px] capitalize ${categoryColors[selectedSkill.category] ?? ""}`}
               >
-                {selectedSkill.category}
+                {selectedSkill.category === "marketing-suite" ? "Marketing Suite" : selectedSkill.category === "sales" ? "Sales Suite" : selectedSkill.category}
               </Badge>
               <Badge
                 variant="outline"
@@ -975,6 +999,14 @@ const SkillsCenter = () => {
               >
                 {selectedSkill.tier} {t("skillsCenter.tier")}
               </Badge>
+              {(selectedSkill.category === "marketing-suite" || selectedSkill.category === "sales") && (
+                <Badge
+                  variant="outline"
+                  className="text-[10px] bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-300 border-amber-500/40"
+                >
+                  Top-Tier Package
+                </Badge>
+              )}
             </div>
 
             {/* Capabilities */}

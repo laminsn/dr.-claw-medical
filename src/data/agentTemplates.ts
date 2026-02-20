@@ -13,7 +13,9 @@ export interface AgentTemplate {
     | "research"
     | "development"
     | "clawbots"
-    | "intelligence";
+    | "intelligence"
+    | "marketing-suite"
+    | "sales";
   defaultSkills: string[]; // skill IDs
   suggestedModel: string;
   tier: "starter" | "professional" | "advanced" | "enterprise";
@@ -542,6 +544,302 @@ export const agentTemplates: AgentTemplate[] = [
       { label: "Scripts/week", value: "10" },
       { label: "Course modules", value: "20/mo" },
       { label: "Completion rate", value: "92%" },
+    ],
+  },
+
+  // ──────────────────────────────────────────────
+  // Marketing Suite Agents (Top-Tier Package)
+  // ──────────────────────────────────────────────
+  {
+    id: "marketing-suite-director",
+    name: "Marketing Suite Director",
+    description:
+      "Enterprise marketing leader that orchestrates omni-channel campaigns, budget allocation, and full-funnel growth.",
+    longDescription:
+      "The strategic command center for your marketing operation. This agent designs quarterly marketing plans, coordinates creative and media teams across all channels, manages budget allocation with real-time ROI optimization, and produces executive reports with pipeline attribution. It thinks in funnels and ensures every dollar spent ladders up to revenue targets. Exclusive to the top-tier package.",
+    icon: "Rocket",
+    category: "marketing-suite",
+    defaultSkills: ["marketing-director", "content-pipeline-manager", "marketing-analytics-engine"],
+    suggestedModel: "Claude",
+    tier: "enterprise",
+    metrics: [
+      { label: "Campaigns/quarter", value: "24" },
+      { label: "Pipeline attributed", value: "$2.5M" },
+      { label: "CAC reduction", value: "42%" },
+    ],
+  },
+  {
+    id: "content-pipeline-agent",
+    name: "Content Pipeline Agent",
+    description:
+      "Industrial-grade content production system that plans, creates, and distributes content at enterprise scale.",
+    longDescription:
+      "A content production powerhouse that maintains intelligent editorial calendars, generates SEO-optimized articles, social posts, email sequences, and sales collateral — all in your brand voice. Tracks content performance, identifies library gaps, and automatically repurposes top-performing pieces across formats. For organizations that need to produce high volumes of quality content without scaling headcount.",
+    icon: "FileText",
+    category: "marketing-suite",
+    defaultSkills: ["content-pipeline-manager", "seo-growth-specialist", "social-media-commander"],
+    suggestedModel: "Claude",
+    tier: "enterprise",
+    metrics: [
+      { label: "Articles/month", value: "40" },
+      { label: "Social posts/day", value: "50" },
+      { label: "SEO traffic lift", value: "+180%" },
+    ],
+  },
+  {
+    id: "paid-media-agent",
+    name: "Paid Media Agent",
+    description:
+      "Cross-platform advertising optimizer managing campaigns across Google, Meta, LinkedIn, and programmatic channels.",
+    longDescription:
+      "Brings algorithmic precision to your advertising spend. Designs campaign structures, writes ad copy, manages bidding strategies, and continuously optimizes creative performance. Monitors real-time ROAS, adjusts targeting based on conversion signals, and automatically pauses underperforming ad sets. Provides the media buying expertise of a senior paid team in a single, tireless agent.",
+    icon: "TrendingUp",
+    category: "marketing-suite",
+    defaultSkills: ["paid-media-optimizer", "marketing-analytics-engine", "marketing-director"],
+    suggestedModel: "Claude",
+    tier: "enterprise",
+    metrics: [
+      { label: "Ad platforms", value: "4" },
+      { label: "Avg ROAS", value: "5.2x" },
+      { label: "CPA reduction", value: "38%" },
+    ],
+  },
+  {
+    id: "email-automation-agent",
+    name: "Email Automation Agent",
+    description:
+      "Sophisticated email marketing engine that builds nurture sequences, optimizes deliverability, and drives conversions.",
+    longDescription:
+      "Your dedicated email revenue engine. Builds sophisticated nurture sequences with behavioral branching, designs trigger-based automations, optimizes subject lines and send times, and manages list health for maximum deliverability. Segments audiences by behavior and lifecycle stage, ensuring the right message reaches the right person at the right time.",
+    icon: "Mail",
+    category: "marketing-suite",
+    defaultSkills: ["email-automation-specialist", "content-pipeline-manager", "marketing-analytics-engine"],
+    suggestedModel: "OpenAI",
+    tier: "enterprise",
+    metrics: [
+      { label: "Sequences active", value: "25" },
+      { label: "Open rate avg", value: "42%" },
+      { label: "Revenue attributed", value: "$800K/mo" },
+    ],
+  },
+  {
+    id: "social-media-agent",
+    name: "Social Media Agent",
+    description:
+      "Full-service social media management across all platforms — content, scheduling, engagement, and analytics.",
+    longDescription:
+      "Owns your entire social presence. Develops platform-specific strategies, maintains posting schedules, crafts engaging posts, monitors mentions and sentiment, and generates performance reports. Understands the nuances of each platform and adapts content accordingly. Built for organizations that need a consistent, strategic social presence.",
+    icon: "Share2",
+    category: "marketing-suite",
+    defaultSkills: ["social-media-commander", "content-pipeline-manager", "marketing-director"],
+    suggestedModel: "OpenAI",
+    tier: "enterprise",
+    metrics: [
+      { label: "Platforms managed", value: "5" },
+      { label: "Engagement rate", value: "+65%" },
+      { label: "Follower growth", value: "12%/mo" },
+    ],
+  },
+  {
+    id: "seo-growth-agent",
+    name: "SEO & Growth Agent",
+    description:
+      "Technical and content SEO specialist that drives organic traffic through optimization and strategic content.",
+    longDescription:
+      "Your dedicated organic traffic engine. Conducts technical SEO audits, performs keyword research, develops content strategies mapped to search intent, and monitors ranking performance. Identifies quick wins for immediate gains while building long-term topical authority through systematic content planning and link acquisition.",
+    icon: "Search",
+    category: "marketing-suite",
+    defaultSkills: ["seo-growth-specialist", "content-pipeline-manager", "marketing-analytics-engine"],
+    suggestedModel: "Claude",
+    tier: "enterprise",
+    metrics: [
+      { label: "Keywords tracked", value: "500+" },
+      { label: "Organic growth", value: "+210%" },
+      { label: "Domain authority", value: "+15 pts" },
+    ],
+  },
+  {
+    id: "event-webinar-agent",
+    name: "Event & Webinar Agent",
+    description:
+      "End-to-end event lifecycle management from planning through execution and post-event lead follow-up.",
+    longDescription:
+      "Manages the full lifecycle of marketing events — from concept and promotion through execution and post-event follow-up. Designs themes, writes promotional copy, builds registration workflows, creates presenter materials, and generates post-event reports with attendee engagement scoring. Covers everything from intimate roundtables to large-scale virtual conferences.",
+    icon: "CalendarCheck",
+    category: "marketing-suite",
+    defaultSkills: ["event-webinar-producer", "email-automation-specialist", "marketing-director"],
+    suggestedModel: "Claude",
+    tier: "enterprise",
+    metrics: [
+      { label: "Events/quarter", value: "12" },
+      { label: "Avg attendance", value: "450" },
+      { label: "Pipeline/event", value: "$180K" },
+    ],
+  },
+  {
+    id: "marketing-analytics-agent",
+    name: "Marketing Analytics Agent",
+    description:
+      "Deep marketing intelligence with attribution modeling, CLV analysis, and data-driven optimization.",
+    longDescription:
+      "Transforms raw marketing data into strategic intelligence. Builds attribution models, calculates customer lifetime value, forecasts pipeline contribution, and identifies the levers that move your most important metrics. Integrates data from CRM, ad platforms, web analytics, and email for a unified performance view.",
+    icon: "BarChart3",
+    category: "marketing-suite",
+    defaultSkills: ["marketing-analytics-engine", "marketing-director", "paid-media-optimizer"],
+    suggestedModel: "Claude",
+    tier: "enterprise",
+    metrics: [
+      { label: "Data sources", value: "12" },
+      { label: "Attribution models", value: "5" },
+      { label: "Forecast accuracy", value: "94%" },
+    ],
+  },
+
+  // ──────────────────────────────────────────────
+  // Sales Suite Agents (Top-Tier Package)
+  // ──────────────────────────────────────────────
+  {
+    id: "sales-suite-director",
+    name: "Sales Suite Director",
+    description:
+      "Enterprise sales leader that drives territory planning, pipeline management, and revenue accountability.",
+    longDescription:
+      "The strategic command center for your entire revenue operation. Builds territory plans, designs compensation structures, manages pipeline reviews, and produces accurate revenue forecasts. Aligns sales team activity with revenue targets while identifying coaching opportunities and deal risks. Exclusive to the top-tier package for organizations that need VP-of-Sales caliber execution.",
+    icon: "Handshake",
+    category: "sales",
+    defaultSkills: ["sales-director", "revenue-forecasting-analyst", "crm-intelligence-agent"],
+    suggestedModel: "Claude",
+    tier: "enterprise",
+    metrics: [
+      { label: "Quota attainment", value: "112%" },
+      { label: "Forecast accuracy", value: "95%" },
+      { label: "Deal velocity", value: "+30%" },
+    ],
+  },
+  {
+    id: "lead-gen-agent",
+    name: "Lead Generation Agent",
+    description:
+      "AI-powered prospecting machine that identifies, qualifies, and nurtures high-value leads at scale.",
+    longDescription:
+      "Your always-on prospecting engine. Identifies ideal customer profiles, builds targeted prospect lists, qualifies inbound leads, and initiates personalized outreach sequences. Integrates intent data, firmographic intelligence, and engagement signals to surface the prospects most likely to convert.",
+    icon: "UserPlus",
+    category: "sales",
+    defaultSkills: ["lead-generation-engine", "sales-outreach-automator", "crm-intelligence-agent"],
+    suggestedModel: "Claude",
+    tier: "enterprise",
+    metrics: [
+      { label: "Leads/month", value: "2,000" },
+      { label: "Qualification rate", value: "35%" },
+      { label: "Cost per lead", value: "-55%" },
+    ],
+  },
+  {
+    id: "crm-intel-agent",
+    name: "CRM Intelligence Agent",
+    description:
+      "CRM optimization specialist that enriches data, surfaces deal insights, and automates sales workflows.",
+    longDescription:
+      "Transforms your CRM from a data entry burden into a strategic intelligence platform. Automates data enrichment, enforces data hygiene, surfaces deal insights, and builds automated workflows that eliminate manual administration. Ensures every record is complete and accurate while providing the contextual intelligence reps need to advance deals.",
+    icon: "Database",
+    category: "sales",
+    defaultSkills: ["crm-intelligence-agent", "revenue-forecasting-analyst", "sales-director"],
+    suggestedModel: "Claude",
+    tier: "enterprise",
+    metrics: [
+      { label: "Data accuracy", value: "99.5%" },
+      { label: "Automation workflows", value: "40+" },
+      { label: "Admin time saved", value: "70%" },
+    ],
+  },
+  {
+    id: "proposal-specialist-agent",
+    name: "Proposal Specialist Agent",
+    description:
+      "Sales document automation engine that generates proposals, quotes, and battle cards in minutes.",
+    longDescription:
+      "Eliminates the document creation bottleneck. Generates custom proposals, price quotes, statements of work, and contract drafts in minutes. Pulls deal context from CRM, applies approved pricing rules, and produces polished documents that maintain brand standards and legal compliance. For organizations where deal velocity is constrained by document turnaround.",
+    icon: "FileCheck",
+    category: "sales",
+    defaultSkills: ["proposal-quote-specialist", "sales-enablement-specialist", "sales-director"],
+    suggestedModel: "Claude",
+    tier: "enterprise",
+    metrics: [
+      { label: "Proposals/week", value: "20" },
+      { label: "Creation time", value: "<15min" },
+      { label: "Win rate lift", value: "+18%" },
+    ],
+  },
+  {
+    id: "sales-enablement-agent",
+    name: "Sales Enablement Agent",
+    description:
+      "Training and enablement specialist that builds playbooks, onboarding programs, and rep-ready resources.",
+    longDescription:
+      "Bridges the gap between marketing content and sales execution. Builds sales playbooks, designs onboarding programs, creates objection-handling guides, and develops training materials that accelerate rep ramp time. Continuously updates resources based on competitive intelligence and win/loss analysis.",
+    icon: "GraduationCap",
+    category: "sales",
+    defaultSkills: ["sales-enablement-specialist", "proposal-quote-specialist", "sales-director"],
+    suggestedModel: "Claude",
+    tier: "enterprise",
+    metrics: [
+      { label: "Ramp time reduction", value: "50%" },
+      { label: "Playbooks", value: "15+" },
+      { label: "Win rate impact", value: "+22%" },
+    ],
+  },
+  {
+    id: "revenue-forecast-agent",
+    name: "Revenue Forecasting Agent",
+    description:
+      "Data-science-driven revenue prediction engine with pipeline analytics and scenario modeling.",
+    longDescription:
+      "Brings data-science rigor to revenue prediction. Analyzes historical close rates, deal velocity, seasonal patterns, and pipeline composition to generate trustworthy forecasts. Produces commit, best-case, and upside scenarios with deal-level justification and confidence scoring for leadership.",
+    icon: "BarChart3",
+    category: "sales",
+    defaultSkills: ["revenue-forecasting-analyst", "crm-intelligence-agent", "sales-director"],
+    suggestedModel: "Claude",
+    tier: "enterprise",
+    metrics: [
+      { label: "Forecast accuracy", value: "96%" },
+      { label: "Scenarios modeled", value: "3" },
+      { label: "At-risk detection", value: "3wks early" },
+    ],
+  },
+  {
+    id: "account-expansion-agent-tpl",
+    name: "Account Expansion Agent",
+    description:
+      "Expansion revenue specialist that identifies upsell, cross-sell, and renewal opportunities in existing accounts.",
+    longDescription:
+      "Mines your existing customer base for growth. Analyzes usage data, renewal timelines, and health scores to surface accounts ripe for expansion. Builds account plans, calculates whitespace, and generates personalized expansion proposals that leverage existing relationships and proven value delivery.",
+    icon: "TrendingUp",
+    category: "sales",
+    defaultSkills: ["account-expansion-agent", "crm-intelligence-agent", "revenue-forecasting-analyst"],
+    suggestedModel: "Claude",
+    tier: "enterprise",
+    metrics: [
+      { label: "Expansion revenue", value: "+40%" },
+      { label: "Renewal rate", value: "96%" },
+      { label: "Upsell pipeline", value: "$1.2M" },
+    ],
+  },
+  {
+    id: "outreach-automator-agent",
+    name: "Sales Outreach Agent",
+    description:
+      "Hyper-personalized outreach automation across email, LinkedIn, and phone at massive scale.",
+    longDescription:
+      "Enables hyper-personalized prospecting at massive scale. Crafts individualized emails, LinkedIn messages, and call scripts using prospect-specific research. Designs multi-touch sequences with optimal spacing and channel mix, then measures response rates to continuously improve effectiveness.",
+    icon: "Send",
+    category: "sales",
+    defaultSkills: ["sales-outreach-automator", "lead-generation-engine", "crm-intelligence-agent"],
+    suggestedModel: "OpenAI",
+    tier: "enterprise",
+    metrics: [
+      { label: "Prospects/month", value: "5,000" },
+      { label: "Response rate", value: "12%" },
+      { label: "Meetings booked", value: "150/mo" },
     ],
   },
 ];

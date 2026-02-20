@@ -46,6 +46,11 @@ import {
   Maximize2,
   LayoutGrid,
   RefreshCw,
+  Rocket,
+  Handshake,
+  Code,
+  Linkedin,
+  Sparkles,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
@@ -158,6 +163,11 @@ const DEPARTMENT_ICONS: Record<string, string> = {
   "Human Resources": "users",
   "Research & Development": "git-branch",
   "IT & Security": "settings",
+  "Development & Integration": "code",
+  "Clawbots": "linkedin",
+  "Intelligence & Analytics": "sparkles",
+  "Marketing Suite": "rocket",
+  "Sales Suite": "handshake",
 };
 
 // ── Default Capabilities ─────────────────────────────────────────────────
@@ -256,6 +266,76 @@ const DEPARTMENT_TEMPLATES: DepartmentTemplate[] = [
       { name: "Compliance Guard", role: "Compliance Officer", zone: "operations", active: true, model: "claude", skills: ["HIPAA Compliance", "Audit Preparation", "Policy Enforcement"], level: "worker" },
     ],
   },
+  {
+    id: "tpl-dev",
+    name: "Development & Integration",
+    icon: "code",
+    description: "Notion specialist, Airtable specialist, coding specialist, and application specialist for platform development.",
+    agents: [
+      { name: "Dev Lead", role: "Development Director", zone: "operations", active: true, model: "claude", skills: ["Architecture Planning", "Code Review", "Technical Strategy"], level: "department-head" },
+      { name: "Notion Architect", role: "Notion Development Specialist", zone: "operations", active: true, model: "claude", skills: ["Database Architecture", "Notion API", "Template Design", "Automation Workflows"], level: "worker" },
+      { name: "Airtable Builder", role: "Airtable Development Specialist", zone: "operations", active: true, model: "claude", skills: ["Base Architecture", "Scripting & Extensions", "Interface Designer", "API Integration"], level: "worker" },
+      { name: "Code Engine", role: "Coding Specialist", zone: "operations", active: true, model: "claude", skills: ["Full-Stack Development", "API Development", "Testing & QA", "DevOps"], level: "worker" },
+      { name: "App Strategist", role: "Application Specialist", zone: "operations", active: true, model: "claude", skills: ["Requirements Analysis", "Application Architecture", "MVP Strategy", "Deployment Management"], level: "worker" },
+    ],
+  },
+  {
+    id: "tpl-clawbots",
+    name: "Clawbots",
+    icon: "linkedin",
+    description: "LinkedIn Clawbot and Google Search Clawbot for autonomous client prospecting and lead generation.",
+    agents: [
+      { name: "Clawbot Commander", role: "Lead Generation Director", zone: "external", active: true, model: "claude", skills: ["Prospect Strategy", "Pipeline Management", "Lead Scoring"], level: "department-head" },
+      { name: "LinkedIn Clawbot", role: "LinkedIn Client Clawbot", zone: "external", active: true, model: "claude", skills: ["ICP Targeting", "Connection Personalization", "Messaging Sequences", "Thought Leadership"], level: "worker" },
+      { name: "Google Search Clawbot", role: "Google Client Search Clawbot", zone: "external", active: true, model: "gemini", skills: ["Advanced Search Queries", "Company Intelligence", "Intent Signal Detection", "Lead Scoring"], level: "worker" },
+      { name: "Book Research Bot", role: "Book Read & Research Specialist", zone: "external", active: true, model: "claude", skills: ["Book Summarization", "Key Insight Extraction", "Curated Reading Lists", "Thematic Synthesis"], level: "worker" },
+      { name: "Video Producer Bot", role: "Instructional Video Maker", zone: "external", active: true, model: "openai", skills: ["Script Writing", "Storyboard Development", "Course Curriculum", "Production Planning"], level: "worker" },
+    ],
+  },
+  {
+    id: "tpl-intelligence",
+    name: "Intelligence & Analytics",
+    icon: "sparkles",
+    description: "Self-improving agent optimizer and analytics hub for continuous platform evolution and data-driven insights.",
+    agents: [
+      { name: "Intelligence Prime", role: "Chief Intelligence Officer", zone: "operations", active: true, model: "claude", skills: ["Performance Strategy", "Optimization Planning", "Quality Governance"], level: "department-head" },
+      { name: "Self-Improve Engine", role: "Self-Improving Agent", zone: "operations", active: true, model: "claude", skills: ["Agent Monitoring", "Prompt Optimization", "A/B Testing", "Regression Detection"], level: "worker" },
+      { name: "Analytics Hub", role: "Analytics & Data Specialist", zone: "operations", active: true, model: "claude", skills: ["Dashboard Development", "Predictive Analytics", "KPI Tracking", "Anomaly Detection"], level: "worker" },
+      { name: "Home Health Researcher", role: "Home Healthcare & Hospice Researcher", zone: "clinical", active: true, model: "claude", skills: ["CMS Regulatory Research", "OASIS Guidance", "Quality Measures", "Accreditation Prep"], level: "worker" },
+    ],
+  },
+  {
+    id: "tpl-marketing-suite",
+    name: "Marketing Suite",
+    icon: "rocket",
+    description: "Enterprise-tier marketing department with campaign orchestration, content pipeline, paid media, email automation, social media, SEO, events, and analytics agents.",
+    agents: [
+      { name: "Marketing Commander", role: "Marketing Suite Director", zone: "operations", active: true, model: "claude", skills: ["Omni-Channel Campaigns", "Budget Optimization", "Full-Funnel Attribution", "GTM Planning"], level: "department-head" },
+      { name: "Content Factory", role: "Content Pipeline Manager", zone: "operations", active: true, model: "claude", skills: ["Editorial Calendar", "SEO Content", "Content Repurposing", "Thought Leadership"], level: "worker" },
+      { name: "Ad Optimizer", role: "Paid Media Optimizer", zone: "operations", active: true, model: "claude", skills: ["Cross-Platform Ads", "Bid Strategy", "Audience Targeting", "A/B Testing"], level: "worker" },
+      { name: "Email Engine", role: "Email Automation Specialist", zone: "operations", active: true, model: "openai", skills: ["Nurture Sequences", "Behavioral Triggers", "Deliverability", "Segmentation"], level: "worker" },
+      { name: "Social Commander", role: "Social Media Commander", zone: "external", active: true, model: "openai", skills: ["Multi-Platform Strategy", "Community Engagement", "Social Listening", "Influencer ID"], level: "worker" },
+      { name: "SEO Engine", role: "SEO & Growth Specialist", zone: "operations", active: true, model: "claude", skills: ["Technical SEO", "Keyword Research", "Link Building", "CRO"], level: "worker" },
+      { name: "Event Producer", role: "Event & Webinar Producer", zone: "operations", active: true, model: "claude", skills: ["Event Strategy", "Webinar Production", "Registration Workflows", "Post-Event Follow-Up"], level: "worker" },
+      { name: "Mktg Analytics", role: "Marketing Analytics Engine", zone: "operations", active: true, model: "claude", skills: ["Attribution Modeling", "CLV Analysis", "Pipeline Forecasting", "Marketing Mix"], level: "worker" },
+    ],
+  },
+  {
+    id: "tpl-sales-suite",
+    name: "Sales Suite",
+    icon: "handshake",
+    description: "Enterprise-tier sales department with pipeline management, lead generation, CRM intelligence, proposals, enablement, forecasting, account expansion, and outreach automation agents.",
+    agents: [
+      { name: "Sales Commander", role: "Sales Suite Director", zone: "operations", active: true, model: "claude", skills: ["Revenue Strategy", "Pipeline Management", "Deal Coaching", "QBR Presentations"], level: "department-head" },
+      { name: "Lead Machine", role: "Lead Generation Engine", zone: "external", active: true, model: "claude", skills: ["ICP Development", "Prospect Lists", "Lead Scoring", "Intent Signals"], level: "worker" },
+      { name: "CRM Brain", role: "CRM Intelligence Agent", zone: "operations", active: true, model: "claude", skills: ["Data Enrichment", "Deal Insights", "Workflow Automation", "Pipeline Dashboards"], level: "worker" },
+      { name: "Proposal Pro", role: "Proposal & Quote Specialist", zone: "operations", active: true, model: "claude", skills: ["Proposal Generation", "Dynamic Pricing", "Battle Cards", "ROI Models"], level: "worker" },
+      { name: "Enablement Hub", role: "Sales Enablement Specialist", zone: "operations", active: true, model: "claude", skills: ["Sales Playbooks", "Onboarding Programs", "Objection Library", "Win/Loss Analysis"], level: "worker" },
+      { name: "Forecast Engine", role: "Revenue Forecasting Analyst", zone: "operations", active: true, model: "claude", skills: ["Statistical Forecasting", "Pipeline Scoring", "Scenario Modeling", "Quota Tracking"], level: "worker" },
+      { name: "Expansion Agent", role: "Account Expansion Agent", zone: "operations", active: true, model: "claude", skills: ["Whitespace Analysis", "Upsell Scoring", "Account Planning", "Renewal Risk"], level: "worker" },
+      { name: "Outreach Bot", role: "Sales Outreach Automator", zone: "external", active: true, model: "openai", skills: ["Personalized Emails", "LinkedIn Campaigns", "Call Scripts", "Response Routing"], level: "worker" },
+    ],
+  },
 ];
 
 // ── Initial Access ──────────────────────────────────────────────────────────
@@ -268,6 +348,11 @@ const INITIAL_ACCESS: DepartmentAccess[] = [
   { departmentName: "Human Resources", accessLevel: "department-only" },
   { departmentName: "Research & Development", accessLevel: "all-staff" },
   { departmentName: "IT & Security", accessLevel: "admin-only" },
+  { departmentName: "Development & Integration", accessLevel: "department-only" },
+  { departmentName: "Clawbots", accessLevel: "department-only" },
+  { departmentName: "Intelligence & Analytics", accessLevel: "admin-only" },
+  { departmentName: "Marketing Suite", accessLevel: "admin-only" },
+  { departmentName: "Sales Suite", accessLevel: "admin-only" },
 ];
 
 // ── Helper Functions ────────────────────────────────────────────────────────
@@ -288,6 +373,16 @@ function getDeptIcon(iconKey: string) {
       return <GitBranch className="h-5 w-5" />;
     case "settings":
       return <Settings className="h-5 w-5" />;
+    case "code":
+      return <Code className="h-5 w-5" />;
+    case "linkedin":
+      return <Linkedin className="h-5 w-5" />;
+    case "sparkles":
+      return <Sparkles className="h-5 w-5" />;
+    case "rocket":
+      return <Rocket className="h-5 w-5" />;
+    case "handshake":
+      return <Handshake className="h-5 w-5" />;
     default:
       return <Building2 className="h-5 w-5" />;
   }
@@ -726,6 +821,11 @@ const AgentOrgChart = () => {
       "Human Resources",
       "Research & Development",
       "IT & Security",
+      "Development & Integration",
+      "Clawbots",
+      "Intelligence & Analytics",
+      "Marketing Suite",
+      "Sales Suite",
     ])
   );
 
@@ -751,6 +851,20 @@ const AgentOrgChart = () => {
       /* ignore */
     }
   }, [departmentAccess]);
+
+  // Sync selectedAgent with context so edits/toggles reflect immediately
+  useEffect(() => {
+    if (selectedAgent) {
+      const updated = agents.find((a) => a.id === selectedAgent.id);
+      if (updated) {
+        setSelectedAgent(updated);
+      } else {
+        // Agent was deleted from context
+        setSelectedAgent(null);
+        setDetailOpen(false);
+      }
+    }
+  }, [agents]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Derived Data ────────────────────────────────────────────────────────
 
@@ -798,6 +912,31 @@ const AgentOrgChart = () => {
   const openAgentDetail = (agent: MyAgent) => {
     setSelectedAgent(agent);
     setDetailOpen(true);
+    setIsEditing(false);
+    setConfirmRemoveId(null);
+  };
+
+  const startEditing = (agent: MyAgent) => {
+    setEditName(agent.name);
+    setEditRole(agent.role);
+    setEditModel(agent.model);
+    setEditSkills(agent.skills.join(", "));
+    setIsEditing(true);
+  };
+
+  const saveEdit = () => {
+    if (!selectedAgent || !editName.trim() || !editRole.trim()) {
+      toast({ title: "Missing Fields", description: "Name and role are required." });
+      return;
+    }
+    updateAgent(selectedAgent.id, {
+      name: editName.trim(),
+      role: editRole.trim(),
+      model: editModel,
+      skills: editSkills.split(",").map((s) => s.trim()).filter(Boolean),
+    });
+    setIsEditing(false);
+    toast({ title: "Agent Updated", description: `${editName.trim()} has been updated.` });
   };
 
   const removeAgent = (agentId: string) => {
@@ -1690,8 +1829,8 @@ const AgentOrgChart = () => {
       ═══════════════════════════════════════════════════════════════════ */}
 
       {/* Agent Detail Dialog */}
-      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="bg-card border-border max-w-md">
+      <Dialog open={detailOpen} onOpenChange={(open) => { setDetailOpen(open); if (!open) { setIsEditing(false); setConfirmRemoveId(null); } }}>
+        <DialogContent className="bg-card border-border max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-foreground">
               {selectedAgent && (
@@ -1709,7 +1848,25 @@ const AgentOrgChart = () => {
                       />
                     )}
                   </div>
-                  {selectedAgent.name}
+                  {isEditing ? (
+                    <Input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="h-8 text-sm bg-card/50 border-border max-w-[200px]"
+                    />
+                  ) : (
+                    selectedAgent.name
+                  )}
+                  {!isEditing && selectedAgent.level !== "ceo" && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => startEditing(selectedAgent)}
+                      className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                    >
+                      <Edit3 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                 </>
               )}
             </DialogTitle>
@@ -1913,6 +2070,11 @@ const AgentOrgChart = () => {
                   "Human Resources",
                   "Research & Development",
                   "IT & Security",
+                  "Development & Integration",
+                  "Clawbots",
+                  "Intelligence & Analytics",
+                  "Marketing Suite",
+                  "Sales Suite",
                 ].map((dept) => (
                   <button
                     key={dept}
