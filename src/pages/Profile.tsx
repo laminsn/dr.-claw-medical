@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { User, Mail, Phone, Building2, Stethoscope, Globe, Save, Loader2 } from "lucide-react";
+import { User, Mail, Phone, Building2, Stethoscope, Globe, Save, Loader2, Camera, Shield } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,12 +23,21 @@ const timezones = [
   "Asia/Tokyo",
 ];
 
+const roleBadgeStyle: Record<string, string> = {
+  master_admin: "bg-amber-500/20 text-amber-400 border border-amber-500/30",
+  admin: "bg-primary/20 text-primary border border-primary/30",
+  manager: "bg-blue-500/20 text-blue-400 border border-blue-500/30",
+  user: "bg-secondary text-muted-foreground border border-border",
+};
+
 const Profile = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -42,6 +51,7 @@ const Profile = () => {
   const [notifSms, setNotifSms] = useState(false);
   const [notifSlack, setNotifSlack] = useState(false);
   const [role, setRole] = useState("user");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const notificationItems = [
     { label: t("profile.emailNotifications"), desc: t("profile.emailNotificationsDesc"), value: notifEmail, setter: setNotifEmail },
@@ -62,13 +72,14 @@ const Profile = () => {
 
       if (data) {
         setFullName(data.full_name || "");
-        setPhone((data as any).phone || "");
+        setPhone(data.phone || "");
         setPracticeName(data.practice_name || "");
-        setSpecialty((data as any).specialty || "");
-        setOrganization((data as any).organization || "");
-        setBio((data as any).bio || "");
-        setTimezone((data as any).timezone || "America/New_York");
-        const prefs = (data as any).notification_preferences as any;
+        setSpecialty(data.specialty || "");
+        setOrganization(data.organization || "");
+        setBio(data.bio || "");
+        setTimezone(data.timezone || "America/New_York");
+        setAvatarUrl(data.avatar_url || null);
+        const prefs = data.notification_preferences as Record<string, boolean> | null;
         if (prefs) {
           setNotifEmail(prefs.email ?? true);
           setNotifSms(prefs.sms ?? false);
@@ -76,14 +87,13 @@ const Profile = () => {
         }
       }
 
-      // Load role
       const { data: roleData } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", user.id);
 
       if (roleData && roleData.length > 0) {
-        setRole((roleData[0] as any).role);
+        setRole(roleData[0].role);
       }
 
       setLoading(false);
@@ -91,6 +101,34 @@ const Profile = () => {
 
     loadProfile();
   }, [user]);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setUploadingAvatar(true);
+    const ext = file.name.split(".").pop();
+    const path = `avatars/${user.id}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("agent-documents")
+      .upload(path, file, { upsert: true });
+
+    if (uploadError) {
+      toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
+      setUploadingAvatar(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from("agent-documents").getPublicUrl(path);
+    const publicUrl = urlData.publicUrl;
+
+    await supabase.from("profiles").update({ avatar_url: publicUrl } as never).eq("user_id", user.id);
+
+    setAvatarUrl(publicUrl);
+    toast({ title: "Avatar updated", description: "Your profile photo has been saved." });
+    setUploadingAvatar(false);
+  };
 
   const handleSave = async () => {
     if (!user) return;
@@ -107,7 +145,7 @@ const Profile = () => {
         bio,
         timezone,
         notification_preferences: { email: notifEmail, sms: notifSms, slack: notifSlack },
-      } as any)
+      } as never)
       .eq("user_id", user.id);
 
     if (error) {
@@ -118,24 +156,24 @@ const Profile = () => {
     setSaving(false);
   };
 
-  const roleBadgeColor = role === "master_admin"
-    ? "gradient-primary text-primary-foreground"
-    : role === "admin"
-    ? "bg-accent/20 text-accent"
-    : "bg-secondary text-muted-foreground";
+  const initials = fullName
+    ? fullName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : email?.[0]?.toUpperCase() ?? "?";
 
   return (
     <div className="flex min-h-screen bg-background">
       <DashboardSidebar />
       <main className="flex-1 p-8">
         <div className="max-w-3xl mx-auto">
+          {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="font-display text-2xl font-bold text-foreground">{t("profile.title")}</h1>
               <p className="text-sm text-muted-foreground mt-1">{t("profile.subtitle")}</p>
             </div>
-            <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${roleBadgeColor}`}>
-              {role.replace("_", " ")}
+            <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${roleBadgeStyle[role] ?? roleBadgeStyle.user}`}>
+              {role === "master_admin" && <Shield className="inline h-3 w-3 mr-1 -mt-0.5" />}
+              {role.replace(/_/g, " ")}
             </span>
           </div>
 
@@ -145,6 +183,50 @@ const Profile = () => {
             </div>
           ) : (
             <div className="space-y-8">
+              {/* Avatar card */}
+              <section className="bg-card rounded-xl border border-border p-6">
+                <div className="flex items-center gap-6">
+                  <div className="relative shrink-0">
+                    <div className="h-20 w-20 rounded-full overflow-hidden bg-secondary border-2 border-border flex items-center justify-center">
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                      ) : (
+                        <span className="font-display text-2xl font-bold text-muted-foreground">{initials}</span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingAvatar}
+                      className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-primary flex items-center justify-center shadow-glow-sm hover:opacity-90 transition-opacity"
+                    >
+                      {uploadingAvatar ? (
+                        <Loader2 className="h-3.5 w-3.5 text-primary-foreground animate-spin" />
+                      ) : (
+                        <Camera className="h-3.5 w-3.5 text-primary-foreground" />
+                      )}
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleAvatarUpload}
+                    />
+                  </div>
+                  <div>
+                    <p className="font-display font-semibold text-foreground text-lg">{fullName || "Your Name"}</p>
+                    <p className="text-sm text-muted-foreground">{email}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{practiceName || "No practice set"}</p>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="text-xs text-primary hover:text-primary/80 mt-2 transition-colors"
+                    >
+                      Change photo
+                    </button>
+                  </div>
+                </div>
+              </section>
+
               {/* Personal Info */}
               <section className="bg-card rounded-xl border border-border p-6 space-y-5">
                 <h2 className="font-display font-semibold text-foreground flex items-center gap-2">
