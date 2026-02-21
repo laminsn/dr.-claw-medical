@@ -12,6 +12,7 @@ import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
 import {
   Table,
@@ -73,8 +74,8 @@ const AdminDashboard = () => {
         supabase.from("user_roles").select("user_id, role"),
       ]);
 
-      if (profilesRes.data) setProfiles(profilesRes.data as any);
-      if (rolesRes.data) setRoles(rolesRes.data as any);
+      if (profilesRes.data) setProfiles(profilesRes.data as UserProfile[]);
+      if (rolesRes.data) setRoles(rolesRes.data as UserRole[]);
       setLoading(false);
     };
     load();
@@ -85,6 +86,7 @@ const AdminDashboard = () => {
     return found?.role || "user";
   };
 
+  type AppRole = Database["public"]["Enums"]["app_role"];
   const updateRole = async (userId: string, newRole: string) => {
     setUpdating(userId);
     const existing = roles.find((r) => r.user_id === userId);
@@ -92,7 +94,7 @@ const AdminDashboard = () => {
     if (existing) {
       const { error } = await supabase
         .from("user_roles")
-        .update({ role: newRole } as any)
+        .update({ role: newRole as AppRole })
         .eq("user_id", userId);
 
       if (error) {
@@ -106,7 +108,7 @@ const AdminDashboard = () => {
     } else {
       const { error } = await supabase
         .from("user_roles")
-        .insert({ user_id: userId, role: newRole } as any);
+        .insert({ user_id: userId, role: newRole as AppRole });
 
       if (error) {
         toast({ title: t("adminDashboard.error"), description: error.message, variant: "destructive" });

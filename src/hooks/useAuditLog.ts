@@ -31,7 +31,8 @@ export function useAuditLog() {
       if (!user) return;
 
       try {
-        // audit_log table may not exist; wrap gracefully
+        // audit_log table may not exist in generated types; wrap gracefully
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await (supabase as any).from("audit_log").insert({
           user_id: user.id,
           action: entry.action,

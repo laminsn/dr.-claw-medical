@@ -137,7 +137,7 @@ const Auth = () => {
   const handleAppleAuth = async () => {
     setAppleLoading(true);
     try {
-      const { error } = await lovable.auth.signInWithOAuth("apple" as any, { redirect_uri: window.location.origin });
+      const { error } = await lovable.auth.signInWithOAuth("apple", { redirect_uri: window.location.origin });
       if (error) toast({ title: t("auth.errors.error"), description: error.message, variant: "destructive" });
     } catch {
       toast({ title: t("auth.errors.error"), description: t("auth.errors.appleFailed"), variant: "destructive" });

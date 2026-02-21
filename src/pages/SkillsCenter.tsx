@@ -388,8 +388,9 @@ const SkillsCenter = () => {
 
   // Cleanup intervals on unmount
   useEffect(() => {
+    const intervals = trainingIntervals.current;
     return () => {
-      Object.values(trainingIntervals.current).forEach(clearInterval);
+      Object.values(intervals).forEach(clearInterval);
     };
   }, []);
 
