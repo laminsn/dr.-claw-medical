@@ -111,7 +111,7 @@ const Profile = () => {
     const path = `avatars/${user.id}.${ext}`;
 
     const { error: uploadError } = await supabase.storage
-      .from("agent-documents")
+      .from("avatars")
       .upload(path, file, { upsert: true });
 
     if (uploadError) {
@@ -120,7 +120,7 @@ const Profile = () => {
       return;
     }
 
-    const { data: urlData } = supabase.storage.from("agent-documents").getPublicUrl(path);
+    const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
     const publicUrl = urlData.publicUrl;
 
     await supabase.from("profiles").update({ avatar_url: publicUrl } as never).eq("user_id", user.id);
