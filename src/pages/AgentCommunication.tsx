@@ -1232,7 +1232,7 @@ const AgentCommunication = () => {
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
-                        selectedThread ? handleSendThreadMessage() : handleSendMessage();
+                        if (selectedThread) { handleSendThreadMessage(); } else { handleSendMessage(); }
                       }
                     }}
                     placeholder={selectedThread ? t("communication.replyInThread") : t("communication.typeMessage")}

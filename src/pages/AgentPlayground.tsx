@@ -541,12 +541,6 @@ const AgentPlayground = () => {
       setIsTyping(false);
 
       // Update metrics
-      setMetrics({
-        responseTime: delay,
-        tokenUsage: (prev) => prev,
-        phiDetections: Math.random() > 0.8 ? 1 : 0,
-        sentimentScore: parseFloat((Math.random() * 0.3 + 0.7).toFixed(2)),
-      } as any);
       setMetrics((prev) => ({
         responseTime: delay,
         tokenUsage: prev.tokenUsage + Math.floor(Math.random() * 300) + 100,

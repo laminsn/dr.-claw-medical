@@ -126,6 +126,9 @@ export function AgentChatPanel({ agents, selectedAgentId, onSelectAgent }: Agent
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [agentMessages.length]);
 
+  // ── Stop recording handler (defined before keyboard shortcut effect) ──
+  const handleStopRecordingRef = useRef<() => void>(() => {});
+
   // ── Global keyboard shortcuts ──────────────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -142,7 +145,7 @@ export function AgentChatPanel({ agents, selectedAgentId, onSelectAgent }: Agent
       if (modKey && e.shiftKey && e.key.toLowerCase() === "r") {
         e.preventDefault();
         if (recorder.isRecording) {
-          handleStopRecording();
+          handleStopRecordingRef.current();
         } else {
           recorder.start();
         }
@@ -250,6 +253,9 @@ export function AgentChatPanel({ agents, selectedAgentId, onSelectAgent }: Agent
       });
     }, 1200);
   }, [recorder, selectedAgentId]);
+
+  // Keep ref in sync so keyboard shortcut can call latest version
+  handleStopRecordingRef.current = handleStopRecording;
 
   // ── Handle Enter key ───────────────────────────────────────────
   const handleKeyDown = (e: React.KeyboardEvent) => {
