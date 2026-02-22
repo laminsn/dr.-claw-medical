@@ -10,7 +10,25 @@ export interface Integration {
   features: string[];
   tier: "starter" | "professional" | "advanced" | "enterprise";
   popular?: boolean;
+  brandColor?: string;
 }
+
+/** Brand color map for provider-specific styling in connect dialogs */
+export const BRAND_STYLES: Record<string, { accent: string; bg: string; border: string; glow: string }> = {
+  openai:          { accent: "#10a37f", bg: "bg-[#10a37f]/10", border: "border-[#10a37f]/30", glow: "shadow-[0_0_24px_rgba(16,163,127,0.12)]" },
+  anthropic:       { accent: "#d4a27f", bg: "bg-[#d4a27f]/10", border: "border-[#d4a27f]/30", glow: "shadow-[0_0_24px_rgba(212,162,127,0.12)]" },
+  "google-gemini": { accent: "#4285f4", bg: "bg-[#4285f4]/10", border: "border-[#4285f4]/30", glow: "shadow-[0_0_24px_rgba(66,133,244,0.12)]" },
+  elevenlabs:      { accent: "#000000", bg: "bg-[#f8f8f8]/10", border: "border-white/20",     glow: "shadow-[0_0_24px_rgba(255,255,255,0.06)]" },
+  epic:            { accent: "#e11d48", bg: "bg-[#e11d48]/10", border: "border-[#e11d48]/30", glow: "shadow-[0_0_24px_rgba(225,29,72,0.12)]" },
+  slack:           { accent: "#e01e5a", bg: "bg-[#4a154b]/10", border: "border-[#4a154b]/30", glow: "shadow-[0_0_24px_rgba(74,21,75,0.12)]" },
+  salesforce:      { accent: "#00a1e0", bg: "bg-[#00a1e0]/10", border: "border-[#00a1e0]/30", glow: "shadow-[0_0_24px_rgba(0,161,224,0.12)]" },
+  hubspot:         { accent: "#ff7a59", bg: "bg-[#ff7a59]/10", border: "border-[#ff7a59]/30", glow: "shadow-[0_0_24px_rgba(255,122,89,0.12)]" },
+  twilio:          { accent: "#f22f46", bg: "bg-[#f22f46]/10", border: "border-[#f22f46]/30", glow: "shadow-[0_0_24px_rgba(242,47,70,0.12)]" },
+  cerner:          { accent: "#c4122e", bg: "bg-[#c4122e]/10", border: "border-[#c4122e]/30", glow: "shadow-[0_0_24px_rgba(196,18,46,0.12)]" },
+  zoom:            { accent: "#2d8cff", bg: "bg-[#2d8cff]/10", border: "border-[#2d8cff]/30", glow: "shadow-[0_0_24px_rgba(45,140,255,0.12)]" },
+  deepgram:        { accent: "#13ef93", bg: "bg-[#13ef93]/10", border: "border-[#13ef93]/30", glow: "shadow-[0_0_24px_rgba(19,239,147,0.12)]" },
+  vapi:            { accent: "#6366f1", bg: "bg-[#6366f1]/10", border: "border-[#6366f1]/30", glow: "shadow-[0_0_24px_rgba(99,102,241,0.12)]" },
+};
 
 export const integrationCategories = [
   { id: "llm", name: "AI Models", description: "Large language models for agent intelligence" },
