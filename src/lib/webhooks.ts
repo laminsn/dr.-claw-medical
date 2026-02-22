@@ -522,3 +522,160 @@ export function getHttpStatusColor(code: number | null): string {
 export function getRetryDelayMs(attempt: number, baseMs: number): number {
   return baseMs * Math.pow(2, attempt - 1);
 }
+
+/* ── Webhook Templates ─────────────────────────────────────────────── */
+
+export interface WebhookTemplate {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: "alerting" | "ehr" | "compliance" | "devops" | "communication";
+  urlPlaceholder: string;
+  events: string[];
+  zone: SecurityZone;
+  phi_filter: boolean;
+  retry_policy: { maxRetries: number; backoffMs: number };
+  timeout_ms: number;
+}
+
+export const WEBHOOK_TEMPLATES: WebhookTemplate[] = [
+  {
+    id: "slack-notifications",
+    name: "Slack Notifications",
+    description: "Send agent and task events to a Slack channel via Incoming Webhook.",
+    icon: "💬",
+    category: "communication",
+    urlPlaceholder: "https://hooks.slack.com/services/T00000/B00000/XXXXXXXX",
+    events: ["agent.started", "agent.completed", "agent.error", "task.completed", "task.failed"],
+    zone: "external",
+    phi_filter: true,
+    retry_policy: { maxRetries: 3, backoffMs: 1000 },
+    timeout_ms: 10000,
+  },
+  {
+    id: "pagerduty-alerts",
+    name: "PagerDuty Alerts",
+    description: "Trigger PagerDuty incidents for critical failures and PHI violations.",
+    icon: "🚨",
+    category: "alerting",
+    urlPlaceholder: "https://events.pagerduty.com/v2/enqueue",
+    events: ["agent.error", "task.failed", "phi.violation", "phi.breach_risk", "integration.error"],
+    zone: "external",
+    phi_filter: true,
+    retry_policy: { maxRetries: 5, backoffMs: 1000 },
+    timeout_ms: 15000,
+  },
+  {
+    id: "epic-ehr-sync",
+    name: "Epic EHR Sync",
+    description: "Forward clinical events to an Epic FHIR endpoint for EHR synchronization.",
+    icon: "🏥",
+    category: "ehr",
+    urlPlaceholder: "https://your-epic-instance.com/api/FHIR/R4/Subscription",
+    events: ["agent.completed", "task.completed", "workflow.completed"],
+    zone: "clinical",
+    phi_filter: false,
+    retry_policy: { maxRetries: 3, backoffMs: 2000 },
+    timeout_ms: 30000,
+  },
+  {
+    id: "compliance-monitor",
+    name: "HIPAA Compliance Monitor",
+    description: "Route all PHI and authentication events to your compliance monitoring system.",
+    icon: "🛡️",
+    category: "compliance",
+    urlPlaceholder: "https://compliance.yourorg.com/webhooks/hipaa",
+    events: ["phi.detected", "phi.violation", "phi.breach_risk", "auth.login", "auth.failed_login"],
+    zone: "operations",
+    phi_filter: true,
+    retry_policy: { maxRetries: 5, backoffMs: 1000 },
+    timeout_ms: 15000,
+  },
+  {
+    id: "ms-teams",
+    name: "Microsoft Teams",
+    description: "Post notifications to a Microsoft Teams channel via connector webhook.",
+    icon: "📋",
+    category: "communication",
+    urlPlaceholder: "https://your-org.webhook.office.com/webhookb2/...",
+    events: ["agent.completed", "agent.error", "task.completed", "task.failed", "workflow.completed"],
+    zone: "external",
+    phi_filter: true,
+    retry_policy: { maxRetries: 3, backoffMs: 1000 },
+    timeout_ms: 10000,
+  },
+  {
+    id: "datadog-events",
+    name: "Datadog Events",
+    description: "Send operational metrics and error events to Datadog for monitoring dashboards.",
+    icon: "📊",
+    category: "devops",
+    urlPlaceholder: "https://http-intake.logs.datadoghq.com/api/v2/logs",
+    events: ["agent.started", "agent.completed", "agent.error", "integration.connected", "integration.error"],
+    zone: "external",
+    phi_filter: true,
+    retry_policy: { maxRetries: 3, backoffMs: 1000 },
+    timeout_ms: 10000,
+  },
+  {
+    id: "custom-ehr",
+    name: "Custom EHR Integration",
+    description: "Connect to any EHR system with workflow and task event forwarding.",
+    icon: "🔗",
+    category: "ehr",
+    urlPlaceholder: "https://your-ehr-system.com/api/webhooks",
+    events: ["workflow.started", "workflow.completed", "task.created", "task.completed"],
+    zone: "clinical",
+    phi_filter: false,
+    retry_policy: { maxRetries: 3, backoffMs: 2000 },
+    timeout_ms: 30000,
+  },
+  {
+    id: "security-siem",
+    name: "Security SIEM",
+    description: "Forward authentication and PHI events to your SIEM for security analysis.",
+    icon: "🔐",
+    category: "compliance",
+    urlPlaceholder: "https://siem.yourorg.com/api/events/webhook",
+    events: ["auth.login", "auth.failed_login", "phi.detected", "phi.violation", "phi.breach_risk"],
+    zone: "operations",
+    phi_filter: true,
+    retry_policy: { maxRetries: 5, backoffMs: 1000 },
+    timeout_ms: 15000,
+  },
+  {
+    id: "patient-comms",
+    name: "Patient Communications",
+    description: "Trigger patient messaging workflows when messages are received or sent.",
+    icon: "📨",
+    category: "communication",
+    urlPlaceholder: "https://your-comms-platform.com/webhooks",
+    events: ["message.received", "message.sent"],
+    zone: "external",
+    phi_filter: true,
+    retry_policy: { maxRetries: 3, backoffMs: 1000 },
+    timeout_ms: 10000,
+  },
+  {
+    id: "n8n-automation",
+    name: "n8n Automation",
+    description: "Trigger n8n workflows from Dr. Claw events for custom automation pipelines.",
+    icon: "⚡",
+    category: "devops",
+    urlPlaceholder: "https://your-n8n.com/webhook/drclaw-events",
+    events: ["agent.completed", "task.completed", "workflow.completed", "message.received"],
+    zone: "external",
+    phi_filter: true,
+    retry_policy: { maxRetries: 3, backoffMs: 1000 },
+    timeout_ms: 15000,
+  },
+];
+
+export const WEBHOOK_TEMPLATE_CATEGORIES = [
+  { id: "communication", label: "Communication" },
+  { id: "alerting", label: "Alerting & Monitoring" },
+  { id: "ehr", label: "EHR Integration" },
+  { id: "compliance", label: "Compliance & Security" },
+  { id: "devops", label: "DevOps & Automation" },
+] as const;
