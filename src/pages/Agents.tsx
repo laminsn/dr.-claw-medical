@@ -85,40 +85,40 @@ const MODEL_OPTIONS = [
   { id: "kimi", label: "Kimi", color: "text-rose-400" },
 ];
 
-const ZONE_CONFIG: Record<AgentZone, { label: string; description: string; color: string; border: string; icon: typeof Shield; restrictions: string[] }> = {
+const getZoneConfig = (t: (key: string) => string): Record<AgentZone, { label: string; description: string; color: string; border: string; icon: typeof Shield; restrictions: string[] }> => ({
   clinical: {
-    label: "Zone 1 — Clinical (PHI)",
-    description: "Handles protected health information. Internal platform communication only. No email, phone, SMS, or external endpoints.",
+    label: t("agents.zoneClinicalLabel"),
+    description: t("agents.zoneClinicalDesc"),
     color: "text-red-400 bg-red-500/15 border-red-500/30",
     border: "border-red-500/30",
     icon: Shield,
-    restrictions: ["No email/phone/SMS access", "No external integrations", "Cannot communicate with Zone 3 agents", "EHR/EMR access only"],
+    restrictions: t("agents.zoneClinicalRestrictions").split(","),
   },
   operations: {
-    label: "Zone 2 — Operations (Internal)",
-    description: "Internal operations only. Receives de-identified data from Zone 1 through sanitization gate. No direct PHI access.",
+    label: t("agents.zoneOperationsLabel"),
+    description: t("agents.zoneOperationsDesc"),
     color: "text-amber-400 bg-amber-500/15 border-amber-500/30",
     border: "border-amber-500/30",
     icon: Shield,
-    restrictions: ["No direct PHI access", "De-identified data only from Zone 1", "Internal tools only"],
+    restrictions: t("agents.zoneOperationsRestrictions").split(","),
   },
   external: {
-    label: "Zone 3 — External (Public-Facing)",
-    description: "Communicates with patients and external services. Email, SMS, voice, web enabled. Never has access to PHI data.",
+    label: t("agents.zoneExternalLabel"),
+    description: t("agents.zoneExternalDesc"),
     color: "text-blue-400 bg-blue-500/15 border-blue-500/30",
     border: "border-blue-500/30",
     icon: Shield,
-    restrictions: ["Zero PHI access", "Cannot communicate with Zone 1 agents", "Public-facing channels enabled"],
+    restrictions: t("agents.zoneExternalRestrictions").split(","),
   },
-};
+});
 
-const CAPABILITY_OPTIONS: { key: keyof AgentCapabilities; label: string; description: string; icon: typeof Shield; color: string }[] = [
-  { key: "phiProtection", label: "PHI Protection", description: "Never discusses or exposes Protected Health Information. Redirects requests for PHI to authorized personnel.", icon: Shield, color: "text-red-400" },
-  { key: "messaging", label: "Send & Receive Messages", description: "Can send, receive, and understand text and audio messages on applicable platforms (SMS, email, chat, Slack, Telegram, Discord).", icon: MessageSquare, color: "text-blue-400" },
-  { key: "voiceRecognition", label: "Voice Recognition & Verification", description: "Uses voice biometrics for identity verification and supports voice-based interactions.", icon: Fingerprint, color: "text-violet-400" },
-  { key: "distressDetection", label: "Distress Detection", description: "Identifies signs of distress in patient or caller interactions and escalates to appropriate human staff immediately.", icon: HeartPulse, color: "text-rose-400" },
-  { key: "taskCreation", label: "Create & Assign Tasks", description: "Allows this agent to autonomously create, assign, and track tasks for itself or other agents based on conversation context.", icon: ListTodo, color: "text-cyan-400" },
-  { key: "hrAssistant", label: "HR Assistant", description: "Assists staff with payroll inquiries, clock-ins/outs, receiving documents, training reminders, and PTO tracking.", icon: Clock, color: "text-amber-400" },
+const getCapabilityOptions = (t: (key: string) => string): { key: keyof AgentCapabilities; label: string; description: string; icon: typeof Shield; color: string }[] => [
+  { key: "phiProtection", label: t("agents.capPhiProtection"), description: t("agents.capPhiProtectionDesc"), icon: Shield, color: "text-red-400" },
+  { key: "messaging", label: t("agents.capMessaging"), description: t("agents.capMessagingDesc"), icon: MessageSquare, color: "text-blue-400" },
+  { key: "voiceRecognition", label: t("agents.capVoiceRecognition"), description: t("agents.capVoiceRecognitionDesc"), icon: Fingerprint, color: "text-violet-400" },
+  { key: "distressDetection", label: t("agents.capDistressDetection"), description: t("agents.capDistressDetectionDesc"), icon: HeartPulse, color: "text-rose-400" },
+  { key: "taskCreation", label: t("agents.capTaskCreation"), description: t("agents.capTaskCreationDesc"), icon: ListTodo, color: "text-cyan-400" },
+  { key: "hrAssistant", label: t("agents.capHrAssistant"), description: t("agents.capHrAssistantDesc"), icon: Clock, color: "text-amber-400" },
 ];
 
 const MOCK_ACTIVITY: ActivityEntry[] = [
@@ -145,6 +145,8 @@ function getSkillFullName(skillId: string): string {
 const Agents = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const ZONE_CONFIG = getZoneConfig(t);
+  const CAPABILITY_OPTIONS = getCapabilityOptions(t);
   const { agents: myAgents, addAgent, updateAgent, deleteAgent: removeAgent, archiveAgent: archiveAgentCtx, restoreAgent: restoreAgentCtx } = useAgents();
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -315,7 +317,7 @@ const Agents = () => {
       zone: configZone,
       language: configLanguage,
     });
-    toast({ title: "Agent Updated", description: `${configName.trim()} settings saved.` });
+    toast({ title: t("agents.agentUpdated"), description: t("agents.agentUpdatedDesc", { name: configName.trim() }) });
     setConfigOpen(false);
     setConfigAgent(null);
   };
@@ -341,7 +343,7 @@ const Agents = () => {
   const executeDeleteAgent = () => {
     if (!configAgent) return;
     removeAgent(configAgent.id);
-    toast({ title: "Agent Deleted", description: `${configAgent.name} has been removed.` });
+    toast({ title: t("agents.agentDeleted"), description: t("agents.agentDeletedDesc", { name: configAgent.name }) });
     setConfigOpen(false);
     setConfigAgent(null);
     setDeleteConfirmStep(false);
@@ -365,7 +367,7 @@ const Agents = () => {
   const executeArchiveAgent = () => {
     if (!configAgent) return;
     archiveAgentCtx(configAgent.id);
-    toast({ title: "Agent Archived", description: `${configAgent.name} has been archived.` });
+    toast({ title: t("agents.agentArchived"), description: t("agents.agentArchivedDesc", { name: configAgent.name }) });
     setConfigOpen(false);
     setConfigAgent(null);
     setTransferOpen(false);
@@ -374,14 +376,14 @@ const Agents = () => {
   const handleRestoreAgent = (agentId: string) => {
     restoreAgentCtx(agentId);
     const agent = myAgents.find((a) => a.id === agentId);
-    toast({ title: "Agent Restored", description: `${agent?.name ?? "Agent"} has been restored.` });
+    toast({ title: t("agents.agentRestored"), description: t("agents.agentRestoredDesc", { name: agent?.name ?? "Agent" }) });
   };
 
   const handleClearMemory = () => {
     if (!configAgent) return;
     toast({
-      title: "Agent Memory Cleared",
-      description: "Agent memory cleared. Conversation history and learned patterns have been reset.",
+      title: t("agents.agentMemoryCleared"),
+      description: t("agents.agentMemoryClearedDesc"),
     });
   };
 
@@ -438,7 +440,7 @@ const Agents = () => {
             >
               <span className="flex items-center gap-2">
                 <Bot className="h-4 w-4" />
-                My Agents
+                {t("agents.myAgents")}
               </span>
             </button>
             <button
@@ -451,7 +453,7 @@ const Agents = () => {
             >
               <span className="flex items-center gap-2">
                 <Zap className="h-4 w-4" />
-                Quick-Start Templates
+                {t("agents.templates")}
               </span>
             </button>
             <button
@@ -464,7 +466,7 @@ const Agents = () => {
             >
               <span className="flex items-center gap-2">
                 <Activity className="h-4 w-4" />
-                Monitor
+                {t("agents.monitor")}
               </span>
             </button>
           </div>
@@ -474,14 +476,14 @@ const Agents = () => {
             <div>
               <div className="flex items-center justify-between mb-6">
                 <p className="text-sm text-muted-foreground">
-                  {myAgents.filter((a) => a.active && !a.archived).length} active of {myAgents.filter((a) => !a.archived).length} agents — no limit on how many you can connect
+                  {myAgents.filter((a) => a.active && !a.archived).length} {t("agents.activeOf")} {myAgents.filter((a) => !a.archived).length} {t("agents.agents")} — {t("agents.noLimitConnect")}
                 </p>
                 <Button
                   className="gradient-primary text-primary-foreground rounded-xl shadow-glow-sm hover:opacity-90 gap-2"
                   onClick={() => { resetCreateForm(); setCreateOpen(true); }}
                 >
                   <Plus className="h-4 w-4" />
-                  Create Agent
+                   {t("agents.createAgent")}
                 </Button>
               </div>
 
@@ -529,7 +531,7 @@ const Agents = () => {
 
                       <div className="mb-3">
                         <p className="text-xs text-muted-foreground mb-2">
-                          {agent.skills.length} skill{agent.skills.length !== 1 ? "s" : ""} assigned
+                          {agent.skills.length} {t("agents.skillsAssigned")}
                         </p>
                         <div className="flex flex-wrap gap-1.5">
                           {visibleSkills.map((skillId) => (
@@ -538,7 +540,7 @@ const Agents = () => {
                             </span>
                           ))}
                           {extraCount > 0 && (
-                            <span className="text-xs px-2 py-0.5 rounded-md bg-muted text-muted-foreground">+{extraCount} more</span>
+                            <span className="text-xs px-2 py-0.5 rounded-md bg-muted text-muted-foreground">+{extraCount} {t("agents.more")}</span>
                           )}
                         </div>
                       </div>
@@ -575,17 +577,17 @@ const Agents = () => {
                             <Clock className="h-3 w-3 text-amber-400" />
                           </span>
                         )}
-                        <span className="text-[10px] text-muted-foreground ml-1">{capCount} capabilities</span>
+                        <span className="text-[10px] text-muted-foreground ml-1">{capCount} {t("agents.capabilities")}</span>
                       </div>
 
                       {/* ── Hover Stats Panel ──────────────────────────── */}
                       <div className="overflow-hidden max-h-0 group-hover:max-h-40 transition-all duration-300 ease-in-out">
                         <div className="border-t border-border pt-3 pb-1 space-y-2">
                           <div className="grid grid-cols-3 gap-1.5">
-                            {[
-                              { label: "Tasks Today", value: agent.tasksToday, icon: CheckCircle2, color: "text-primary" },
-                              { label: "Success", value: `${agent.successRate}%`, icon: TrendingUp, color: "text-emerald-400" },
-                              { label: "Avg Speed", value: agent.avgResponseTime, icon: Clock, color: "text-cyan-400" },
+                             {[
+                               { label: t("agents.tasksToday"), value: agent.tasksToday, icon: CheckCircle2, color: "text-primary" },
+                               { label: t("agents.success"), value: `${agent.successRate}%`, icon: TrendingUp, color: "text-emerald-400" },
+                               { label: t("agents.avgSpeed"), value: agent.avgResponseTime, icon: Clock, color: "text-cyan-400" },
                             ].map((s) => (
                               <div key={s.label} className="rounded-lg bg-muted/40 p-2 text-center">
                                 <s.icon className={`h-3 w-3 mx-auto mb-0.5 ${s.color}`} />
@@ -598,11 +600,11 @@ const Agents = () => {
                           <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 flex items-center justify-between">
                             <div className="flex items-center gap-1.5">
                               <DollarSign className="h-3 w-3 text-amber-400" />
-                              <span className="text-[10px] text-amber-400 font-semibold">Usage Cost</span>
+                              <span className="text-[10px] text-amber-400 font-semibold">{t("agents.usageCost")}</span>
                             </div>
                             <div className="flex items-center gap-3">
-                              <span className="text-[10px] text-muted-foreground">Today: <span className="text-foreground font-semibold">${agent.costToday.toFixed(2)}</span></span>
-                              <span className="text-[10px] text-muted-foreground">Month: <span className="text-foreground font-semibold">${agent.costMonth.toFixed(2)}</span></span>
+                               <span className="text-[10px] text-muted-foreground">{t("agents.today")}: <span className="text-foreground font-semibold">${agent.costToday.toFixed(2)}</span></span>
+                               <span className="text-[10px] text-muted-foreground">{t("agents.month")}: <span className="text-foreground font-semibold">${agent.costMonth.toFixed(2)}</span></span>
                             </div>
                           </div>
                         </div>
@@ -616,7 +618,7 @@ const Agents = () => {
                           }`}
                         >
                           <Power className="h-3.5 w-3.5" />
-                          {agent.active ? "Active" : "Inactive"}
+                          {agent.active ? t("agents.active") : t("agents.inactive")}
                         </button>
                         <div className="flex items-center gap-1">
                           <Button
@@ -649,10 +651,10 @@ const Agents = () => {
                   <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center mb-3 group-hover:bg-primary/10 transition-colors">
                     <Plus className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                   </div>
-                  <p className="font-display font-semibold text-muted-foreground group-hover:text-foreground transition-colors text-sm">
-                    Create New Agent
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">No limit — connect as many agents as you want</p>
+                   <p className="font-display font-semibold text-muted-foreground group-hover:text-foreground transition-colors text-sm">
+                     {t("agents.createNewAgent")}
+                   </p>
+                   <p className="text-xs text-muted-foreground mt-1">{t("agents.noLimit")}</p>
                 </button>
               </div>
 
@@ -665,7 +667,7 @@ const Agents = () => {
                   >
                     {archivedExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     <Archive className="h-4 w-4" />
-                    Archived ({myAgents.filter((a) => a.archived).length})
+                    {t("agents.archived")} ({myAgents.filter((a) => a.archived).length})
                   </button>
                   {archivedExpanded && (
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -688,10 +690,10 @@ const Agents = () => {
                               </div>
                             </div>
                             <div className="flex items-center gap-2 mb-3">
-                              <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-400">
-                                Archived
-                              </Badge>
-                              <span className="text-[10px] text-muted-foreground">{agent.skills.length} skills</span>
+                               <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-400">
+                                 {t("agents.archived")}
+                               </Badge>
+                               <span className="text-[10px] text-muted-foreground">{agent.skills.length} {t("agents.skills").toLowerCase()}</span>
                             </div>
                             <Button
                               variant="outline"
@@ -700,7 +702,7 @@ const Agents = () => {
                               onClick={() => handleRestoreAgent(agent.id)}
                             >
                               <RotateCcw className="h-3 w-3" />
-                              Restore
+                               {t("agents.restore")}
                             </Button>
                           </div>
                         );
@@ -716,7 +718,7 @@ const Agents = () => {
           {activeTab === "templates" && (
             <div>
               <p className="text-sm text-muted-foreground mb-6">
-                Pre-configured agent blueprints. Deploy one in a single click.
+                {t("agents.templatesDesc")}
               </p>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {agentTemplates.map((template) => (
@@ -748,7 +750,7 @@ const Agents = () => {
                       className="w-full gradient-primary text-primary-foreground rounded-lg shadow-glow-sm hover:opacity-90 gap-2"
                       onClick={() => openDeployDialog(template.id)}
                     >
-                      <Zap className="h-4 w-4" /> Deploy <ArrowRight className="h-4 w-4 ml-auto" />
+                      <Zap className="h-4 w-4" /> {t("agents.deploy")} <ArrowRight className="h-4 w-4 ml-auto" />
                     </Button>
                   </div>
                 ))}
@@ -760,7 +762,7 @@ const Agents = () => {
           {activeTab === "monitor" && (
             <div>
               <p className="text-sm text-muted-foreground mb-4">
-                Real-time activity feed across all agents.
+                {t("agents.monitorDesc")}
               </p>
 
               {/* Filter chips */}
@@ -786,7 +788,7 @@ const Agents = () => {
                         activityFilter === filter ? activeColorMap[filter] : colorMap[filter]
                       }`}
                     >
-                      {filter === "all" ? "All" : filter.charAt(0).toUpperCase() + filter.slice(1)}
+                      {filter === "all" ? t("agents.all") : filter === "success" ? t("agents.success") : filter === "warning" ? t("agents.warning") : t("agents.error")}
                     </button>
                   );
                 })}
@@ -837,7 +839,7 @@ const Agents = () => {
                       );
                     })}
                   {MOCK_ACTIVITY.filter((entry) => activityFilter === "all" || entry.status === activityFilter).length === 0 && (
-                    <div className="text-center py-12 text-muted-foreground text-sm">No activity matches the selected filter.</div>
+                    <div className="text-center py-12 text-muted-foreground text-sm">{t("agents.noActivityMatch")}</div>
                   )}
                 </div>
               </div>
@@ -858,14 +860,14 @@ const Agents = () => {
               <DialogHeader>
                 <DialogTitle className="font-display text-xl font-bold flex items-center gap-2">
                   <Settings className="h-5 w-5 text-primary" />
-                  Agent Settings — {configAgent.name}
+                  {t("agents.agentSettingsFor", { name: configAgent.name })}
                 </DialogTitle>
               </DialogHeader>
 
               <div className="space-y-6 mt-2">
                 {/* Agent Name */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Agent Name</Label>
+                   <Label className="text-sm font-medium">{t("agents.agentName")}</Label>
                   <Input
                     value={configName}
                     onChange={(e) => setConfigName(e.target.value)}
@@ -875,7 +877,7 @@ const Agents = () => {
 
                 {/* Zone Classification */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Security Zone</Label>
+                   <Label className="text-sm font-medium">{t("agents.securityZone")}</Label>
                   <div className="space-y-2">
                     {(Object.entries(ZONE_CONFIG) as [AgentZone, typeof ZONE_CONFIG["clinical"]][]).map(([zone, config]) => (
                       <button
@@ -897,7 +899,7 @@ const Agents = () => {
 
                 {/* Model Selection */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">AI Model</Label>
+                   <Label className="text-sm font-medium">{t("agents.aiModel")}</Label>
                   <div className="grid grid-cols-5 gap-2">
                     {MODEL_OPTIONS.map((model) => (
                       <button
@@ -973,7 +975,7 @@ const Agents = () => {
                               <cap.icon className={`h-4 w-4 ${cap.color}`} />
                               <p className="text-sm font-medium text-foreground">{cap.label}</p>
                               {cap.key === "phiProtection" && (
-                                <Badge variant="outline" className="text-[9px] border-red-500/30 text-red-400">Required</Badge>
+                                <Badge variant="outline" className="text-[9px] border-red-500/30 text-red-400">{t("agents.required")}</Badge>
                               )}
                             </div>
                             <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{cap.description}</p>
@@ -987,22 +989,20 @@ const Agents = () => {
                   <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
                     <AlertTriangle className="h-4 w-4 text-red-400 mt-0.5 shrink-0" />
                     <div>
-                      <p className="text-xs font-semibold text-red-400">PHI Protection is always enforced</p>
-                      <p className="text-[11px] text-red-400/80 mt-0.5">
-                        Agents will never discuss, transmit, or expose Protected Health Information (PHI). When PHI is requested,
-                        the agent automatically redirects the requester to authorized clinical staff. This is a hard-coded safety
-                        parameter that cannot be overridden. Scheduling agents only confirm visit times without disclosing clinical details.
-                      </p>
+                       <p className="text-xs font-semibold text-red-400">{t("agents.phiAlwaysEnforced")}</p>
+                       <p className="text-[11px] text-red-400/80 mt-0.5">
+                         {t("agents.phiAlwaysEnforcedDesc")}
+                       </p>
                     </div>
                   </div>
                   {configZone === "clinical" && (
                     <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
                       <Lock className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
                       <div>
-                        <p className="text-xs font-semibold text-amber-400">Zone 1 Restrictions Active</p>
-                        <p className="text-[11px] text-amber-400/80 mt-0.5">
-                          Clinical zone agents are restricted to internal platform communication only. Email, SMS, voice, and external messaging capabilities are automatically disabled. This agent can only communicate with other Zone 1 (Clinical) agents.
-                        </p>
+                       <p className="text-xs font-semibold text-amber-400">{t("agents.zone1RestrictionsActive")}</p>
+                       <p className="text-[11px] text-amber-400/80 mt-0.5">
+                         {t("agents.zone1RestrictionsActiveDesc")}
+                       </p>
                       </div>
                     </div>
                   )}
@@ -1010,8 +1010,8 @@ const Agents = () => {
 
                 {/* Skills */}
                 <div className="space-y-3">
-                  <Label className="text-sm font-medium">
-                    Skills <span className="text-muted-foreground font-normal">({configSkills.length} selected)</span>
+                   <Label className="text-sm font-medium">
+                     {t("agents.skills")} <span className="text-muted-foreground font-normal">({configSkills.length} {t("agents.selected")})</span>
                   </Label>
                   {configSkills.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 p-3 rounded-lg bg-primary/5 border border-primary/20">
@@ -1032,7 +1032,7 @@ const Agents = () => {
                     <Input
                       value={configSearchSkills}
                       onChange={(e) => setConfigSearchSkills(e.target.value)}
-                      placeholder="Search skills..."
+                       placeholder={t("agents.searchSkills")}
                       className="pl-9 bg-background border-border"
                     />
                   </div>
@@ -1078,7 +1078,7 @@ const Agents = () => {
                     onClick={handleSaveConfig}
                   >
                     <Save className="h-4 w-4" />
-                    Save Changes
+                    {t("agents.saveChanges")}
                   </Button>
                   <div className="flex items-center gap-2">
                     <Button
@@ -1087,7 +1087,7 @@ const Agents = () => {
                       onClick={handleArchiveAgent}
                     >
                       <Archive className="h-4 w-4" />
-                      Archive
+                       {t("agents.archive")}
                     </Button>
                     <Button
                       variant="outline"
@@ -1095,7 +1095,7 @@ const Agents = () => {
                       onClick={handleClearMemory}
                     >
                       <Eraser className="h-4 w-4" />
-                      Clear Memory
+                      {t("agents.clearMemory")}
                     </Button>
                     <Button
                       variant="outline"
@@ -1103,7 +1103,7 @@ const Agents = () => {
                       onClick={handleDeleteAgent}
                     >
                       <Trash2 className="h-4 w-4" />
-                      {deleteConfirmStep ? "Are you sure?" : "Delete"}
+                      {deleteConfirmStep ? t("agents.areYouSure") : t("agents.delete")}
                     </Button>
                   </div>
                 </div>
@@ -1124,7 +1124,7 @@ const Agents = () => {
             <DialogHeader>
               <DialogTitle className="font-display text-xl font-bold flex items-center gap-2">
                 <ArrowRightLeft className="h-5 w-5 text-primary" />
-                Transfer Agent Tasks
+                {t("agents.transferAgentTasks")}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-5 mt-2">
@@ -1136,7 +1136,7 @@ const Agents = () => {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Transfer tasks to:</Label>
+                <Label className="text-sm font-medium">{t("agents.transferTasksTo")}</Label>
                 <div className="space-y-2">
                   <button
                     onClick={() => setTransferTargetId("unassigned")}
@@ -1147,7 +1147,7 @@ const Agents = () => {
                     <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${transferTargetId === "unassigned" ? "border-primary" : "border-muted-foreground/40"}`}>
                       {transferTargetId === "unassigned" && <div className="h-2 w-2 rounded-full bg-primary" />}
                     </div>
-                    <span className="text-sm text-foreground font-medium">Keep tasks unassigned</span>
+                    <span className="text-sm text-foreground font-medium">{t("agents.keepUnassigned")}</span>
                   </button>
                   {myAgents
                     .filter((a) => !a.archived && a.id !== transferAgentId)
@@ -1178,14 +1178,14 @@ const Agents = () => {
                   className="flex-1"
                   onClick={() => { setTransferOpen(false); setTransferAgentId(null); }}
                 >
-                  Cancel
+                  {t("agents.cancel")}
                 </Button>
                 <Button
                   className="flex-1 gradient-primary text-primary-foreground rounded-xl shadow-glow-sm hover:opacity-90 gap-2"
                   onClick={handleTransferConfirm}
                 >
                   <ArrowRightLeft className="h-4 w-4" />
-                  {transferAction === "archive" ? "Transfer & Archive" : "Transfer & Delete"}
+                  {transferAction === "archive" ? t("agents.transferArchive") : t("agents.transferDelete")}
                 </Button>
               </div>
             </div>
@@ -1205,17 +1205,17 @@ const Agents = () => {
               <DialogHeader>
                 <DialogTitle className="font-display text-xl font-bold flex items-center gap-2">
                   <Zap className="h-5 w-5 text-primary" />
-                  Deploy {deployTemplate.name}
+                  {t("agents.deployTemplateName", { name: deployTemplate.name })}
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-5 mt-2">
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Name Your Agent</Label>
-                  <Input value={deployName} onChange={(e) => setDeployName(e.target.value)} placeholder="Give your agent a custom name..." className="bg-background border-border" autoFocus />
-                  <p className="text-xs text-muted-foreground">Pre-filled with the template name. Customize it to fit your team.</p>
+                   <Label className="text-sm font-medium">{t("agents.nameYourAgent")}</Label>
+                   <Input value={deployName} onChange={(e) => setDeployName(e.target.value)} placeholder={t("agents.nameYourAgent")} className="bg-background border-border" autoFocus />
+                   <p className="text-xs text-muted-foreground">{t("agents.nameYourAgentDesc")}</p>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">AI Model</Label>
+                   <Label className="text-sm font-medium">{t("agents.aiModel")}</Label>
                   <div className="grid grid-cols-5 gap-2">
                     {MODEL_OPTIONS.map((model) => (
                       <button
@@ -1233,7 +1233,7 @@ const Agents = () => {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Included Skills</Label>
+                  <Label className="text-sm font-medium">{t("agents.includedSkills")}</Label>
                   <div className="flex flex-wrap gap-1.5 p-3 rounded-lg bg-primary/5 border border-primary/20">
                     {deployTemplate.defaultSkills.map((skillId) => (
                       <span key={skillId} className="text-xs px-2 py-0.5 rounded-md bg-primary/15 text-primary font-medium">{getSkillFullName(skillId)}</span>
@@ -1253,7 +1253,7 @@ const Agents = () => {
                   disabled={!deployName.trim()}
                   onClick={handleDeployTemplate}
                 >
-                  <Zap className="h-4 w-4" /> Deploy Agent
+                  <Zap className="h-4 w-4" /> {t("agents.deployAgent")}
                 </Button>
               </div>
             </DialogContent>
@@ -1269,16 +1269,16 @@ const Agents = () => {
             <DialogHeader>
               <DialogTitle className="font-display text-xl font-bold flex items-center gap-2">
                 <Bot className="h-5 w-5 text-primary" />
-                Create New Agent
+                {t("agents.createNewAgent")}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-6 mt-2">
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Agent Name</Label>
+                <Label className="text-sm font-medium">{t("agents.agentName")}</Label>
                 <Input value={newAgentName} onChange={(e) => setNewAgentName(e.target.value)} placeholder="e.g. Dr. Front Desk, Marketing Maven..." className="bg-background border-border" />
               </div>
               <div className="space-y-2">
-                <Label className="text-sm font-medium">AI Model</Label>
+                <Label className="text-sm font-medium">{t("agents.aiModel")}</Label>
                 <div className="grid grid-cols-5 gap-2">
                   {MODEL_OPTIONS.map((model) => (
                     <button
@@ -1297,8 +1297,8 @@ const Agents = () => {
               </div>
               {/* Zone Classification */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Security Zone</Label>
-                <p className="text-xs text-muted-foreground mb-2">Determines what data, channels, and integrations this agent can access.</p>
+                 <Label className="text-sm font-medium">{t("agents.securityZone")}</Label>
+                 <p className="text-xs text-muted-foreground mb-2">{t("agents.securityZoneDesc")}</p>
                 <div className="space-y-2">
                   {(Object.entries(ZONE_CONFIG) as [AgentZone, typeof ZONE_CONFIG["clinical"]][]).map(([zone, config]) => (
                     <button
@@ -1366,7 +1366,7 @@ const Agents = () => {
                 )}
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input value={searchSkills} onChange={(e) => setSearchSkills(e.target.value)} placeholder="Search skills..." className="pl-9 bg-background border-border" />
+                  <Input value={searchSkills} onChange={(e) => setSearchSkills(e.target.value)} placeholder={t("agents.searchSkills")} className="pl-9 bg-background border-border" />
                 </div>
                 <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
                   {groupedSkills.map((group) => (
@@ -1399,7 +1399,7 @@ const Agents = () => {
                     </div>
                   ))}
                   {groupedSkills.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground text-sm">No skills match your search.</div>
+                    <div className="text-center py-8 text-muted-foreground text-sm">{t("agents.noSkillsMatch")}</div>
                   )}
                 </div>
               </div>

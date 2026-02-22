@@ -1,34 +1,37 @@
 import { Link } from "react-router-dom";
 import { Shield, FileCheck, Lock, Zap } from "lucide-react";
-
-const productLinks = [
-  { label: "Features", href: "#features" },
-  { label: "How It Works", href: "#how-it-works" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "Integrations", href: "#integrations" },
-  { label: "Templates", href: "#templates" },
-  { label: "FAQ", href: "#faq" },
-];
-
-const solutionLinks = [
-  { label: "Medical Practices", href: "/auth" },
-  { label: "Health Systems", href: "/auth" },
-  { label: "Specialty Clinics", href: "/auth" },
-  { label: "Telehealth", href: "/auth" },
-  { label: "Clinical Research", href: "/auth" },
-  { label: "Revenue Cycle", href: "/auth" },
-];
-
-const complianceLinks = [
-  { label: "HIPAA Compliance", href: "/compliance/hipaa" },
-  { label: "BAA Information", href: "/compliance/baa" },
-  { label: "SOC 2 Certification", href: "/compliance/soc2" },
-  { label: "Privacy Policy", href: "/privacy" },
-  { label: "Terms of Service", href: "/terms" },
-  { label: "Security", href: "/security" },
-];
+import { useTranslation } from "react-i18next";
 
 export default function Footer() {
+  const { t } = useTranslation();
+
+  const productLinks = [
+    { label: t("footer.features"), href: "#features" },
+    { label: t("footer.howItWorks"), href: "#how-it-works" },
+    { label: t("footer.pricing"), href: "#pricing" },
+    { label: t("footer.integrations"), href: "#integrations" },
+    { label: t("footer.templates"), href: "#templates" },
+    { label: t("footer.faq"), href: "#faq" },
+  ];
+
+  const solutionLinks = [
+    { label: t("footer.medicalPractices"), href: "/auth" },
+    { label: t("footer.healthSystems"), href: "/auth" },
+    { label: t("footer.specialtyClinics"), href: "/auth" },
+    { label: t("footer.telehealth"), href: "/auth" },
+    { label: t("footer.clinicalResearch"), href: "/auth" },
+    { label: t("footer.revenueCycle"), href: "/auth" },
+  ];
+
+  const complianceLinks = [
+    { label: t("footer.hipaaCompliance"), href: "/compliance/hipaa" },
+    { label: t("footer.baaInformation"), href: "/compliance/baa" },
+    { label: t("footer.soc2Certification"), href: "/compliance/soc2" },
+    { label: t("footer.privacyPolicy"), href: "/privacy" },
+    { label: t("footer.termsOfService"), href: "/terms" },
+    { label: t("footer.security"), href: "/security" },
+  ];
+
   return (
     <footer className="border-t border-white/10 pt-16 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -44,9 +47,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-sm text-slate-400 leading-relaxed mb-6 max-w-sm">
-              The AI agent platform built exclusively for healthcare. Automate
-              patient scheduling, clinical documentation, insurance verification,
-              care coordination, and every operation in your medical practice.
+              {t("footer.description")}
             </p>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1.5 text-xs text-slate-500">
@@ -66,10 +67,10 @@ export default function Footer() {
 
           {/* Column 3: Product */}
           <div>
-            <h4 className="text-sm font-semibold text-white mb-4">Product</h4>
+            <h4 className="text-sm font-semibold text-white mb-4">{t("footer.product")}</h4>
             <ul className="space-y-3">
               {productLinks.map((link) => (
-                <li key={link.label}>
+                <li key={link.href}>
                   <a
                     href={link.href}
                     className="text-sm text-slate-400 hover:text-white transition-colors"
@@ -83,7 +84,7 @@ export default function Footer() {
 
           {/* Column 4: Solutions */}
           <div>
-            <h4 className="text-sm font-semibold text-white mb-4">Solutions</h4>
+            <h4 className="text-sm font-semibold text-white mb-4">{t("footer.solutions")}</h4>
             <ul className="space-y-3">
               {solutionLinks.map((link) => (
                 <li key={link.label}>
@@ -101,7 +102,7 @@ export default function Footer() {
           {/* Column 5: Compliance */}
           <div>
             <h4 className="text-sm font-semibold text-white mb-4">
-              Compliance
+              {t("footer.compliance")}
             </h4>
             <ul className="space-y-3">
               {complianceLinks.map((link) => (
@@ -121,7 +122,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-white/10 pt-8 text-center">
           <p className="text-sm text-slate-500">
-            &copy; {new Date().getFullYear()} Dr. Claw. All rights reserved.
+            &copy; {new Date().getFullYear()} Dr. Claw. {t("footer.allRightsReserved")}
           </p>
         </div>
       </div>
