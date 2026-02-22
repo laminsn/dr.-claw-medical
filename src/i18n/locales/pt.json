@@ -907,6 +907,7 @@
   },
   "integrations": {
     "all": "Todos",
+    "cancel": "Cancelar",
     "categoryAiModels": "Modelos de IA",
     "categoryCloud": "Nuvem",
     "categoryCommunication": "Comunicação",
@@ -925,6 +926,7 @@
     "disconnect": "Desconectar",
     "disconnectConfirm": "Tem certeza de que deseja desconectar {{name}}?",
     "enterApiKey": "Insira sua chave API para conectar",
+    "error": "Erro",
     "features": "Recursos",
     "invalidKeyFormat": "Formato de chave API inválido",
     "keyEncrypted": "Sua chave API está criptografada e armazenada com segurança",

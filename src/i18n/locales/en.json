@@ -909,6 +909,7 @@
   },
   "integrations": {
     "all": "All",
+    "cancel": "Cancel",
     "categoryAiModels": "AI Models",
     "categoryCloud": "Cloud",
     "categoryCommunication": "Communication",
@@ -927,6 +928,7 @@
     "disconnect": "Disconnect",
     "disconnectConfirm": "Are you sure you want to disconnect {{name}}?",
     "enterApiKey": "Enter your API key to connect",
+    "error": "Error",
     "features": "Features",
     "invalidKeyFormat": "Invalid API key format",
     "keyEncrypted": "Your API key is encrypted and stored securely",
