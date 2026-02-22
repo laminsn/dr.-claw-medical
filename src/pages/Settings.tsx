@@ -64,17 +64,17 @@ const Settings = () => {
   };
 
   const handleRegenerateKey = () => {
-    toast({ title: "API key regenerated", description: "Your old key has been revoked." });
+    toast({ title: t("settings.apiKeyRegenerated"), description: t("settings.apiKeyRegeneratedDesc") });
   };
 
   const handleExportData = () => {
-    toast({ title: "Export started", description: "Your data export will be ready shortly." });
+    toast({ title: t("settings.exportStarted"), description: t("settings.exportStartedDesc") });
   };
 
   const handleDeleteAccount = () => {
     toast({
-      title: "Action required",
-      description: "Contact support to delete your account. A 30-day data export period applies.",
+      title: t("settings.actionRequired"),
+      description: t("settings.deleteAccountDesc"),
       variant: "destructive",
     });
   };
@@ -269,9 +269,9 @@ const Settings = () => {
                 >
                   <option value="90">90 {t("common.days")}</option>
                   <option value="180">180 {t("common.days")}</option>
-                  <option value="365">1 year</option>
-                  <option value="730">2 years</option>
-                  <option value="2555">7 years (HIPAA)</option>
+                   <option value="365">1 {t("common.year")}</option>
+                   <option value="730">2 {t("common.years")}</option>
+                   <option value="2555">7 {t("common.years")} (HIPAA)</option>
                 </select>
               </div>
 
