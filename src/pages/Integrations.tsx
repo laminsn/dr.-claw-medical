@@ -177,10 +177,11 @@ const INTEGRATION_ZONE_ACCESS: Record<string, AgentZone[]> = {
   salesforce: ["external"],
   "zoho-crm": ["external"],
   pipedrive: ["external"],
-  // Voice — External zone only
-  elevenlabs: ["external"],
-  deepgram: ["external"],
+  // Voice — External + Operations
+  elevenlabs: ["external", "operations"],
+  deepgram: ["external", "operations"],
   vapi: ["external"],
+  "wispr-flow": ["clinical", "operations", "external"],
   // Messaging — External zone only
   telegram: ["external"],
   discord: ["external"],
