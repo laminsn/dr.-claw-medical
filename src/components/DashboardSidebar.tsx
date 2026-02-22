@@ -35,6 +35,7 @@ import {
   Network,
   Database,
   Wallet,
+  Webhook,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "react-i18next";
@@ -72,6 +73,7 @@ const DashboardSidebar = ({ overdueTaskCount = 0 }: { overdueTaskCount?: number 
     { icon: GraduationCap, label: t("sidebar.trainingCenter"), path: "/dashboard/training" },
     { icon: ShieldAlert, label: t("sidebar.phiMonitor"), path: "/dashboard/phi-monitor" },
     { icon: GitBranch, label: t("sidebar.n8nGateway", "N8N Gateway"), path: "/dashboard/n8n-gateway" },
+    { icon: Webhook, label: t("sidebar.webhooks", "Webhooks"), path: "/dashboard/webhooks" },
     { icon: Code2, label: t("sidebar.apiPortal"), path: "/dashboard/api" },
     { icon: Wallet, label: t("sidebar.companyCards"), path: "/dashboard/cards" },
     { icon: CreditCard, label: t("sidebar.billingPlans"), path: "/dashboard/billing" },

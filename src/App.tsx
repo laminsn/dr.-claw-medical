@@ -38,6 +38,7 @@ import AgentOrgChart from "./pages/AgentOrgChart";
 import AgentDataCenter from "./pages/AgentDataCenter";
 import CompanyCards from "./pages/CompanyCards";
 import N8nGateway from "./pages/N8nGateway";
+import Webhooks from "./pages/Webhooks";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -86,6 +87,7 @@ const App = () => (
             <Route path="/dashboard/data-center" element={<ProtectedRoute><AgentDataCenter /></ProtectedRoute>} />
             <Route path="/dashboard/cards" element={<ProtectedRoute><CompanyCards /></ProtectedRoute>} />
             <Route path="/dashboard/n8n-gateway" element={<ProtectedRoute><N8nGateway /></ProtectedRoute>} />
+            <Route path="/dashboard/webhooks" element={<ProtectedRoute><Webhooks /></ProtectedRoute>} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Terms />} />
             <Route path="/security" element={<Terms />} />
