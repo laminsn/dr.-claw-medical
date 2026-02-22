@@ -24,6 +24,9 @@ import {
   ExternalLink,
   Search,
   Filter,
+  CopyPlus,
+  LayoutTemplate,
+  ArrowLeft,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
@@ -55,12 +58,15 @@ import { useWebhooks } from "@/hooks/useWebhooks";
 import {
   WEBHOOK_EVENT_CATEGORIES,
   ALL_WEBHOOK_EVENTS,
+  WEBHOOK_TEMPLATES,
+  WEBHOOK_TEMPLATE_CATEGORIES,
   getEventById,
   getStatusColor,
   getHttpStatusColor,
   type Webhook,
   type WebhookDelivery,
   type WebhookCreateInput,
+  type WebhookTemplate,
 } from "@/lib/webhooks";
 import type { SecurityZone } from "@/lib/security";
 
@@ -110,6 +116,8 @@ const Webhooks = () => {
   const [formPhiFilter, setFormPhiFilter] = useState(true);
   const [formTimeout, setFormTimeout] = useState(10000);
   const [formMaxRetries, setFormMaxRetries] = useState(3);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(true);
+  const [templateCategoryFilter, setTemplateCategoryFilter] = useState<string>("all");
 
   // Load deliveries when tab changes
   useEffect(() => {
@@ -212,6 +220,33 @@ const Webhooks = () => {
     setFormPhiFilter(true);
     setFormTimeout(10000);
     setFormMaxRetries(3);
+    setShowTemplatePicker(true);
+    setTemplateCategoryFilter("all");
+  };
+
+  const applyTemplate = (template: WebhookTemplate) => {
+    setFormName(template.name);
+    setFormUrl("");
+    setFormDescription(template.description);
+    setFormZone(template.zone);
+    setFormEvents([...template.events]);
+    setFormPhiFilter(template.phi_filter);
+    setFormTimeout(template.timeout_ms);
+    setFormMaxRetries(template.retry_policy.maxRetries);
+    setShowTemplatePicker(false);
+  };
+
+  const handleDuplicate = (webhook: Webhook) => {
+    setFormName(`${webhook.name} (Copy)`);
+    setFormUrl(webhook.url);
+    setFormDescription(webhook.description || "");
+    setFormZone(webhook.zone);
+    setFormEvents([...webhook.events]);
+    setFormPhiFilter(webhook.phi_filter);
+    setFormTimeout(webhook.timeout_ms);
+    setFormMaxRetries(webhook.retry_policy.maxRetries);
+    setShowTemplatePicker(false);
+    setShowCreateDialog(true);
   };
 
   const toggleEventSelection = (eventId: string) => {
@@ -420,6 +455,15 @@ const Webhooks = () => {
                           onClick={() => setShowSecretDialog(webhook)}
                         >
                           <Settings2 className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => handleDuplicate(webhook)}
+                          title={t("webhooks.duplicate")}
+                        >
+                          <CopyPlus className="h-4 w-4 text-muted-foreground" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -687,144 +731,229 @@ const Webhooks = () => {
       </main>
 
       {/* ── Create Webhook Dialog ───────────────────────────────────── */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+      <Dialog open={showCreateDialog} onOpenChange={(open) => { setShowCreateDialog(open); if (!open) resetForm(); }}>
         <DialogContent className="bg-card border-white/[0.06] max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{t("webhooks.createWebhook")}</DialogTitle>
-            <DialogDescription>{t("webhooks.createDesc")}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-5 py-2">
-            {/* Name */}
-            <div className="space-y-2">
-              <Label>{t("webhooks.name")}</Label>
-              <Input
-                placeholder={t("webhooks.namePlaceholder")}
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-                className="bg-white/[0.03] border-white/10"
-              />
-            </div>
+          {showTemplatePicker ? (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <LayoutTemplate className="h-5 w-5" />
+                  {t("webhooks.chooseTemplate")}
+                </DialogTitle>
+                <DialogDescription>{t("webhooks.chooseTemplateDesc")}</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-2">
+                {/* Template category filter */}
+                <div className="flex flex-wrap gap-1.5">
+                  <Button
+                    variant={templateCategoryFilter === "all" ? "default" : "outline"}
+                    size="sm"
+                    className="text-xs h-7"
+                    onClick={() => setTemplateCategoryFilter("all")}
+                  >
+                    {t("webhooks.allTemplates")}
+                  </Button>
+                  {WEBHOOK_TEMPLATE_CATEGORIES.map((cat) => (
+                    <Button
+                      key={cat.id}
+                      variant={templateCategoryFilter === cat.id ? "default" : "outline"}
+                      size="sm"
+                      className="text-xs h-7"
+                      onClick={() => setTemplateCategoryFilter(cat.id)}
+                    >
+                      {t(`webhooks.templateCat_${cat.id}`, cat.label)}
+                    </Button>
+                  ))}
+                </div>
 
-            {/* URL */}
-            <div className="space-y-2">
-              <Label>{t("webhooks.url")}</Label>
-              <Input
-                placeholder="https://your-server.com/webhooks/drclaw"
-                value={formUrl}
-                onChange={(e) => setFormUrl(e.target.value)}
-                className="bg-white/[0.03] border-white/10"
-              />
-            </div>
-
-            {/* Description */}
-            <div className="space-y-2">
-              <Label>{t("webhooks.description")}</Label>
-              <Textarea
-                placeholder={t("webhooks.descriptionPlaceholder")}
-                value={formDescription}
-                onChange={(e) => setFormDescription(e.target.value)}
-                className="bg-white/[0.03] border-white/10 min-h-[60px]"
-              />
-            </div>
-
-            {/* Zone & PHI */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>{t("webhooks.zone")}</Label>
-                <Select value={formZone} onValueChange={(v) => setFormZone(v as SecurityZone)}>
-                  <SelectTrigger className="bg-white/[0.03] border-white/10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="clinical">{t("webhooks.zoneClinical")}</SelectItem>
-                    <SelectItem value="operations">{t("webhooks.zoneOperations")}</SelectItem>
-                    <SelectItem value="external">{t("webhooks.zoneExternal")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>{t("webhooks.timeout")}</Label>
-                <Select value={String(formTimeout)} onValueChange={(v) => setFormTimeout(Number(v))}>
-                  <SelectTrigger className="bg-white/[0.03] border-white/10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5000">5s</SelectItem>
-                    <SelectItem value="10000">10s</SelectItem>
-                    <SelectItem value="15000">15s</SelectItem>
-                    <SelectItem value="30000">30s</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Retries & PHI filter */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>{t("webhooks.maxRetries")}</Label>
-                <Select value={String(formMaxRetries)} onValueChange={(v) => setFormMaxRetries(Number(v))}>
-                  <SelectTrigger className="bg-white/[0.03] border-white/10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">{t("webhooks.noRetries")}</SelectItem>
-                    <SelectItem value="1">1</SelectItem>
-                    <SelectItem value="3">3</SelectItem>
-                    <SelectItem value="5">5</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>{t("webhooks.phiFilter")}</Label>
-                <div className="flex items-center gap-3 mt-1">
-                  <Switch checked={formPhiFilter} onCheckedChange={setFormPhiFilter} />
-                  <span className="text-sm text-muted-foreground">
-                    {formPhiFilter ? t("webhooks.phiEnabled") : t("webhooks.phiDisabled")}
-                  </span>
+                {/* Template cards */}
+                <div className="grid grid-cols-2 gap-3 max-h-[400px] overflow-y-auto">
+                  {WEBHOOK_TEMPLATES.filter(
+                    (tpl) => templateCategoryFilter === "all" || tpl.category === templateCategoryFilter
+                  ).map((tpl) => (
+                    <button
+                      key={tpl.id}
+                      className="text-left p-4 rounded-lg border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] hover:border-primary/40 transition-all group"
+                      onClick={() => applyTemplate(tpl)}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-lg">{tpl.icon}</span>
+                        <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                          {t(`webhooks.tpl_${tpl.id}`, tpl.name)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                        {t(`webhooks.tplDesc_${tpl.id}`, tpl.description)}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        {zoneBadge(tpl.zone)}
+                        <Badge variant="secondary" className="text-[10px]">
+                          {tpl.events.length} {t("webhooks.events").toLowerCase()}
+                        </Badge>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
-            </div>
+              <DialogFooter className="flex-row justify-between sm:justify-between">
+                <Button variant="outline" onClick={() => { setShowCreateDialog(false); resetForm(); }}>
+                  {t("webhooks.cancel")}
+                </Button>
+                <Button variant="ghost" className="gap-2" onClick={() => setShowTemplatePicker(false)}>
+                  {t("webhooks.startFromScratch")}
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </DialogFooter>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>{t("webhooks.createWebhook")}</DialogTitle>
+                <DialogDescription>{t("webhooks.createDesc")}</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-5 py-2">
+                {/* Back to templates link */}
+                <button
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+                  onClick={() => { resetForm(); setShowTemplatePicker(true); }}
+                >
+                  <ArrowLeft className="h-3 w-3" />
+                  {t("webhooks.backToTemplates")}
+                </button>
 
-            {/* Event Selection */}
-            <div className="space-y-3">
-              <Label>{t("webhooks.events")} ({formEvents.length} {t("webhooks.selected")})</Label>
-              <div className="border border-white/[0.06] rounded-lg max-h-[240px] overflow-y-auto">
-                {WEBHOOK_EVENT_CATEGORIES.map((category) => {
-                  const categoryEventIds = category.events.map((e) => e.id);
-                  const allSelected = categoryEventIds.every((id) => formEvents.includes(id));
-                  const someSelected = categoryEventIds.some((id) => formEvents.includes(id));
+                {/* Name */}
+                <div className="space-y-2">
+                  <Label>{t("webhooks.name")}</Label>
+                  <Input
+                    placeholder={t("webhooks.namePlaceholder")}
+                    value={formName}
+                    onChange={(e) => setFormName(e.target.value)}
+                    className="bg-white/[0.03] border-white/10"
+                  />
+                </div>
 
-                  return (
-                    <div key={category.id} className="border-b border-white/[0.04] last:border-0">
-                      <div className="flex items-center gap-2 px-3 py-2 bg-white/[0.02]">
-                        <Checkbox
-                          checked={allSelected ? true : someSelected ? "indeterminate" : false}
-                          onCheckedChange={() => toggleCategorySelection(category.id)}
-                        />
-                        <span className="text-sm font-medium text-foreground">{category.label}</span>
-                      </div>
-                      {category.events.map((event) => (
-                        <div key={event.id} className="flex items-center gap-2 px-3 py-1.5 pl-8">
-                          <Checkbox
-                            checked={formEvents.includes(event.id)}
-                            onCheckedChange={() => toggleEventSelection(event.id)}
-                          />
-                          <span className="text-sm text-muted-foreground">{event.label}</span>
-                          <code className="text-xs text-muted-foreground/60 ml-auto">{event.id}</code>
-                        </div>
-                      ))}
+                {/* URL */}
+                <div className="space-y-2">
+                  <Label>{t("webhooks.url")}</Label>
+                  <Input
+                    placeholder="https://your-server.com/webhooks/drclaw"
+                    value={formUrl}
+                    onChange={(e) => setFormUrl(e.target.value)}
+                    className="bg-white/[0.03] border-white/10"
+                  />
+                </div>
+
+                {/* Description */}
+                <div className="space-y-2">
+                  <Label>{t("webhooks.description")}</Label>
+                  <Textarea
+                    placeholder={t("webhooks.descriptionPlaceholder")}
+                    value={formDescription}
+                    onChange={(e) => setFormDescription(e.target.value)}
+                    className="bg-white/[0.03] border-white/10 min-h-[60px]"
+                  />
+                </div>
+
+                {/* Zone & Timeout */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>{t("webhooks.zone")}</Label>
+                    <Select value={formZone} onValueChange={(v) => setFormZone(v as SecurityZone)}>
+                      <SelectTrigger className="bg-white/[0.03] border-white/10">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="clinical">{t("webhooks.zoneClinical")}</SelectItem>
+                        <SelectItem value="operations">{t("webhooks.zoneOperations")}</SelectItem>
+                        <SelectItem value="external">{t("webhooks.zoneExternal")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t("webhooks.timeout")}</Label>
+                    <Select value={String(formTimeout)} onValueChange={(v) => setFormTimeout(Number(v))}>
+                      <SelectTrigger className="bg-white/[0.03] border-white/10">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5000">5s</SelectItem>
+                        <SelectItem value="10000">10s</SelectItem>
+                        <SelectItem value="15000">15s</SelectItem>
+                        <SelectItem value="30000">30s</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Retries & PHI filter */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>{t("webhooks.maxRetries")}</Label>
+                    <Select value={String(formMaxRetries)} onValueChange={(v) => setFormMaxRetries(Number(v))}>
+                      <SelectTrigger className="bg-white/[0.03] border-white/10">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">{t("webhooks.noRetries")}</SelectItem>
+                        <SelectItem value="1">1</SelectItem>
+                        <SelectItem value="3">3</SelectItem>
+                        <SelectItem value="5">5</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t("webhooks.phiFilter")}</Label>
+                    <div className="flex items-center gap-3 mt-1">
+                      <Switch checked={formPhiFilter} onCheckedChange={setFormPhiFilter} />
+                      <span className="text-sm text-muted-foreground">
+                        {formPhiFilter ? t("webhooks.phiEnabled") : t("webhooks.phiDisabled")}
+                      </span>
                     </div>
-                  );
-                })}
+                  </div>
+                </div>
+
+                {/* Event Selection */}
+                <div className="space-y-3">
+                  <Label>{t("webhooks.events")} ({formEvents.length} {t("webhooks.selected")})</Label>
+                  <div className="border border-white/[0.06] rounded-lg max-h-[240px] overflow-y-auto">
+                    {WEBHOOK_EVENT_CATEGORIES.map((category) => {
+                      const categoryEventIds = category.events.map((e) => e.id);
+                      const allSelected = categoryEventIds.every((id) => formEvents.includes(id));
+                      const someSelected = categoryEventIds.some((id) => formEvents.includes(id));
+
+                      return (
+                        <div key={category.id} className="border-b border-white/[0.04] last:border-0">
+                          <div className="flex items-center gap-2 px-3 py-2 bg-white/[0.02]">
+                            <Checkbox
+                              checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                              onCheckedChange={() => toggleCategorySelection(category.id)}
+                            />
+                            <span className="text-sm font-medium text-foreground">{category.label}</span>
+                          </div>
+                          {category.events.map((event) => (
+                            <div key={event.id} className="flex items-center gap-2 px-3 py-1.5 pl-8">
+                              <Checkbox
+                                checked={formEvents.includes(event.id)}
+                                onCheckedChange={() => toggleEventSelection(event.id)}
+                              />
+                              <span className="text-sm text-muted-foreground">{event.label}</span>
+                              <code className="text-xs text-muted-foreground/60 ml-auto">{event.id}</code>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setShowCreateDialog(false); resetForm(); }}>
-              {t("webhooks.cancel")}
-            </Button>
-            <Button onClick={handleCreate}>{t("webhooks.create")}</Button>
-          </DialogFooter>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => { setShowCreateDialog(false); resetForm(); }}>
+                  {t("webhooks.cancel")}
+                </Button>
+                <Button onClick={handleCreate}>{t("webhooks.create")}</Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
