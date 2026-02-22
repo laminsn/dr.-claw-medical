@@ -1180,7 +1180,7 @@
     "sentimentScore": "Sentiment Score",
     "subtitle": "Test and interact with your AI agents in a sandboxed environment",
     "systemPrompt": "System Prompt",
-    "temperature": "s a draft blog introduction:\\n\\n**Why This Flu Season Demands Your Attention**\\n\\nAs temperatures drop and we spend more time indoors, flu season is ramping up - and this year",
+    "temperature": "Temperature",
     "testScenarios": "Tests scheduling capability",
     "title": "Agent Playground",
     "tokenUsage": "Token Usage",
