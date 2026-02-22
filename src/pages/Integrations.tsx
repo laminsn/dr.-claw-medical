@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Brain,
@@ -46,6 +46,12 @@ import {
   CalendarCheck,
   Bug,
   Smartphone,
+  Loader2,
+  Power,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
@@ -62,7 +68,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { integrations, integrationCategories } from "@/data/integrations";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { integrations, integrationCategories, BRAND_STYLES } from "@/data/integrations";
+import { validateApiKeyFormat, maskApiKey } from "@/lib/security";
 
 // ---------------------------------------------------------------------------
 // Icon mapping: integration data stores icon names as lowercase strings
@@ -141,9 +150,6 @@ const categoryColors: Record<string, string> = {
 };
 
 // ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 // Zone classification for integrations
 // ---------------------------------------------------------------------------
 type AgentZone = "clinical" | "operations" | "external" | "all";
@@ -205,20 +211,65 @@ const INTEGRATION_ZONE_ACCESS: Record<string, AgentZone[]> = {
   jira: ["operations"],
 };
 
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+interface ConnectedIntegration {
+  apiKey: string;
+  isActive: boolean;
+}
+
 const Integrations = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { user } = useAuth();
 
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedIntegration, setSelectedIntegration] = useState<
     (typeof integrations)[number] | null
   >(null);
   const [apiKeyInput, setApiKeyInput] = useState("");
-  const [connectedKeys, setConnectedKeys] = useState<Record<string, string>>(
-    {},
-  );
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [connectedIntegrations, setConnectedIntegrations] = useState<
+    Record<string, ConnectedIntegration>
+  >({});
+  const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
+  const [validationError, setValidationError] = useState("");
+  const [disconnectTarget, setDisconnectTarget] = useState<
+    (typeof integrations)[number] | null
+  >(null);
 
-  // --- i18n label maps (inside component so t() is accessible) ---
+  // --- Load connected integrations from Supabase ---
+  const loadIntegrations = useCallback(async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    const { data } = await supabase
+      .from("user_integrations")
+      .select("integration_key, api_key, is_active")
+      .eq("user_id", user.id);
+
+    if (data) {
+      const map: Record<string, ConnectedIntegration> = {};
+      for (const row of data) {
+        map[row.integration_key] = {
+          apiKey: row.api_key,
+          isActive: row.is_active ?? true,
+        };
+      }
+      setConnectedIntegrations(map);
+    }
+    setLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    loadIntegrations();
+  }, [loadIntegrations]);
+
+  // --- i18n label maps ---
   const categoryLabel: Record<string, string> = {
     llm: t("integrations.categoryAiModels"),
     voice: t("integrations.categoryVoiceAi"),
@@ -234,9 +285,18 @@ const Integrations = () => {
   };
 
   const ZONE_BADGE_CONFIG: Record<string, { label: string; color: string }> = {
-    clinical: { label: t("integrations.zone1"), color: "text-red-400 bg-red-500/10 border-red-500/30" },
-    operations: { label: t("integrations.zone2"), color: "text-amber-400 bg-amber-500/10 border-amber-500/30" },
-    external: { label: t("integrations.zone3"), color: "text-blue-400 bg-blue-500/10 border-blue-500/30" },
+    clinical: {
+      label: t("integrations.zone1"),
+      color: "text-red-400 bg-red-500/10 border-red-500/30",
+    },
+    operations: {
+      label: t("integrations.zone2"),
+      color: "text-amber-400 bg-amber-500/10 border-amber-500/30",
+    },
+    external: {
+      label: t("integrations.zone3"),
+      color: "text-blue-400 bg-blue-500/10 border-blue-500/30",
+    },
   };
 
   const filteredIntegrations = integrations.filter((integ) => {
@@ -248,22 +308,101 @@ const Integrations = () => {
     ...integrationCategories.map((c) => ({ id: c.id, name: c.name })),
   ];
 
-  const handleConnect = () => {
-    if (!selectedIntegration || !apiKeyInput.trim()) return;
+  // --- Connect handler with validation + Supabase persistence ---
+  const handleConnect = async () => {
+    if (!selectedIntegration || !apiKeyInput.trim() || !user) return;
 
-    setConnectedKeys((prev) => ({
-      ...prev,
-      [selectedIntegration.id]: apiKeyInput.trim(),
-    }));
+    const key = apiKeyInput.trim();
 
-    toast({
-      title: t("integrations.toastConnected"),
-      description: t("integrations.toastConnectedDesc", { name: selectedIntegration.name }),
-    });
+    // Validate key format for known providers
+    const validation = validateApiKeyFormat(selectedIntegration.id, key);
+    if (!validation.valid) {
+      setValidationError(validation.message);
+      toast({
+        title: t("integrations.toastInvalidKey"),
+        description: t("integrations.toastInvalidKeyDesc", {
+          message: validation.message,
+        }),
+        variant: "destructive",
+      });
+      return;
+    }
 
+    setConnecting(true);
+    setValidationError("");
+
+    const { error } = await supabase.from("user_integrations").upsert(
+      {
+        user_id: user.id,
+        integration_key: selectedIntegration.id,
+        api_key: key,
+        is_active: true,
+      },
+      { onConflict: "user_id,integration_key" }
+    );
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      setConnectedIntegrations((prev) => ({
+        ...prev,
+        [selectedIntegration.id]: { apiKey: key, isActive: true },
+      }));
+
+      toast({
+        title: t("integrations.toastConnected"),
+        description: t("integrations.toastConnectedDesc", {
+          name: selectedIntegration.name,
+        }),
+      });
+    }
+
+    setConnecting(false);
     setApiKeyInput("");
+    setShowApiKey(false);
     setSelectedIntegration(null);
   };
+
+  // --- Disconnect handler ---
+  const handleDisconnect = async () => {
+    if (!disconnectTarget || !user) return;
+
+    const { error } = await supabase
+      .from("user_integrations")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("integration_key", disconnectTarget.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      setConnectedIntegrations((prev) => {
+        const next = { ...prev };
+        delete next[disconnectTarget.id];
+        return next;
+      });
+
+      toast({
+        title: t("integrations.toastDisconnected"),
+        description: t("integrations.toastDisconnectedDesc", {
+          name: disconnectTarget.name,
+        }),
+      });
+    }
+
+    setDisconnectTarget(null);
+  };
+
+  // --- Helper: get brand style for provider ---
+  const getBrandStyle = (id: string) => BRAND_STYLES[id] ?? null;
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -285,14 +424,25 @@ const Integrations = () => {
           <div className="flex items-start gap-3 p-4 rounded-xl border border-red-500/20 bg-red-500/5">
             <Lock className="h-5 w-5 text-red-400 mt-0.5 shrink-0" />
             <div>
-              <p className="text-sm font-semibold text-red-400">{t("integrations.zoneLockedTitle")}</p>
+              <p className="text-sm font-semibold text-red-400">
+                {t("integrations.zoneLockedTitle")}
+              </p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {t("integrations.zoneLockedDesc")}
               </p>
               <div className="flex items-center gap-4 mt-2">
-                <span className="flex items-center gap-1.5 text-[10px]"><span className="h-2 w-2 rounded-full bg-red-400" /> {t("integrations.zone1Desc")}</span>
-                <span className="flex items-center gap-1.5 text-[10px]"><span className="h-2 w-2 rounded-full bg-amber-400" /> {t("integrations.zone2Desc")}</span>
-                <span className="flex items-center gap-1.5 text-[10px]"><span className="h-2 w-2 rounded-full bg-blue-400" /> {t("integrations.zone3Desc")}</span>
+                <span className="flex items-center gap-1.5 text-[10px]">
+                  <span className="h-2 w-2 rounded-full bg-red-400" />{" "}
+                  {t("integrations.zone1Desc")}
+                </span>
+                <span className="flex items-center gap-1.5 text-[10px]">
+                  <span className="h-2 w-2 rounded-full bg-amber-400" />{" "}
+                  {t("integrations.zone2Desc")}
+                </span>
+                <span className="flex items-center gap-1.5 text-[10px]">
+                  <span className="h-2 w-2 rounded-full bg-blue-400" />{" "}
+                  {t("integrations.zone3Desc")}
+                </span>
               </div>
             </div>
           </div>
@@ -314,8 +464,12 @@ const Integrations = () => {
             ))}
           </div>
 
-          {/* ── Integration cards grid ─────────────────── */}
-          {filteredIntegrations.length === 0 ? (
+          {/* ── Loading ─────────────────────────────────── */}
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-primary/60" />
+            </div>
+          ) : filteredIntegrations.length === 0 ? (
             <div className="text-center py-20 text-muted-foreground">
               <Search className="h-10 w-10 mx-auto mb-3 opacity-40" />
               <p className="text-sm">{t("integrations.noIntegrations")}</p>
@@ -324,17 +478,33 @@ const Integrations = () => {
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {filteredIntegrations.map((integ) => {
                 const Icon = resolveIcon(integ.icon);
-                const isConnected = !!connectedKeys[integ.id];
+                const isConnected = !!connectedIntegrations[integ.id];
+                const brand = getBrandStyle(integ.id);
 
                 return (
                   <div
                     key={integ.id}
-                    className="glass-card card-hover rounded-2xl p-5 flex flex-col transition-all group"
+                    className={`glass-card card-hover rounded-2xl p-5 flex flex-col transition-all group ${
+                      isConnected
+                        ? "ring-1 ring-emerald-500/20 bg-emerald-500/[0.02]"
+                        : ""
+                    }`}
                   >
                     {/* Top row */}
                     <div className="flex items-start justify-between mb-3">
-                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                        <Icon className="h-5 w-5 text-primary" />
+                      <div
+                        className={`h-10 w-10 rounded-xl flex items-center justify-center ${
+                          brand
+                            ? `${brand.bg} ${brand.border} border`
+                            : "bg-gradient-to-br from-primary/20 to-primary/5"
+                        }`}
+                      >
+                        <Icon
+                          className={`h-5 w-5 ${
+                            brand ? "" : "text-primary"
+                          }`}
+                          style={brand ? { color: brand.accent } : undefined}
+                        />
                       </div>
 
                       <div className="flex items-center gap-1.5">
@@ -349,7 +519,9 @@ const Integrations = () => {
                         )}
                         <Badge
                           variant="outline"
-                          className={`text-[10px] ${categoryColors[integ.category] ?? ""}`}
+                          className={`text-[10px] ${
+                            categoryColors[integ.category] ?? ""
+                          }`}
                         >
                           {categoryLabel[integ.category] ?? integ.category}
                         </Badge>
@@ -377,16 +549,27 @@ const Integrations = () => {
                       ))}
                       {integ.features.length > 3 && (
                         <li className="text-[11px] text-muted-foreground/60 pl-[18px]">
-                          +{integ.features.length - 3} {t("integrations.more")}
+                          +{integ.features.length - 3}{" "}
+                          {t("integrations.more")}
                         </li>
                       )}
                     </ul>
 
                     {/* Zone Access */}
                     <div className="flex items-center gap-1 mt-2 flex-wrap">
-                      <span className="text-[9px] text-muted-foreground/60 mr-0.5">{t("integrations.zones")}:</span>
-                      {(INTEGRATION_ZONE_ACCESS[integ.id] || ["operations"]).map((zone) => (
-                        <Badge key={zone} variant="outline" className={`text-[8px] px-1.5 py-0 ${ZONE_BADGE_CONFIG[zone]?.color || ""}`}>
+                      <span className="text-[9px] text-muted-foreground/60 mr-0.5">
+                        {t("integrations.zones")}:
+                      </span>
+                      {(
+                        INTEGRATION_ZONE_ACCESS[integ.id] || ["operations"]
+                      ).map((zone) => (
+                        <Badge
+                          key={zone}
+                          variant="outline"
+                          className={`text-[8px] px-1.5 py-0 ${
+                            ZONE_BADGE_CONFIG[zone]?.color || ""
+                          }`}
+                        >
                           {ZONE_BADGE_CONFIG[zone]?.label || zone}
                         </Badge>
                       ))}
@@ -396,28 +579,50 @@ const Integrations = () => {
                     <div className="mt-auto pt-4 flex items-center justify-between">
                       <Badge
                         variant="outline"
-                        className={`text-[10px] capitalize ${tierColors[integ.tier] ?? ""}`}
+                        className={`text-[10px] capitalize ${
+                          tierColors[integ.tier] ?? ""
+                        }`}
                       >
                         {integ.tier}
                       </Badge>
 
                       {isConnected ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400">
-                          <Check className="h-3.5 w-3.5" />
-                          {t("integrations.connected")}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400">
+                            <ShieldCheck className="h-3.5 w-3.5" />
+                            {t("integrations.connected")}
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-xs text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
+                            onClick={() => setDisconnectTarget(integ)}
+                          >
+                            <Power className="h-3 w-3" />
+                          </Button>
+                        </div>
                       ) : (
                         <Button
                           size="sm"
                           variant="outline"
-                          className="text-xs border-white/10 hover:bg-white/5"
+                          className={`text-xs border-white/10 hover:bg-white/5 ${
+                            brand
+                              ? `hover:${brand.border}`
+                              : ""
+                          }`}
                           onClick={() => {
                             setApiKeyInput("");
+                            setShowApiKey(false);
+                            setValidationError("");
                             setSelectedIntegration(integ);
                           }}
                         >
                           <Plug className="h-3.5 w-3.5 mr-1" />
-                          {t("integrations.connect")}
+                          {integ.category === "llm"
+                            ? t("integrations.signInWith", {
+                                name: integ.name.split(" ")[0],
+                              })
+                            : t("integrations.connect")}
                         </Button>
                       )}
                     </div>
@@ -436,88 +641,210 @@ const Integrations = () => {
           if (!open) {
             setSelectedIntegration(null);
             setApiKeyInput("");
+            setShowApiKey(false);
+            setValidationError("");
           }
         }}
       >
-        {selectedIntegration && (
-          <DialogContent className="max-w-md glass-card border-white/10">
-            <DialogHeader>
-              <div className="flex items-center gap-3 mb-1">
-                {(() => {
-                  const Icon = resolveIcon(selectedIntegration.icon);
-                  return (
-                    <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0">
-                      <Icon className="h-5 w-5 text-primary" />
-                    </div>
-                  );
-                })()}
-                <div className="min-w-0">
-                  <DialogTitle className="text-lg font-heading">
-                    {t("integrations.connectName", { name: selectedIntegration.name })}
-                  </DialogTitle>
-                  <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                    {selectedIntegration.description}
-                  </DialogDescription>
-                </div>
-              </div>
-            </DialogHeader>
+        {selectedIntegration && (() => {
+          const brand = getBrandStyle(selectedIntegration.id);
+          const isLLM = selectedIntegration.category === "llm";
 
-            {/* API key input */}
-            <div className="space-y-2 pt-2">
-              <Label htmlFor="api-key" className="text-sm font-medium">
-                {selectedIntegration.apiKeyLabel}
-              </Label>
-              <Input
-                id="api-key"
-                type="password"
-                placeholder={selectedIntegration.apiKeyPlaceholder}
-                value={apiKeyInput}
-                onChange={(e) => setApiKeyInput(e.target.value)}
-                className="bg-white/5 border-white/10 focus:border-primary"
-              />
-              <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
-                <Lock className="h-3 w-3" />
-                {t("integrations.keyEncrypted")}
-              </p>
-            </div>
-
-            {/* Features */}
-            <div className="pt-2">
-              <h4 className="text-xs font-semibold text-foreground mb-2">
-                {t("integrations.features")}
-              </h4>
-              <ul className="space-y-1.5">
-                {selectedIntegration.features.map((feat) => (
-                  <li
-                    key={feat}
-                    className="flex items-center gap-2 text-xs text-muted-foreground"
-                  >
-                    <Check className="h-3 w-3 text-primary shrink-0" />
-                    {feat}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Website link */}
-            <a
-              href={selectedIntegration.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+          return (
+            <DialogContent
+              className={`max-w-md glass-card border-white/10 ${
+                brand ? brand.glow : ""
+              }`}
             >
-              {t("integrations.visitName", { name: selectedIntegration.name })}
-              <ExternalLink className="h-3 w-3" />
-            </a>
+              <DialogHeader>
+                <div className="flex items-center gap-3 mb-1">
+                  {(() => {
+                    const Icon = resolveIcon(selectedIntegration.icon);
+                    return (
+                      <div
+                        className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${
+                          brand
+                            ? `${brand.bg} ${brand.border} border`
+                            : "bg-gradient-to-br from-primary/20 to-primary/5"
+                        }`}
+                      >
+                        <Icon
+                          className="h-6 w-6"
+                          style={
+                            brand
+                              ? { color: brand.accent }
+                              : undefined
+                          }
+                        />
+                      </div>
+                    );
+                  })()}
+                  <div className="min-w-0">
+                    <DialogTitle className="text-lg font-heading">
+                      {isLLM
+                        ? t("integrations.signInWith", {
+                            name: selectedIntegration.name,
+                          })
+                        : t("integrations.connectName", {
+                            name: selectedIntegration.name,
+                          })}
+                    </DialogTitle>
+                    <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                      {selectedIntegration.description}
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
 
-            <DialogFooter className="pt-2">
-              <Button
-                className="w-full gradient-primary text-white shadow-glow-sm hover:opacity-90 transition-opacity"
-                disabled={!apiKeyInput.trim()}
-                onClick={handleConnect}
+              {/* API key input */}
+              <div className="space-y-2 pt-2">
+                <Label htmlFor="api-key" className="text-sm font-medium">
+                  {selectedIntegration.apiKeyLabel}
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {t("integrations.enterApiKey")}
+                </p>
+                <div className="relative">
+                  <Input
+                    id="api-key"
+                    type={showApiKey ? "text" : "password"}
+                    placeholder={selectedIntegration.apiKeyPlaceholder}
+                    value={apiKeyInput}
+                    onChange={(e) => {
+                      setApiKeyInput(e.target.value);
+                      setValidationError("");
+                    }}
+                    className={`bg-white/5 border-white/10 focus:border-primary pr-10 ${
+                      validationError
+                        ? "border-red-500/50 focus:border-red-500"
+                        : ""
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowApiKey(!showApiKey)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showApiKey ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+                {validationError ? (
+                  <p className="flex items-center gap-1.5 text-[11px] text-red-400">
+                    <AlertCircle className="h-3 w-3" />
+                    {validationError}
+                  </p>
+                ) : (
+                  <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
+                    <Lock className="h-3 w-3" />
+                    {t("integrations.keyEncrypted")}
+                  </p>
+                )}
+              </div>
+
+              {/* Features */}
+              <div className="pt-2">
+                <h4 className="text-xs font-semibold text-foreground mb-2">
+                  {t("integrations.features")}
+                </h4>
+                <ul className="space-y-1.5">
+                  {selectedIntegration.features.map((feat) => (
+                    <li
+                      key={feat}
+                      className="flex items-center gap-2 text-xs text-muted-foreground"
+                    >
+                      <Check className="h-3 w-3 text-primary shrink-0" />
+                      {feat}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Website link */}
+              <a
+                href={selectedIntegration.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
               >
-                <Zap className="h-4 w-4 mr-1.5" />
-                {t("integrations.saveAndConnect")}
+                {t("integrations.visitName", {
+                  name: selectedIntegration.name,
+                })}
+                <ExternalLink className="h-3 w-3" />
+              </a>
+
+              <DialogFooter className="pt-2">
+                <Button
+                  className={`w-full text-white shadow-glow-sm hover:opacity-90 transition-opacity ${
+                    brand
+                      ? ""
+                      : "gradient-primary"
+                  }`}
+                  style={
+                    brand
+                      ? {
+                          background: `linear-gradient(135deg, ${brand.accent}, ${brand.accent}cc)`,
+                        }
+                      : undefined
+                  }
+                  disabled={!apiKeyInput.trim() || connecting}
+                  onClick={handleConnect}
+                >
+                  {connecting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                      {t("integrations.connecting")}
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-4 w-4 mr-1.5" />
+                      {t("integrations.saveAndConnect")}
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          );
+        })()}
+      </Dialog>
+
+      {/* ── Disconnect confirmation dialog ─────────────── */}
+      <Dialog
+        open={!!disconnectTarget}
+        onOpenChange={(open) => {
+          if (!open) setDisconnectTarget(null);
+        }}
+      >
+        {disconnectTarget && (
+          <DialogContent className="max-w-sm glass-card border-white/10">
+            <DialogHeader>
+              <DialogTitle className="text-base font-heading">
+                {t("integrations.disconnect")}
+              </DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground">
+                {t("integrations.disconnectConfirm", {
+                  name: disconnectTarget.name,
+                })}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1 border-white/10"
+                onClick={() => setDisconnectTarget(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1"
+                onClick={handleDisconnect}
+              >
+                <Power className="h-4 w-4 mr-1.5" />
+                {t("integrations.disconnect")}
               </Button>
             </DialogFooter>
           </DialogContent>

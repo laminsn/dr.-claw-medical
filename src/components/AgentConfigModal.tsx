@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   X,
   Mic,
@@ -7,6 +7,8 @@ import {
   Calendar,
   Save,
   Loader2,
+  AudioWaveform,
+  Volume2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,11 +38,24 @@ const tabs = [
 
 type TabKey = (typeof tabs)[number]["key"];
 
-const voiceProfiles = [
-  { id: "alloy", name: "Alloy", desc: "Warm & professional" },
-  { id: "nova", name: "Nova", desc: "Friendly & upbeat" },
-  { id: "echo", name: "Echo", desc: "Calm & measured" },
-  { id: "shimmer", name: "Shimmer", desc: "Soft & reassuring" },
+// Standard voices (built-in)
+const standardVoices = [
+  { id: "alloy", name: "Alloy", desc: "Warm & professional", provider: "standard" },
+  { id: "nova", name: "Nova", desc: "Friendly & upbeat", provider: "standard" },
+  { id: "echo", name: "Echo", desc: "Calm & measured", provider: "standard" },
+  { id: "shimmer", name: "Shimmer", desc: "Soft & reassuring", provider: "standard" },
+];
+
+// ElevenLabs premium voices
+const elevenLabsVoices = [
+  { id: "el-rachel", name: "Rachel", desc: "Calm & confident", provider: "elevenlabs" },
+  { id: "el-drew", name: "Drew", desc: "Warm & authoritative", provider: "elevenlabs" },
+  { id: "el-sarah", name: "Sarah", desc: "Soft & empathetic", provider: "elevenlabs" },
+  { id: "el-charlie", name: "Charlie", desc: "Casual & friendly", provider: "elevenlabs" },
+  { id: "el-charlotte", name: "Charlotte", desc: "Elegant & soothing", provider: "elevenlabs" },
+  { id: "el-james", name: "James", desc: "Deep & reassuring", provider: "elevenlabs" },
+  { id: "el-alice", name: "Alice", desc: "Cheerful & caring", provider: "elevenlabs" },
+  { id: "el-fin", name: "Fin", desc: "Clear & clinical", provider: "elevenlabs" },
 ];
 
 const languages = [
@@ -73,6 +88,8 @@ const AgentConfigModal = ({ agent, open, onClose }: AgentConfigModalProps) => {
   const [voiceProfile, setVoiceProfile] = useState("alloy");
   const [language, setLanguage] = useState("en");
   const [autoDetect, setAutoDetect] = useState(false);
+  const [elevenlabsConnected, setElevenlabsConnected] = useState(false);
+  const [voiceEngine, setVoiceEngine] = useState<"standard" | "elevenlabs">("standard");
   const [openingScript, setOpeningScript] = useState(
     `Hello {patient_name}, this is Dr. Claw calling from {practice_name}. How are you feeling today?`
   );
@@ -84,12 +101,19 @@ const AgentConfigModal = ({ agent, open, onClose }: AgentConfigModalProps) => {
   const [slackChannel, setSlackChannel] = useState("");
   const [slackNotifications, setSlackNotifications] = useState(false);
 
-  // Load existing config
+  // Active voice list based on engine selection
+  const activeVoices = useMemo(
+    () => (voiceEngine === "elevenlabs" && elevenlabsConnected ? elevenLabsVoices : standardVoices),
+    [voiceEngine, elevenlabsConnected]
+  );
+
+  // Load existing config + check ElevenLabs connection
   useEffect(() => {
     if (!open || !user) return;
     setLoading(true);
 
     const loadConfig = async () => {
+      // Load agent config
       const { data } = await supabase
         .from("agent_configs")
         .select("*")
@@ -109,7 +133,25 @@ const AgentConfigModal = ({ agent, open, onClose }: AgentConfigModalProps) => {
         setScheduleEnd(data.schedule_end || "17:00");
         setSlackChannel(data.slack_channel || "");
         setSlackNotifications(data.slack_notifications || false);
+
+        // Set voice engine based on saved profile
+        if (data.voice_profile?.startsWith("el-")) {
+          setVoiceEngine("elevenlabs");
+        } else {
+          setVoiceEngine("standard");
+        }
       }
+
+      // Check if ElevenLabs is connected
+      const { data: elData } = await supabase
+        .from("user_integrations")
+        .select("is_active")
+        .eq("user_id", user.id)
+        .eq("integration_key", "elevenlabs")
+        .maybeSingle();
+
+      setElevenlabsConnected(!!elData?.is_active);
+
       setLoading(false);
     };
 
@@ -202,32 +244,109 @@ const AgentConfigModal = ({ agent, open, onClose }: AgentConfigModalProps) => {
           ) : (
             <>
               {activeTab === "voice" && (
-                <div className="space-y-4">
-                  <Label className="text-foreground">Voice Profile</Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {voiceProfiles.map((v) => (
+                <div className="space-y-5">
+                  {/* Voice Engine Selector */}
+                  <div className="space-y-2">
+                    <Label className="text-foreground">Voice Engine</Label>
+                    <div className="flex gap-2">
                       <button
-                        key={v.id}
-                        onClick={() => setVoiceProfile(v.id)}
-                        className={`p-4 rounded-xl border text-left transition-all ${
-                          voiceProfile === v.id
-                            ? "border-primary bg-primary/10"
-                            : "border-border bg-secondary hover:border-muted-foreground/30"
+                        onClick={() => {
+                          setVoiceEngine("standard");
+                          // Reset to standard voice if switching engines
+                          if (voiceProfile.startsWith("el-")) setVoiceProfile("alloy");
+                        }}
+                        className={`flex-1 flex items-center gap-2 px-4 py-3 rounded-xl border text-sm transition-all ${
+                          voiceEngine === "standard"
+                            ? "border-primary bg-primary/10 text-foreground"
+                            : "border-border text-muted-foreground hover:border-muted-foreground/30"
                         }`}
                       >
-                        <p className="font-medium text-sm text-foreground">{v.name}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{v.desc}</p>
-                        <div className="flex gap-0.5 mt-3">
-                          {[...Array(8)].map((_, i) => (
-                            <div
-                              key={i}
-                              className={`w-1 rounded-full ${voiceProfile === v.id ? "bg-primary" : "bg-muted-foreground/30"}`}
-                              style={{ height: `${Math.random() * 16 + 8}px` }}
-                            />
-                          ))}
-                        </div>
+                        <Volume2 className="h-4 w-4" />
+                        Standard
                       </button>
-                    ))}
+                      <button
+                        onClick={() => {
+                          if (!elevenlabsConnected) return;
+                          setVoiceEngine("elevenlabs");
+                          // Reset to ElevenLabs voice if switching engines
+                          if (!voiceProfile.startsWith("el-")) setVoiceProfile("el-rachel");
+                        }}
+                        disabled={!elevenlabsConnected}
+                        className={`flex-1 flex items-center gap-2 px-4 py-3 rounded-xl border text-sm transition-all ${
+                          voiceEngine === "elevenlabs"
+                            ? "border-primary bg-primary/10 text-foreground"
+                            : elevenlabsConnected
+                            ? "border-border text-muted-foreground hover:border-muted-foreground/30"
+                            : "border-border/50 text-muted-foreground/40 cursor-not-allowed"
+                        }`}
+                      >
+                        <AudioWaveform className="h-4 w-4" />
+                        ElevenLabs
+                        {!elevenlabsConnected && (
+                          <span className="ml-auto text-[10px] text-muted-foreground/50">
+                            Not connected
+                          </span>
+                        )}
+                      </button>
+                    </div>
+                    {!elevenlabsConnected && voiceEngine === "standard" && (
+                      <p className="text-[11px] text-muted-foreground/60">
+                        Connect ElevenLabs in Integrations to unlock premium voices with cloning, emotion control, and 29+ languages.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Voice Profile Selection */}
+                  <div className="space-y-2">
+                    <Label className="text-foreground">
+                      Voice Profile
+                      {voiceEngine === "elevenlabs" && (
+                        <span className="ml-2 text-[10px] font-normal text-primary/70">
+                          ElevenLabs Premium
+                        </span>
+                      )}
+                    </Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {activeVoices.map((v) => {
+                        const isEL = v.provider === "elevenlabs";
+                        const isSelected = voiceProfile === v.id;
+
+                        return (
+                          <button
+                            key={v.id}
+                            onClick={() => setVoiceProfile(v.id)}
+                            className={`p-4 rounded-xl border text-left transition-all ${
+                              isSelected
+                                ? isEL
+                                  ? "border-primary bg-primary/10 ring-1 ring-primary/20"
+                                  : "border-primary bg-primary/10"
+                                : "border-border bg-secondary hover:border-muted-foreground/30"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <p className="font-medium text-sm text-foreground">{v.name}</p>
+                              {isEL && (
+                                <AudioWaveform className={`h-3 w-3 ${isSelected ? "text-primary" : "text-muted-foreground/40"}`} />
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">{v.desc}</p>
+                            <div className="flex gap-0.5 mt-3">
+                              {[...Array(isEL ? 12 : 8)].map((_, i) => (
+                                <div
+                                  key={i}
+                                  className={`w-1 rounded-full transition-colors ${
+                                    isSelected ? "bg-primary" : "bg-muted-foreground/30"
+                                  }`}
+                                  style={{
+                                    height: `${Math.random() * (isEL ? 20 : 16) + (isEL ? 6 : 8)}px`,
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               )}
