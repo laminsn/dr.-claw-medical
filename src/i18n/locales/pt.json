@@ -2006,6 +2006,31 @@
     "zoneViolationExternalToClinical": "A etapa {{stepA}} ({{agentA}}) é Externa, mas a etapa {{stepB}} ({{agentB}}) é Clínica — os dados não podem fluir de Externo para Clínico.",
     "zoneViolationHint": "Violacao de Zona Detectada"
   },
+  "footer": {
+    "product": "Produto",
+    "solutions": "Soluções",
+    "compliance": "Conformidade",
+    "features": "Funcionalidades",
+    "howItWorks": "Como Funciona",
+    "pricing": "Preços",
+    "integrations": "Integrações",
+    "templates": "Modelos",
+    "faq": "Perguntas Frequentes",
+    "medicalPractices": "Consultórios Médicos",
+    "healthSystems": "Sistemas de Saúde",
+    "specialtyClinics": "Clínicas Especializadas",
+    "telehealth": "Telessaúde",
+    "clinicalResearch": "Pesquisa Clínica",
+    "revenueCycle": "Ciclo de Receita",
+    "hipaaCompliance": "Conformidade HIPAA",
+    "baaInformation": "Informações BAA",
+    "soc2Certification": "Certificação SOC 2",
+    "privacyPolicy": "Política de Privacidade",
+    "termsOfService": "Termos de Serviço",
+    "security": "Segurança",
+    "description": "A plataforma de agentes de IA criada exclusivamente para a saúde. Automatize agendamento de pacientes, documentação clínica, verificação de seguros, coordenação de cuidados e cada operação em seu consultório médico.",
+    "allRightsReserved": "Todos os direitos reservados."
+  },
   "home": {
     "cta": {
       "footer": "Teste grátis de 14 dias · Sem cartão de crédito · Protegido por HIPAA",
