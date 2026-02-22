@@ -2006,6 +2006,31 @@
     "viewCommand": "Command",
     "viewCompare": "Compare"
   },
+  "footer": {
+    "product": "Product",
+    "solutions": "Solutions",
+    "compliance": "Compliance",
+    "features": "Features",
+    "howItWorks": "How It Works",
+    "pricing": "Pricing",
+    "integrations": "Integrations",
+    "templates": "Templates",
+    "faq": "FAQ",
+    "medicalPractices": "Medical Practices",
+    "healthSystems": "Health Systems",
+    "specialtyClinics": "Specialty Clinics",
+    "telehealth": "Telehealth",
+    "clinicalResearch": "Clinical Research",
+    "revenueCycle": "Revenue Cycle",
+    "hipaaCompliance": "HIPAA Compliance",
+    "baaInformation": "BAA Information",
+    "soc2Certification": "SOC 2 Certification",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "security": "Security",
+    "description": "The AI agent platform built exclusively for healthcare. Automate patient scheduling, clinical documentation, insurance verification, care coordination, and every operation in your medical practice.",
+    "allRightsReserved": "All rights reserved."
+  },
   "home": {
     "cta": {
       "footer": "14-day free trial · No credit card required · HIPAA secured",
