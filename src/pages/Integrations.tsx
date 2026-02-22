@@ -574,6 +574,15 @@ const Integrations = () => {
                           {ZONE_BADGE_CONFIG[zone]?.label || zone}
                         </Badge>
                       ))}
+                      {integ.id === "n8n" && (
+                        <Badge
+                          variant="outline"
+                          className="text-[8px] px-1.5 py-0 text-primary bg-primary/10 border-primary/30"
+                        >
+                          <ShieldCheck className="h-2 w-2 mr-0.5" />
+                          HIPAA Gateway
+                        </Badge>
+                      )}
                     </div>
 
                     {/* Bottom row */}
