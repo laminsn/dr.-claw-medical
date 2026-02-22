@@ -39,11 +39,28 @@ import {
   XCircle,
   BarChart3,
   Database,
+  Music,
+  Video,
+  Play,
+  Pause,
 } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-type DocFileType = "PDF" | "PNG" | "JPG" | "DOCX" | "CSV" | "XLSX";
+type DocFileType =
+  | "PDF" | "PNG" | "JPG" | "DOCX" | "CSV" | "XLSX"
+  | "MP3" | "WAV" | "M4A" | "OGG"
+  | "MP4" | "MOV" | "WEBM";
+
+type MediaCategory = "all" | "documents" | "images" | "audio" | "video";
+
+const MEDIA_CATEGORIES: { key: MediaCategory; label: string; types: DocFileType[] }[] = [
+  { key: "all", label: "All", types: [] },
+  { key: "documents", label: "Documents", types: ["PDF", "DOCX", "CSV", "XLSX"] },
+  { key: "images", label: "Images", types: ["PNG", "JPG"] },
+  { key: "audio", label: "Audio", types: ["MP3", "WAV", "M4A", "OGG"] },
+  { key: "video", label: "Video", types: ["MP4", "MOV", "WEBM"] },
+];
 
 type Sensitivity = "General" | "PHI" | "HIPAA Regulated" | "BAA Required" | "Sensitive";
 
@@ -66,6 +83,8 @@ interface DataDocument {
   description: string;
   sensitivity: Sensitivity;
   assignedAgentIds: string[];
+  /** Duration in seconds — only applicable for audio/video files */
+  durationSec?: number;
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -77,6 +96,15 @@ const FILE_TYPE_CONFIG: Record<DocFileType, { icon: typeof FileText; color: stri
   DOCX: { icon: File, color: "text-blue-400", bg: "bg-blue-500/10" },
   CSV: { icon: FileSpreadsheet, color: "text-orange-400", bg: "bg-orange-500/10" },
   XLSX: { icon: FileSpreadsheet, color: "text-green-400", bg: "bg-green-500/10" },
+  // Audio
+  MP3: { icon: Music, color: "text-fuchsia-400", bg: "bg-fuchsia-500/10" },
+  WAV: { icon: Music, color: "text-pink-400", bg: "bg-pink-500/10" },
+  M4A: { icon: Music, color: "text-rose-400", bg: "bg-rose-500/10" },
+  OGG: { icon: Music, color: "text-purple-400", bg: "bg-purple-500/10" },
+  // Video
+  MP4: { icon: Video, color: "text-sky-400", bg: "bg-sky-500/10" },
+  MOV: { icon: Video, color: "text-indigo-400", bg: "bg-indigo-500/10" },
+  WEBM: { icon: Video, color: "text-cyan-400", bg: "bg-cyan-500/10" },
 };
 
 const SENSITIVITY_CONFIG: Record<Sensitivity, { color: string; bg: string; border: string; icon: typeof Shield }> = {
@@ -93,7 +121,18 @@ const ZONE_CONFIG: Record<AgentZone, { label: string; color: string; dotColor: s
   external: { label: "External (Zone 3)", color: "text-blue-400", dotColor: "bg-blue-400" },
 };
 
-const ACCEPTED_TYPES: DocFileType[] = ["PDF", "PNG", "JPG", "DOCX", "CSV", "XLSX"];
+const ACCEPTED_TYPES: DocFileType[] = [
+  "PDF", "PNG", "JPG", "DOCX", "CSV", "XLSX",
+  "MP3", "WAV", "M4A", "OGG",
+  "MP4", "MOV", "WEBM",
+];
+
+const AUDIO_TYPES: DocFileType[] = ["MP3", "WAV", "M4A", "OGG"];
+const VIDEO_TYPES: DocFileType[] = ["MP4", "MOV", "WEBM"];
+
+const isAudioType = (ft: DocFileType): boolean => AUDIO_TYPES.includes(ft);
+const isVideoType = (ft: DocFileType): boolean => VIDEO_TYPES.includes(ft);
+const isMediaType = (ft: DocFileType): boolean => isAudioType(ft) || isVideoType(ft);
 
 // ── Mock Agents ────────────────────────────────────────────────────────────────
 
@@ -250,6 +289,107 @@ const initialDocuments: DataDocument[] = [
     sensitivity: "HIPAA Regulated",
     assignedAgentIds: ["agent-1", "agent-2", "agent-3"],
   },
+  // ── Audio Documents ────────────────────────────────────────────────────────
+  {
+    id: "doc-15",
+    name: "Patient Consultation Recording - Dr. Thompson.mp3",
+    fileType: "MP3",
+    fileSizeBytes: 15728640,
+    uploadDate: "2026-02-19T09:30:00",
+    description: "Recorded patient consultation session with Dr. Thompson covering symptom review, diagnosis discussion, and treatment plan. Audio transcription available for clinical documentation agent.",
+    sensitivity: "PHI",
+    assignedAgentIds: ["agent-2"],
+    durationSec: 1847,
+  },
+  {
+    id: "doc-16",
+    name: "HIPAA Training Lecture - Module 3.wav",
+    fileType: "WAV",
+    fileSizeBytes: 52428800,
+    uploadDate: "2026-02-15T14:00:00",
+    description: "Audio recording of HIPAA compliance training lecture Module 3: Breach notification procedures, incident response protocols, and staff responsibilities.",
+    sensitivity: "General",
+    assignedAgentIds: ["agent-1", "agent-3"],
+    durationSec: 3612,
+  },
+  {
+    id: "doc-17",
+    name: "Voicemail - Insurance Pre-Auth Follow-up.m4a",
+    fileType: "M4A",
+    fileSizeBytes: 2097152,
+    uploadDate: "2026-02-20T11:15:00",
+    description: "Voicemail from insurance provider regarding pre-authorization follow-up for patient procedure. Contains policy number and authorization reference.",
+    sensitivity: "PHI",
+    assignedAgentIds: ["agent-4"],
+    durationSec: 142,
+  },
+  {
+    id: "doc-18",
+    name: "Staff Meeting Notes - Clinical Workflow Update.ogg",
+    fileType: "OGG",
+    fileSizeBytes: 8388608,
+    uploadDate: "2026-02-18T16:45:00",
+    description: "Audio recording of weekly staff meeting discussing clinical workflow updates, new EHR integration timelines, and agent deployment schedule.",
+    sensitivity: "Sensitive",
+    assignedAgentIds: ["agent-1", "agent-2", "agent-4"],
+    durationSec: 2460,
+  },
+  // ── Video Documents ────────────────────────────────────────────────────────
+  {
+    id: "doc-19",
+    name: "Telehealth Session - Patient Follow-up 02-20.mp4",
+    fileType: "MP4",
+    fileSizeBytes: 157286400,
+    uploadDate: "2026-02-20T10:00:00",
+    description: "Recorded telehealth video session for patient follow-up appointment. Includes visual assessment, screen-shared lab results, and treatment plan discussion.",
+    sensitivity: "PHI",
+    assignedAgentIds: ["agent-2"],
+    durationSec: 1523,
+  },
+  {
+    id: "doc-20",
+    name: "Surgical Procedure Demo - Laparoscopic Appendectomy.mov",
+    fileType: "MOV",
+    fileSizeBytes: 524288000,
+    uploadDate: "2026-02-14T08:30:00",
+    description: "Educational surgical procedure demonstration video showing laparoscopic appendectomy technique. Used for clinical training and AI-assisted surgical documentation.",
+    sensitivity: "General",
+    assignedAgentIds: ["agent-2", "agent-3"],
+    durationSec: 4215,
+  },
+  {
+    id: "doc-21",
+    name: "Facility Walkthrough - New Wing Tour.webm",
+    fileType: "WEBM",
+    fileSizeBytes: 94371840,
+    uploadDate: "2026-02-17T13:00:00",
+    description: "Video walkthrough of the newly constructed clinical wing showing patient rooms, nurse stations, equipment areas, and emergency access points.",
+    sensitivity: "General",
+    assignedAgentIds: ["agent-4", "agent-5"],
+    durationSec: 780,
+  },
+  {
+    id: "doc-22",
+    name: "Patient Education - Post-Op Recovery Guide.mp4",
+    fileType: "MP4",
+    fileSizeBytes: 78643200,
+    uploadDate: "2026-02-21T09:00:00",
+    description: "Patient-facing educational video explaining post-operative recovery guidelines, medication schedules, wound care instructions, and warning signs to monitor.",
+    sensitivity: "General",
+    assignedAgentIds: ["agent-1", "agent-7"],
+    durationSec: 542,
+  },
+  {
+    id: "doc-23",
+    name: "Agent Training - Voice Interaction Patterns.mp3",
+    fileType: "MP3",
+    fileSizeBytes: 6291456,
+    uploadDate: "2026-02-19T15:30:00",
+    description: "Sample audio dataset of voice interaction patterns for training the front desk agent on tone, pacing, empathy cues, and de-escalation techniques.",
+    sensitivity: "General",
+    assignedAgentIds: ["agent-1"],
+    durationSec: 960,
+  },
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -257,7 +397,16 @@ const initialDocuments: DataDocument[] = [
 const formatFileSize = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1048576).toFixed(1)} MB`;
+  if (bytes < 1073741824) return `${(bytes / 1048576).toFixed(1)} MB`;
+  return `${(bytes / 1073741824).toFixed(1)} GB`;
+};
+
+const formatDuration = (seconds: number): string => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  if (h > 0) return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  return `${m}:${s.toString().padStart(2, "0")}`;
 };
 
 const formatDate = (iso: string): string => {
@@ -279,7 +428,12 @@ const canAccessSensitive = (zone: AgentZone): boolean => zone === "clinical";
 
 const generateMockDescription = (name: string, fileType: DocFileType): string => {
   const base = name.replace(/\.\w+$/, "").replace(/[-_]/g, " ");
-  const typeHint = fileType === "CSV" || fileType === "XLSX" ? "structured data file" : fileType === "PNG" || fileType === "JPG" ? "image document" : "text document";
+  let typeHint: string;
+  if (fileType === "CSV" || fileType === "XLSX") typeHint = "structured data file";
+  else if (fileType === "PNG" || fileType === "JPG") typeHint = "image document";
+  else if (isAudioType(fileType)) typeHint = "audio recording";
+  else if (isVideoType(fileType)) typeHint = "video file";
+  else typeHint = "text document";
   return `AI-generated summary: This ${typeHint} "${base}" appears to contain healthcare-related content. Automatic classification has been applied based on content analysis. Review recommended before agent assignment.`;
 };
 
@@ -294,6 +448,7 @@ const AgentDataCenter = () => {
   const [activeTab, setActiveTab] = useState<"all" | "upload" | "compliance" | "training">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<DocFileType | "all">("all");
+  const [mediaCategoryFilter, setMediaCategoryFilter] = useState<MediaCategory>("all");
   const [sensitivityFilter, setSensitivityFilter] = useState<Sensitivity | "all">("all");
   const [agentFilter, setAgentFilter] = useState<string>("all");
 
@@ -321,9 +476,12 @@ const AgentDataCenter = () => {
       doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       doc.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = typeFilter === "all" || doc.fileType === typeFilter;
+    const matchesCategory =
+      mediaCategoryFilter === "all" ||
+      MEDIA_CATEGORIES.find((c) => c.key === mediaCategoryFilter)?.types.includes(doc.fileType);
     const matchesSensitivity = sensitivityFilter === "all" || doc.sensitivity === sensitivityFilter;
     const matchesAgent = agentFilter === "all" || doc.assignedAgentIds.includes(agentFilter);
-    return matchesSearch && matchesType && matchesSensitivity && matchesAgent;
+    return matchesSearch && matchesType && matchesCategory && matchesSensitivity && matchesAgent;
   });
 
   // ── Compliance stats ───────────────────────────────────────────────────────
@@ -356,13 +514,14 @@ const AgentDataCenter = () => {
     if (!ACCEPTED_TYPES.includes(ext)) {
       toast({
         title: "Unsupported file type",
-        description: `Only PDF, PNG, JPG, DOCX, CSV, and XLSX files are supported.`,
+        description: "Supported formats: PDF, PNG, JPG, DOCX, CSV, XLSX, MP3, WAV, M4A, OGG, MP4, MOV, WEBM.",
         variant: "destructive",
       });
       return;
     }
 
-    // Simulate upload progress
+    // Simulate upload progress — media files use a slower progress rate
+    const isMedia = isMediaType(ext);
     setUploadProgress(0);
     const interval = setInterval(() => {
       setUploadProgress((prev) => {
@@ -371,10 +530,11 @@ const AgentDataCenter = () => {
           clearInterval(interval);
           return 100;
         }
-        return prev + Math.random() * 25;
+        return prev + Math.random() * (isMedia ? 15 : 25);
       });
-    }, 300);
+    }, isMedia ? 400 : 300);
 
+    const uploadDelay = isMedia ? 3500 : 2000;
     setTimeout(() => {
       clearInterval(interval);
       setUploadProgress(null);
@@ -388,14 +548,17 @@ const AgentDataCenter = () => {
         description: generateMockDescription(file.name, ext),
         sensitivity: "General",
         assignedAgentIds: [],
+        // Mock duration for media files
+        ...(isAudioType(ext) ? { durationSec: Math.floor(60 + Math.random() * 1800) } : {}),
+        ...(isVideoType(ext) ? { durationSec: Math.floor(30 + Math.random() * 3600) } : {}),
       };
 
       setDocuments((prev) => [newDoc, ...prev]);
       toast({
-        title: "Document uploaded",
+        title: isMedia ? "Media uploaded" : "Document uploaded",
         description: `"${file.name}" has been saved to the Data Center. AI classification applied.`,
       });
-    }, 2000);
+    }, uploadDelay);
 
     // Reset input
     e.target.value = "";
@@ -532,23 +695,55 @@ const AgentDataCenter = () => {
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
-          {/* File type filter */}
+          {/* Media category filter */}
           <div className="flex gap-1 bg-card/50 border border-border rounded-xl p-1">
             <Filter className="h-4 w-4 text-muted-foreground my-auto ml-2 mr-1" />
-            {(["all", ...ACCEPTED_TYPES] as const).map((ft) => (
+            {MEDIA_CATEGORIES.map((cat) => (
               <button
-                key={ft}
-                onClick={() => setTypeFilter(ft as DocFileType | "all")}
+                key={cat.key}
+                onClick={() => {
+                  setMediaCategoryFilter(cat.key);
+                  setTypeFilter("all");
+                }}
                 className={`px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
-                  typeFilter === ft
+                  mediaCategoryFilter === cat.key && typeFilter === "all"
                     ? "gradient-primary text-primary-foreground shadow-glow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {ft === "all" ? "All" : ft}
+                {cat.label}
               </button>
             ))}
           </div>
+
+          {/* Individual type filter (shows types from selected category) */}
+          {mediaCategoryFilter !== "all" && (
+            <div className="flex gap-1 bg-card/50 border border-border rounded-xl p-1">
+              <button
+                onClick={() => setTypeFilter("all")}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+                  typeFilter === "all"
+                    ? "gradient-primary text-primary-foreground shadow-glow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                All
+              </button>
+              {(MEDIA_CATEGORIES.find((c) => c.key === mediaCategoryFilter)?.types ?? []).map((ft) => (
+                <button
+                  key={ft}
+                  onClick={() => setTypeFilter(ft)}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+                    typeFilter === ft
+                      ? "gradient-primary text-primary-foreground shadow-glow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {ft}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Sensitivity filter */}
           <div className="flex gap-1 bg-card/50 border border-border rounded-xl p-1">
@@ -658,6 +853,12 @@ const AgentDataCenter = () => {
                         <HardDrive className="h-3 w-3" />
                         {formatFileSize(doc.fileSizeBytes)}
                       </span>
+                      {doc.durationSec != null && (
+                        <span className="flex items-center gap-1">
+                          <Play className="h-3 w-3" />
+                          {formatDuration(doc.durationSec)}
+                        </span>
+                      )}
                       <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         {formatDate(doc.uploadDate)}
@@ -756,24 +957,28 @@ const AgentDataCenter = () => {
         </p>
 
         <div className="flex flex-wrap gap-2 justify-center mb-6">
-          {ACCEPTED_TYPES.map((ft) => {
-            const cfg = FILE_TYPE_CONFIG[ft];
-            return (
-              <Badge
-                key={ft}
-                variant="outline"
-                className={`text-[10px] ${cfg.color} border-white/10`}
-              >
-                {ft}
-              </Badge>
-            );
-          })}
+          {MEDIA_CATEGORIES.filter((c) => c.key !== "all").map((cat) => (
+            <div key={cat.key} className="flex items-center gap-1">
+              {cat.types.map((ft) => {
+                const cfg = FILE_TYPE_CONFIG[ft];
+                return (
+                  <Badge
+                    key={ft}
+                    variant="outline"
+                    className={`text-[10px] ${cfg.color} border-white/10`}
+                  >
+                    {ft}
+                  </Badge>
+                );
+              })}
+            </div>
+          ))}
         </div>
 
         <label className="inline-block cursor-pointer">
           <input
             type="file"
-            accept=".pdf,.png,.jpg,.jpeg,.docx,.csv,.xlsx"
+            accept=".pdf,.png,.jpg,.jpeg,.docx,.csv,.xlsx,.mp3,.wav,.m4a,.ogg,.mp4,.mov,.webm"
             className="hidden"
             onChange={handleFileUpload}
           />
@@ -784,7 +989,7 @@ const AgentDataCenter = () => {
         </label>
 
         <p className="text-[11px] text-muted-foreground mt-4">
-          Maximum file size: 50MB. Files are automatically classified by AI upon upload.
+          Maximum file size: 500MB for media, 50MB for documents. All files are automatically classified by AI upon upload.
         </p>
       </div>
 
@@ -1302,11 +1507,88 @@ const AgentDataCenter = () => {
                       <span>{detailDoc.fileType}</span>
                       <span>&middot;</span>
                       <span>{formatFileSize(detailDoc.fileSizeBytes)}</span>
+                      {detailDoc.durationSec != null && (
+                        <>
+                          <span>&middot;</span>
+                          <span className="flex items-center gap-1">
+                            <Play className="h-3 w-3" />
+                            {formatDuration(detailDoc.durationSec)}
+                          </span>
+                        </>
+                      )}
                       <span>&middot;</span>
                       <span>{formatDateTime(detailDoc.uploadDate)}</span>
                     </div>
                   </div>
                 </div>
+
+                {/* Media preview */}
+                {isAudioType(detailDoc.fileType) && (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">
+                      Audio Preview
+                    </Label>
+                    <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
+                      <div className="flex items-center gap-4 mb-3">
+                        <div className={`h-12 w-12 rounded-xl ${FILE_TYPE_CONFIG[detailDoc.fileType].bg} flex items-center justify-center`}>
+                          <Music className={`h-6 w-6 ${FILE_TYPE_CONFIG[detailDoc.fileType].color}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{detailDoc.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {detailDoc.fileType} &middot; {formatFileSize(detailDoc.fileSizeBytes)}
+                            {detailDoc.durationSec != null && ` · ${formatDuration(detailDoc.durationSec)}`}
+                          </p>
+                        </div>
+                      </div>
+                      <audio
+                        controls
+                        className="w-full h-10 rounded-lg"
+                        preload="none"
+                      >
+                        <source src="" type={`audio/${detailDoc.fileType.toLowerCase()}`} />
+                        Your browser does not support audio playback.
+                      </audio>
+                      <p className="text-[10px] text-muted-foreground/50 mt-2 text-center">
+                        Audio preview available when file is stored in Supabase Storage
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {isVideoType(detailDoc.fileType) && (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">
+                      Video Preview
+                    </Label>
+                    <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
+                      <div className="relative aspect-video bg-black/50 rounded-lg overflow-hidden mb-3 flex items-center justify-center">
+                        <div className="text-center">
+                          <div className={`h-16 w-16 rounded-full ${FILE_TYPE_CONFIG[detailDoc.fileType].bg} flex items-center justify-center mx-auto mb-3`}>
+                            <Play className={`h-8 w-8 ${FILE_TYPE_CONFIG[detailDoc.fileType].color} ml-1`} />
+                          </div>
+                          <p className="text-sm font-medium text-foreground">{detailDoc.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {detailDoc.fileType} &middot; {formatFileSize(detailDoc.fileSizeBytes)}
+                            {detailDoc.durationSec != null && ` · ${formatDuration(detailDoc.durationSec)}`}
+                          </p>
+                        </div>
+                      </div>
+                      <video
+                        controls
+                        className="w-full rounded-lg"
+                        preload="none"
+                        playsInline
+                      >
+                        <source src="" type={`video/${detailDoc.fileType.toLowerCase()}`} />
+                        Your browser does not support video playback.
+                      </video>
+                      <p className="text-[10px] text-muted-foreground/50 mt-2 text-center">
+                        Video preview available when file is stored in Supabase Storage
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Classification */}
                 <div>
