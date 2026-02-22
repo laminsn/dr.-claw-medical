@@ -306,7 +306,7 @@ const Integrations = () => {
 
   const categoryTabs = [
     { id: "all", name: t("integrations.all") },
-    ...integrationCategories.map((c) => ({ id: c.id, name: c.name })),
+    ...integrationCategories.map((c) => ({ id: c.id, name: categoryLabel[c.id] ?? c.name })),
   ];
 
   // --- Connect handler with validation + Supabase persistence ---
@@ -344,7 +344,7 @@ const Integrations = () => {
 
     if (error) {
       toast({
-        title: "Error",
+        title: t("integrations.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -380,7 +380,7 @@ const Integrations = () => {
 
     if (error) {
       toast({
-        title: "Error",
+        title: t("integrations.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -837,7 +837,7 @@ const Integrations = () => {
                 className="flex-1 border-white/10"
                 onClick={() => setDisconnectTarget(null)}
               >
-                Cancel
+                {t("integrations.cancel")}
               </Button>
               <Button
                 variant="destructive"
