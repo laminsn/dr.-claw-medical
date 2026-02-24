@@ -10,6 +10,7 @@ import {
   FileText,
   Users,
 } from "lucide-react";
+import { GlowingEffect } from "@/components/ui/glowing-effect";
 
 export default function FeaturesSection() {
   const { t } = useTranslation();
@@ -30,7 +31,7 @@ export default function FeaturesSection() {
     <section id="features" className="py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16 animate-fade-up">
-          <span className="text-sm font-medium text-blue-400 uppercase tracking-widest mb-3 block">
+          <span className="text-sm font-medium text-primary uppercase tracking-widest mb-3 block">
             {t("home.features.badge")}
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-heading mb-4">
@@ -46,18 +47,28 @@ export default function FeaturesSection() {
           {features.map((feature, i) => (
             <div
               key={feature.title}
-              className="glass-card rounded-xl p-6 card-hover animate-fade-up"
+              className="relative rounded-xl animate-fade-up"
               style={{ animationDelay: `${i * 80}ms` }}
             >
-              <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center mb-4 shadow-glow-sm">
-                <feature.icon className="w-6 h-6 text-white" />
+              <GlowingEffect
+                spread={40}
+                glow
+                disabled={false}
+                proximity={64}
+                inactiveZone={0.01}
+                borderWidth={2}
+              />
+              <div className="relative glass-card rounded-xl p-6 h-full">
+                <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center mb-4 shadow-glow-sm">
+                  <feature.icon className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold font-heading text-foreground mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {feature.description}
+                </p>
               </div>
-              <h3 className="text-lg font-semibold font-heading text-foreground mb-2">
-                {feature.title}
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {feature.description}
-              </p>
             </div>
           ))}
         </div>
