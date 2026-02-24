@@ -48,6 +48,8 @@
     --glow-primary: 217 100% 59%;
     --glow-accent: 190 95% 50%;
     --surface-elevated: 220 18% 12%;
+
+    --accent-cyan: hsl(190, 95%, 50%);
   }
 
   .light {
@@ -91,6 +93,8 @@
     --glow-primary: 217 100% 50%;
     --glow-accent: 190 95% 42%;
     --surface-elevated: 0 0% 100%;
+
+    --accent-cyan: hsl(190, 95%, 42%);
   }
 }
 
@@ -196,6 +200,24 @@
   .animate-fade-in {
     animation: fade-in 0.5s ease-out forwards;
     opacity: 0;
+  }
+
+  .marquee-bar {
+    background: #000;
+    border-bottom: 1px solid var(--accent-cyan);
+    color: var(--accent-cyan);
+    padding: 5px 0;
+    font-family: monospace;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .marquee-inner {
+    display: inline-block;
+    animation: scroll 30s linear infinite;
+  }
+  @keyframes scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
   }
 }
 
