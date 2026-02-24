@@ -357,13 +357,13 @@ export function useWebhooks() {
       };
 
       for (const webhook of matchingWebhooks) {
-        let finalPayload = eventPayload;
+        let finalPayload: Record<string, unknown> & { event: string; timestamp: string } = eventPayload;
         let phiStripped = false;
         let phiFields: string[] = [];
 
         if (webhook.phi_filter) {
           const { sanitized, scanResult } = scanAndSanitizePayload(eventPayload);
-          finalPayload = sanitized;
+          finalPayload = { ...sanitized, event: eventType, timestamp: new Date().toISOString() };
           phiStripped = scanResult.hasPhi;
           phiFields = scanResult.fieldsRedacted;
         }
