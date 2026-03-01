@@ -11,6 +11,15 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       overlay: false,
     },
+    // Proxy API requests to the Express backend server (server.js on port 3001).
+    // When the frontend calls fetch('/api/...'), Vite forwards it to http://localhost:3001/api/...
+    // This way the frontend doesn't need to know about the backend's port.
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {

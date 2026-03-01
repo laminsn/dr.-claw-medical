@@ -40,6 +40,7 @@ import CompanyCards from "./pages/CompanyCards";
 import N8nGateway from "./pages/N8nGateway";
 import Webhooks from "./pages/Webhooks";
 import Auth from "./pages/Auth";
+import AIConversation from "./pages/AIConversation";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -57,6 +58,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/ai-conversation" element={<AIConversation />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/dashboard/agents" element={<ProtectedRoute><Agents /></ProtectedRoute>} />
             <Route path="/dashboard/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
