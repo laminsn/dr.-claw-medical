@@ -7,6 +7,7 @@ import { Suspense, lazy } from "react";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AgentProvider } from "@/hooks/useAgents";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Agents from "./pages/Agents";
@@ -48,6 +49,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 const queryClient = new QueryClient();
 
 const App = () => (
+  <ErrorBoundary>
   <ThemeProvider defaultTheme="dark" storageKey="dr-claw-theme">
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -104,6 +106,7 @@ const App = () => (
       </AuthProvider>
     </QueryClientProvider>
   </ThemeProvider>
+  </ErrorBoundary>
 );
 
 export default App;
