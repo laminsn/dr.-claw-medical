@@ -24,18 +24,17 @@ export default function HeroSection() {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-16 bg-[#0B0C10]">
-
-      {/* Interactive Ambient Glow Effects - Following the Cursor */}
+      {/* Interactive Ambient Glow Effects - Aqua to Royal Blue */}
       <div
-        className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-cyan-500/30 rounded-full blur-[160px] pointer-events-none transition-transform duration-700 ease-out"
+        className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#38BDF8]/20 rounded-full blur-[160px] pointer-events-none transition-transform duration-700 ease-out"
         style={{ transform: `translate(${xOffset * 0.08}px, ${yOffset * 0.08}px)` }}
       />
       <div
-        className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-purple-600/30 rounded-full blur-[140px] pointer-events-none transition-transform duration-1000 ease-out"
+        className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-[#2563EB]/25 rounded-full blur-[140px] pointer-events-none transition-transform duration-1000 ease-out"
         style={{ transform: `translate(${xOffset * -0.05}px, ${yOffset * -0.05}px)` }}
       />
       <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-500/20 rounded-full blur-[200px] pointer-events-none transition-transform duration-500 ease-out"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#0284C7]/15 rounded-full blur-[200px] pointer-events-none transition-transform duration-500 ease-out"
         style={{ transform: `translate(${xOffset * 0.03}px, ${yOffset * 0.03}px)` }}
       />
 
@@ -50,7 +49,6 @@ export default function HeroSection() {
       />
 
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-
         {/* THE MAIN LIQUID GLASS PANEL */}
         <div className="p-8 sm:p-12 md:p-16 rounded-[3rem]
           backdrop-blur-3xl bg-white/[0.02]
@@ -61,19 +59,19 @@ export default function HeroSection() {
           {/* Glossy top edge highlight reflection */}
           <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent"></div>
 
-          {/* Liquid Glass Badge */}
+          {/* Liquid Glass Badge - Royal Blue */}
           <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full
-            backdrop-blur-md bg-cyan-500/10
-            border border-cyan-400/20 border-t-cyan-300/50
-            shadow-[inset_0_2px_4px_rgba(69,243,255,0.3)]
-            text-cyan-200 text-sm font-medium mb-8 animate-fade-in">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+            backdrop-blur-md bg-blue-500/10
+            border border-blue-400/20 border-t-blue-300/50
+            shadow-[inset_0_2px_4px_rgba(59,130,246,0.3)]
+            text-blue-200 text-sm font-medium mb-8 animate-fade-in">
+            <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
             {t("hero.badge")}
           </div>
 
-          {/* Headline */}
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold font-heading leading-[1.1] mb-6 animate-fade-up text-white text-shadow-sm">
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-400 drop-shadow-md">
+          {/* Headline - Aqua to Royal Blue Gradient */}
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold font-heading leading-[1.1] mb-6 animate-fade-up text-white">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#38BDF8] to-[#2563EB] drop-shadow-md">
               {t("hero.title1")}
             </span>{" "}
             <br className="hidden sm:block" />
@@ -88,28 +86,28 @@ export default function HeroSection() {
           {/* Trust Badges */}
           <div className="flex items-center justify-center gap-6 sm:gap-8 mb-10 animate-fade-up">
             <div className="flex items-center gap-1.5 text-sm text-white/60 font-medium">
-              <Shield className="w-4 h-4 text-emerald-400 drop-shadow-[0_0_5px_rgba(52,211,153,0.5)]" />
+              <Shield className="w-4 h-4 text-sky-400 drop-shadow-[0_0_5px_rgba(56,189,248,0.5)]" />
               {t("hero.hipaa")}
             </div>
             <div className="flex items-center gap-1.5 text-sm text-white/60 font-medium">
-              <FileCheck className="w-4 h-4 text-emerald-400 drop-shadow-[0_0_5px_rgba(52,211,153,0.5)]" />
+              <FileCheck className="w-4 h-4 text-sky-400 drop-shadow-[0_0_5px_rgba(56,189,248,0.5)]" />
               {t("hero.baa")}
             </div>
             <div className="flex items-center gap-1.5 text-sm text-white/60 font-medium">
-              <Lock className="w-4 h-4 text-emerald-400 drop-shadow-[0_0_5px_rgba(52,211,153,0.5)]" />
+              <Lock className="w-4 h-4 text-sky-400 drop-shadow-[0_0_5px_rgba(56,189,248,0.5)]" />
               {t("hero.soc2")}
             </div>
           </div>
 
-          {/* 3D Liquid Droplet CTAs */}
+          {/* 3D Liquid Droplet CTAs - Aqua/Sky accents */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-5 mb-16 animate-fade-up">
             <Link
               to="/auth"
               className="px-8 py-4 rounded-full
-                backdrop-blur-xl bg-cyan-500/20
-                border border-cyan-300/30 border-t-cyan-100/70 border-l-cyan-100/50
-                shadow-[inset_0_2px_5px_rgba(255,255,255,0.5),0_10px_25px_rgba(69,243,255,0.2)]
-                hover:bg-cyan-500/30 hover:-translate-y-1 hover:shadow-[inset_0_2px_5px_rgba(255,255,255,0.6),0_15px_30px_rgba(69,243,255,0.4)]
+                backdrop-blur-xl bg-sky-500/20
+                border border-sky-300/30 border-t-sky-100/70 border-l-sky-100/50
+                shadow-[inset_0_2px_5px_rgba(255,255,255,0.5),0_10px_25px_rgba(56,189,248,0.2)]
+                hover:bg-sky-500/30 hover:-translate-y-1 hover:shadow-[inset_0_2px_5px_rgba(255,255,255,0.6),0_15px_30px_rgba(56,189,248,0.4)]
                 transition-all duration-300 inline-flex items-center gap-2 text-lg text-white font-semibold tracking-wide"
             >
               {t("hero.startFreeTrial")}
@@ -124,7 +122,7 @@ export default function HeroSection() {
                 hover:bg-white/10 hover:-translate-y-1 hover:shadow-[inset_0_2px_5px_rgba(255,255,255,0.4),0_15px_30px_rgba(0,0,0,0.4)]
                 transition-all duration-300 inline-flex items-center gap-2 text-lg text-white font-semibold tracking-wide"
             >
-              <Play className="w-5 h-5 text-cyan-300" />
+              <Play className="w-5 h-5 text-sky-400" />
               {t("hero.seeHowItWorks")}
             </a>
           </div>
@@ -143,7 +141,7 @@ export default function HeroSection() {
                     border border-white/10 border-t-white/30
                     shadow-[inset_0_1px_3px_rgba(255,255,255,0.15)]"
                 >
-                  <Brain className="h-4 w-4 text-cyan-400" />
+                  <Brain className="h-4 w-4 text-sky-400" />
                   <span className="text-sm text-white/70 font-medium">{name}</span>
                 </div>
               ))}
