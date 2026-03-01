@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Suspense, lazy } from "react";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AgentProvider } from "@/hooks/useAgents";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -40,7 +41,7 @@ import CompanyCards from "./pages/CompanyCards";
 import N8nGateway from "./pages/N8nGateway";
 import Webhooks from "./pages/Webhooks";
 import Auth from "./pages/Auth";
-import AIConversation from "./pages/AIConversation";
+const AIConversation = lazy(() => import("./pages/AIConversation"));
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -58,7 +59,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/ai-conversation" element={<AIConversation />} />
+            <Route path="/ai-conversation" element={<Suspense fallback={<div className="min-h-screen bg-[#0B0C10]" />}><AIConversation /></Suspense>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/dashboard/agents" element={<ProtectedRoute><Agents /></ProtectedRoute>} />
             <Route path="/dashboard/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
