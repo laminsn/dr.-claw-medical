@@ -1,3 +1,5 @@
+import { hospiceCareTemplates } from "./hospiceCareTemplates";
+
 export interface AgentTemplate {
   id: string;
   name: string;
@@ -6,6 +8,7 @@ export interface AgentTemplate {
   icon: string; // lucide icon name
   category:
     | "healthcare"
+    | "hospice"
     | "executive"
     | "marketing"
     | "operations"
@@ -846,4 +849,10 @@ export const agentTemplates: AgentTemplate[] = [
       { label: "Meetings booked", value: "150/mo" },
     ],
   },
+];
+
+// Merge hospice care templates into the main catalog for individual selection
+export const allAgentTemplates: AgentTemplate[] = [
+  ...agentTemplates,
+  ...hospiceCareTemplates,
 ];

@@ -7,7 +7,7 @@ import { scanObject, sanitizeObject } from "../_shared/phi-scanner.ts";
  * LLM Router Edge Function
  *
  * Multi-model LLM gateway with:
- *   1. Routes to Claude, OpenAI, or Gemini based on request
+ *   1. Routes to Claude, OpenAI, Gemini, Grok, DeepSeek, Groq, Mistral, or Cohere based on request
  *   2. PHI scanning before external API calls
  *   3. Zone enforcement (clinical zone requires sanitization)
  *   4. Usage logging to api_usage_log
@@ -15,7 +15,7 @@ import { scanObject, sanitizeObject } from "../_shared/phi-scanner.ts";
  */
 
 interface LlmRequest {
-  model: string;           // 'claude' | 'openai' | 'gemini'
+  model: string;           // 'claude' | 'openai' | 'gemini' | 'grok' | 'deepseek' | 'groq' | 'mistral' | 'cohere'
   messages: Array<{ role: string; content: string }>;
   agentId: string;
   zone: "clinical" | "operations" | "external";
@@ -44,6 +44,12 @@ const COST_TABLE: Record<string, { input: number; output: number }> = {
   "gpt-4o": { input: 2.50, output: 10.0 },
   "gpt-4o-mini": { input: 0.15, output: 0.60 },
   "gemini-2.0-flash": { input: 0.10, output: 0.40 },
+  "grok-3": { input: 3.0, output: 15.0 },
+  "grok-3-mini": { input: 0.30, output: 0.50 },
+  "deepseek-chat": { input: 0.14, output: 0.28 },
+  "llama-3.3-70b-versatile": { input: 0.59, output: 0.79 },
+  "mistral-large-latest": { input: 2.0, output: 6.0 },
+  "command-r-plus": { input: 2.50, output: 10.0 },
 };
 
 function estimateCost(model: string, inputTokens: number, outputTokens: number): number {
@@ -65,6 +71,18 @@ function resolveModel(shortName: string): { provider: string; model: string } {
       return { provider: "openai", model: "gpt-4o-mini" };
     case "gemini":
       return { provider: "google", model: "gemini-2.0-flash" };
+    case "grok":
+      return { provider: "xai", model: "grok-3" };
+    case "grok-mini":
+      return { provider: "xai", model: "grok-3-mini" };
+    case "deepseek":
+      return { provider: "deepseek", model: "deepseek-chat" };
+    case "groq":
+      return { provider: "groq", model: "llama-3.3-70b-versatile" };
+    case "mistral":
+      return { provider: "mistral", model: "mistral-large-latest" };
+    case "cohere":
+      return { provider: "cohere", model: "command-r-plus" };
     default:
       return { provider: "anthropic", model: "claude-sonnet-4-20250514" };
   }
@@ -134,13 +152,15 @@ async function callAnthropic(
   };
 }
 
-async function callOpenAI(
+async function callOpenAICompatible(
   apiKey: string,
   model: string,
   messages: Array<{ role: string; content: string }>,
   systemPrompt: string | undefined,
   maxTokens: number,
   temperature: number,
+  provider: string,
+  baseUrl = "https://api.openai.com/v1",
   tools?: Array<Record<string, unknown>>,
 ): Promise<LlmResponse> {
   const start = Date.now();
@@ -159,7 +179,7 @@ async function callOpenAI(
     body.tools = tools.map((t) => ({ type: "function", function: t }));
   }
 
-  const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+  const resp = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -170,7 +190,7 @@ async function callOpenAI(
 
   if (!resp.ok) {
     const errText = await resp.text();
-    throw new Error(`OpenAI API error ${resp.status}: ${errText}`);
+    throw new Error(`${provider} API error ${resp.status}: ${errText}`);
   }
 
   const data = await resp.json();
@@ -187,13 +207,26 @@ async function callOpenAI(
   return {
     content: choice?.message?.content ?? "",
     model,
-    provider: "openai",
+    provider,
     inputTokens: data.usage?.prompt_tokens ?? 0,
     outputTokens: data.usage?.completion_tokens ?? 0,
     costUsd: estimateCost(model, data.usage?.prompt_tokens ?? 0, data.usage?.completion_tokens ?? 0),
     latencyMs,
     toolCalls: toolCalls?.length > 0 ? toolCalls : undefined,
   };
+}
+
+// Convenience wrapper for standard OpenAI
+async function callOpenAI(
+  apiKey: string,
+  model: string,
+  messages: Array<{ role: string; content: string }>,
+  systemPrompt: string | undefined,
+  maxTokens: number,
+  temperature: number,
+  tools?: Array<Record<string, unknown>>,
+): Promise<LlmResponse> {
+  return callOpenAICompatible(apiKey, model, messages, systemPrompt, maxTokens, temperature, "openai", "https://api.openai.com/v1", tools);
 }
 
 async function callGoogle(
@@ -337,6 +370,11 @@ serve(async (req) => {
       anthropic: "ANTHROPIC_API_KEY",
       openai: "OPENAI_API_KEY",
       google: "GOOGLE_AI_API_KEY",
+      xai: "XAI_API_KEY",
+      deepseek: "DEEPSEEK_API_KEY",
+      groq: "GROQ_API_KEY",
+      mistral: "MISTRAL_API_KEY",
+      cohere: "COHERE_API_KEY",
     };
 
     const apiKey = Deno.env.get(keyMap[provider]);
@@ -349,12 +387,30 @@ serve(async (req) => {
     // ── Call provider ────────────────────────────────────────────────
     let result: LlmResponse;
 
+    // Base URLs for OpenAI-compatible providers
+    const PROVIDER_BASE_URLS: Record<string, string> = {
+      openai: "https://api.openai.com/v1",
+      xai: "https://api.x.ai/v1",
+      deepseek: "https://api.deepseek.com/v1",
+      groq: "https://api.groq.com/openai/v1",
+      mistral: "https://api.mistral.ai/v1",
+      cohere: "https://api.cohere.com/v2",
+    };
+
     switch (provider) {
       case "anthropic":
         result = await callAnthropic(apiKey, model, processedMessages, systemPrompt, maxTokens, temperature, tools);
         break;
       case "openai":
-        result = await callOpenAI(apiKey, model, processedMessages, systemPrompt, maxTokens, temperature, tools);
+      case "xai":
+      case "deepseek":
+      case "groq":
+      case "mistral":
+      case "cohere":
+        result = await callOpenAICompatible(
+          apiKey, model, processedMessages, systemPrompt, maxTokens, temperature,
+          provider, PROVIDER_BASE_URLS[provider], tools,
+        );
         break;
       case "google":
         result = await callGoogle(apiKey, model, processedMessages, systemPrompt, maxTokens, temperature);

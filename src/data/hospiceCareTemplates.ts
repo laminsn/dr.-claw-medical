@@ -15,7 +15,7 @@ function hospiceAgent(
   }
 ): AgentTemplate {
   return {
-    category: "healthcare",
+    category: "hospice",
     suggestedModel: partial.suggestedModel ?? "Claude",
     ...partial,
   };

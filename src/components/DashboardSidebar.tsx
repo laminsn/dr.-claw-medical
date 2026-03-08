@@ -43,9 +43,30 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useTranslation } from "react-i18next";
 import ThemeToggle from "@/components/ThemeToggle";
 import LanguageSelector from "@/components/LanguageSelector";
+
+// Paths visible to each role. Admin sees everything.
+const ROLE_VISIBLE_PATHS: Record<string, Set<string>> = {
+  member: new Set([
+    "/dashboard", "/dashboard/command",
+    "/dashboard/agents",
+    "/dashboard/patients", "/dashboard/communication", "/dashboard/campaigns", "/dashboard/knowledge", "/dashboard/tasks",
+    "/dashboard/integrations",
+    "/dashboard/profile", "/dashboard/billing", "/dashboard/cards", "/dashboard/notifications", "/dashboard/settings",
+  ]),
+  manager: new Set([
+    "/dashboard", "/dashboard/command",
+    "/dashboard/agents", "/dashboard/playground",
+    "/dashboard/patients", "/dashboard/communication", "/dashboard/campaigns", "/dashboard/knowledge", "/dashboard/tasks",
+    "/dashboard/reports", "/dashboard/custom-dashboards", "/dashboard/logs",
+    "/dashboard/company", "/dashboard/team", "/dashboard/skills", "/dashboard/workflows", "/dashboard/training",
+    "/dashboard/integrations",
+    "/dashboard/profile", "/dashboard/billing", "/dashboard/cards", "/dashboard/notifications", "/dashboard/settings",
+  ]),
+};
 
 interface MenuItem {
   icon: LucideIcon;
@@ -82,8 +103,10 @@ function persistGroups(groups: string[]) {
 
 const DashboardSidebar = ({ overdueTaskCount = 0 }: { overdueTaskCount?: number }) => {
   const [collapsed, setCollapsed] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const location = useLocation();
   const { signOut } = useAuth();
+  const { role, isAdmin } = useUserRole();
   const { t } = useTranslation();
 
   const menuGroups: MenuGroup[] = useMemo(() => [
@@ -169,17 +192,29 @@ const DashboardSidebar = ({ overdueTaskCount = 0 }: { overdueTaskCount?: number 
     },
   ], [t, overdueTaskCount]);
 
+  // Filter menu items by role (admin/master_admin sees everything)
+  const visibleGroups = useMemo(() => {
+    if (isAdmin || showAll) return menuGroups;
+    const allowed = ROLE_VISIBLE_PATHS[role ?? "member"] ?? ROLE_VISIBLE_PATHS.member;
+    return menuGroups
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) => allowed.has(item.path)),
+      }))
+      .filter((group) => group.items.length > 0);
+  }, [menuGroups, role, isAdmin, showAll]);
+
   // Determine which group contains the active path
   const activeGroupId = useMemo(() => {
     // Exact match for /dashboard
     if (location.pathname === "/dashboard") return "overview";
-    for (const group of menuGroups) {
+    for (const group of visibleGroups) {
       if (group.items.some((item) => location.pathname === item.path)) {
         return group.id;
       }
     }
     return "overview";
-  }, [location.pathname, menuGroups]);
+  }, [location.pathname, visibleGroups]);
 
   // Initialize expanded groups: persisted + active group
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => {
@@ -220,7 +255,7 @@ const DashboardSidebar = ({ overdueTaskCount = 0 }: { overdueTaskCount?: number 
 
       {/* Navigation */}
       <nav className="flex-1 py-2 px-2 overflow-y-auto space-y-0.5">
-        {menuGroups.map((group) => {
+        {visibleGroups.map((group) => {
           const isExpanded = expandedGroups.has(group.id);
           const isActiveGroup = activeGroupId === group.id;
           const GroupIcon = group.icon;
@@ -306,6 +341,14 @@ const DashboardSidebar = ({ overdueTaskCount = 0 }: { overdueTaskCount?: number 
 
       {/* Footer */}
       <div className="p-2 border-t border-sidebar-border space-y-1">
+        {!collapsed && !isAdmin && (
+          <button
+            onClick={() => setShowAll((prev) => !prev)}
+            className="flex items-center gap-3 px-3 py-1.5 rounded-lg text-[11px] text-sidebar-foreground/50 hover:text-sidebar-foreground/70 hover:bg-sidebar-accent transition-colors w-full"
+          >
+            {showAll ? t("sidebar.showLess", "Simplified View") : t("sidebar.showAll", "Show All Pages")}
+          </button>
+        )}
         {!collapsed && (
           <div className="flex items-center gap-1 px-1 py-1">
             <ThemeToggle />

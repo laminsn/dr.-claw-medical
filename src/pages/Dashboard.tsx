@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Activity,
   Users,
@@ -10,6 +11,8 @@ import {
   Timer,
   CheckCircle2,
   Zap,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -21,6 +24,8 @@ import ComplianceGauges from "@/components/dashboard/ComplianceGauges";
 import DCMFunnelChart from "@/components/dashboard/FunnelChart";
 import PipelineChart from "@/components/dashboard/PipelineChart";
 import AgentWorkloadHeatmap from "@/components/dashboard/AgentWorkloadHeatmap";
+import AgentHealthGrid from "@/components/dashboard/AgentHealthGrid";
+import QuickChatDrawer from "@/components/dashboard/QuickChatDrawer";
 import { CHART_COLORS } from "@/components/dashboard/chartConstants";
 import {
   TaskVolumeChart,
@@ -144,8 +149,22 @@ const impactStats = [
   },
 ];
 
+const DASHBOARD_VIEW_KEY = "dcm-dashboard-view";
+
 const Dashboard = () => {
   const { t } = useTranslation();
+  const [viewMode, setViewMode] = useState<"quick" | "full">(() => {
+    try {
+      return (localStorage.getItem(DASHBOARD_VIEW_KEY) as "quick" | "full") ?? "quick";
+    } catch {
+      return "quick";
+    }
+  });
+
+  const toggleView = (mode: "quick" | "full") => {
+    setViewMode(mode);
+    try { localStorage.setItem(DASHBOARD_VIEW_KEY, mode); } catch { /* ignore */ }
+  };
 
   return (
     <DashboardLayout>
@@ -156,15 +175,75 @@ const Dashboard = () => {
           initial="initial"
           animate="animate"
         >
-          {/* Welcome Header */}
+          {/* Welcome Header + View Toggle */}
           <motion.div variants={fadeInUp}>
-            <WelcomeHeader />
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <WelcomeHeader />
+              </div>
+              <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5 shrink-0 mt-1">
+                <button
+                  onClick={() => toggleView("quick")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    viewMode === "quick"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <List className="h-3.5 w-3.5" />
+                  {t("dashboard.quickView", "Quick")}
+                </button>
+                <button
+                  onClick={() => toggleView("full")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    viewMode === "full"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                  {t("dashboard.fullView", "Full")}
+                </button>
+              </div>
+            </div>
           </motion.div>
 
           {/* KPI Cards with Sparklines */}
           <motion.div variants={fadeInUp}>
             <KpiCards cards={kpiCards} />
           </motion.div>
+
+          {/* Quick View: Agent Health + Alerts only */}
+          {viewMode === "quick" && (
+            <>
+              <motion.div variants={fadeInUp}>
+                <AgentHealthGrid />
+              </motion.div>
+
+              <motion.div variants={fadeInUp}>
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <h3 className="text-sm font-semibold text-foreground mb-3">
+                    {t("dashboard.practiceActivityFeed")}
+                  </h3>
+                  <div className="space-y-2.5 max-h-64 overflow-y-auto">
+                    {recentActivity.slice(0, 5).map((item, i) => (
+                      <div key={i} className="flex items-start gap-3">
+                        <div className="h-1.5 w-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-foreground leading-relaxed">{item.action}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">{item.time}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+
+          {/* Full View: Everything */}
+          {viewMode === "full" && (
+            <>
 
           {/* Impact Summary */}
           <motion.div variants={fadeInUp}>
@@ -370,8 +449,12 @@ const Dashboard = () => {
               <AgentTasksTable />
             </div>
           </motion.div>
+
+            </>
+          )}
         </motion.div>
       </main>
+      <QuickChatDrawer />
     </DashboardLayout>
   );
 };

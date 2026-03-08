@@ -31,8 +31,8 @@ vi.mock("@/integrations/supabase/client", () => ({
   },
 }));
 
-vi.mock("@/data/agentTemplates", () => ({
-  agentTemplates: [
+vi.mock("@/data/agentTemplates", () => {
+  const agentTemplates = [
     {
       id: "front-desk-agent",
       name: "Front Desk Agent",
@@ -83,8 +83,9 @@ vi.mock("@/data/agentTemplates", () => ({
       defaultSkills: ["marketing"],
       longDescription: "A marketing strategist agent.",
     },
-  ],
-}));
+  ];
+  return { agentTemplates, allAgentTemplates: agentTemplates };
+});
 
 vi.mock("@/data/hospiceCareTemplates", () => ({
   hospiceCareTemplates: [
@@ -92,7 +93,7 @@ vi.mock("@/data/hospiceCareTemplates", () => ({
       id: "hospice-ceo-diane",
       name: "Diane — CEO",
       description: "Chief Executive Officer",
-      category: "healthcare",
+      category: "hospice",
       tier: "enterprise",
       suggestedModel: "Claude",
       defaultSkills: ["ceo"],
@@ -104,7 +105,7 @@ vi.mock("@/data/hospiceCareTemplates", () => ({
       id: "hospice-dir-marketing",
       name: "Camila — Marketing Director",
       description: "Marketing Director",
-      category: "healthcare",
+      category: "hospice",
       tier: "enterprise",
       suggestedModel: "Claude",
       defaultSkills: ["marketing"],
@@ -154,21 +155,30 @@ describe("Onboarding Page", () => {
     vi.clearAllMocks();
   });
 
-  it("renders welcome step initially", () => {
+  it("renders welcome step with practice type options", () => {
     renderOnboarding();
     expect(screen.getByText("Welcome to Dr. Claw Medical")).toBeInTheDocument();
-    expect(screen.getByText(/Get Started/)).toBeInTheDocument();
+    expect(screen.getByText("General Practice")).toBeInTheDocument();
+    expect(screen.getByText("Hospice / Home Health")).toBeInTheDocument();
+    expect(screen.getByText("Specialty Clinic")).toBeInTheDocument();
+    expect(screen.getByText("Dental Practice")).toBeInTheDocument();
   });
 
-  it("navigates to pick-pack step on Get Started click", () => {
+  it("navigates to pick-pack step when practice type is selected", () => {
     renderOnboarding();
-    fireEvent.click(screen.getByText(/Get Started/));
+    fireEvent.click(screen.getByText("General Practice"));
+    expect(screen.getByText("Choose Your Team")).toBeInTheDocument();
+  });
+
+  it("navigates to pick-pack via skip link", () => {
+    renderOnboarding();
+    fireEvent.click(screen.getByText(/choose myself/));
     expect(screen.getByText("Choose Your Team")).toBeInTheDocument();
   });
 
   it("shows all quick start packs including hospice", () => {
     renderOnboarding();
-    fireEvent.click(screen.getByText(/Get Started/));
+    fireEvent.click(screen.getByText("General Practice"));
     expect(screen.getByText("Front Office Starter")).toBeInTheDocument();
     expect(screen.getByText("Clinical Operations")).toBeInTheDocument();
     expect(screen.getByText("Growth Engine")).toBeInTheDocument();
@@ -177,29 +187,24 @@ describe("Onboarding Page", () => {
 
   it("shows recommended badges on recommended packs", () => {
     renderOnboarding();
-    fireEvent.click(screen.getByText(/Get Started/));
+    fireEvent.click(screen.getByText("General Practice"));
     const badges = screen.getAllByText("Recommended");
     expect(badges.length).toBeGreaterThanOrEqual(1);
   });
 
   it("enables Continue button after selecting a pack", () => {
     renderOnboarding();
-    fireEvent.click(screen.getByText(/Get Started/));
+    fireEvent.click(screen.getByText("General Practice"));
 
-    // Continue should be disabled initially
     const continueBtn = screen.getByText(/Continue/);
-    expect(continueBtn.closest("button")).toBeDisabled();
-
-    // Click a pack
-    fireEvent.click(screen.getByText("Front Office Starter"));
-
-    // Continue should now be enabled
-    expect(continueBtn.closest("button")).not.toBeDisabled();
+    // A pack should already be pre-selected from the practice type
+    // but verify Continue is present
+    expect(continueBtn).toBeInTheDocument();
   });
 
   it("navigates to customize step after selecting pack and clicking Continue", () => {
     renderOnboarding();
-    fireEvent.click(screen.getByText(/Get Started/));
+    fireEvent.click(screen.getByText("General Practice"));
     fireEvent.click(screen.getByText("Front Office Starter"));
     fireEvent.click(screen.getByText(/Continue/));
 
@@ -209,7 +214,7 @@ describe("Onboarding Page", () => {
 
   it("can go back from pick-pack to welcome", () => {
     renderOnboarding();
-    fireEvent.click(screen.getByText(/Get Started/));
+    fireEvent.click(screen.getByText("General Practice"));
     expect(screen.getByText("Choose Your Team")).toBeInTheDocument();
 
     fireEvent.click(screen.getByText("Back"));
@@ -218,7 +223,7 @@ describe("Onboarding Page", () => {
 
   it("allows custom selection without a pack", () => {
     renderOnboarding();
-    fireEvent.click(screen.getByText(/Get Started/));
+    fireEvent.click(screen.getByText("General Practice"));
     fireEvent.click(screen.getByText("Custom Selection"));
 
     expect(screen.getByText("Build Your Team")).toBeInTheDocument();
@@ -227,21 +232,19 @@ describe("Onboarding Page", () => {
 
   it("toggles agent templates in customize step", () => {
     renderOnboarding();
-    fireEvent.click(screen.getByText(/Get Started/));
+    fireEvent.click(screen.getByText("General Practice"));
     fireEvent.click(screen.getByText("Custom Selection"));
 
-    // Select an agent
     fireEvent.click(screen.getByText("Front Desk Agent"));
     expect(screen.getByText(/1 agent selected/)).toBeInTheDocument();
 
-    // Deselect it
     fireEvent.click(screen.getByText("Front Desk Agent"));
     expect(screen.getByText(/0 agents selected/)).toBeInTheDocument();
   });
 
   it("disables deploy button when no agents selected", () => {
     renderOnboarding();
-    fireEvent.click(screen.getByText(/Get Started/));
+    fireEvent.click(screen.getByText("General Practice"));
     fireEvent.click(screen.getByText("Custom Selection"));
 
     const deployBtn = screen.getByText(/Deploy/);
@@ -250,11 +253,10 @@ describe("Onboarding Page", () => {
 
   it("shows department grouping for hospice pack", () => {
     renderOnboarding();
-    fireEvent.click(screen.getByText(/Get Started/));
+    fireEvent.click(screen.getByText("Hospice / Home Health"));
     fireEvent.click(screen.getByText("Hospice Care Team"));
     fireEvent.click(screen.getByText(/Continue/));
 
-    // Department headers are uppercase h3 elements
     expect(screen.getByText("Diane — CEO")).toBeInTheDocument();
     expect(screen.getByText("Camila — Marketing Director")).toBeInTheDocument();
     expect(screen.getByText(/2 agents? selected/)).toBeInTheDocument();

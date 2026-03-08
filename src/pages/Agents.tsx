@@ -46,7 +46,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { skills, skillCategories } from "@/data/skills";
-import { agentTemplates } from "@/data/agentTemplates";
+import { allAgentTemplates as agentTemplates } from "@/data/agentTemplates";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { useAgents, type MyAgent, type AgentCapabilities } from "@/hooks/useAgents";

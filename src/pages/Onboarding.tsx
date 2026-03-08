@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { agentTemplates, type AgentTemplate } from "@/data/agentTemplates";
+import { allAgentTemplates as agentTemplates, type AgentTemplate } from "@/data/agentTemplates";
 import { hospiceCareTemplates } from "@/data/hospiceCareTemplates";
 import { ORG_CHART_PACKS, type OrgChartPack } from "@/data/orgChartPacks";
 
@@ -82,6 +82,14 @@ const QUICK_START_PACKS: QuickStartPack[] = [
 
 type OnboardingStep = "welcome" | "pick-pack" | "customize" | "deploying" | "done";
 
+const PRACTICE_TYPES = [
+  { id: "general", label: "General Practice", suggestedPack: "front-office" },
+  { id: "hospice", label: "Hospice / Home Health", suggestedPack: "hospice-care-team" },
+  { id: "specialty", label: "Specialty Clinic", suggestedPack: "clinical-ops" },
+  { id: "dental", label: "Dental Practice", suggestedPack: "front-office" },
+  { id: "other", label: "Other / Not Sure", suggestedPack: "front-office" },
+];
+
 // ── Component ──────────────────────────────────────────────────────────
 
 const Onboarding = () => {
@@ -136,7 +144,7 @@ const Onboarding = () => {
 
     // Build batch rows for agent_configs
     const agentRows = templates.map((template) => {
-      const zone = template.category === "healthcare" ? "clinical"
+      const zone = template.category === "healthcare" || template.category === "hospice" ? "clinical"
         : template.category === "marketing" || template.category === "marketing-suite" || template.category === "sales" ? "external"
         : "operations";
 
@@ -231,7 +239,7 @@ const Onboarding = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-3xl">
-        {/* ── Welcome ──────────────────────────────────────── */}
+        {/* ── Welcome + Practice Type ───────────────────────── */}
         {step === "welcome" && (
           <div className="text-center space-y-6">
             <div className="inline-flex items-center justify-center h-20 w-20 rounded-2xl bg-gradient-to-br from-primary to-blue-600 shadow-glow mx-auto">
@@ -242,15 +250,28 @@ const Onboarding = () => {
             </h1>
             <p className="text-muted-foreground max-w-lg mx-auto">
               Deploy autonomous AI agents for your healthcare practice in minutes.
-              Choose a Quick Start pack or build your own team.
+              What type of practice do you run?
             </p>
-            <Button
-              size="lg"
-              className="gradient-primary text-primary-foreground rounded-xl shadow-glow hover:opacity-90"
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-md mx-auto">
+              {PRACTICE_TYPES.map((pt) => (
+                <button
+                  key={pt.id}
+                  onClick={() => {
+                    selectPack(pt.suggestedPack);
+                    setStep("pick-pack");
+                  }}
+                  className="p-3 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all text-sm font-medium text-foreground"
+                >
+                  {pt.label}
+                </button>
+              ))}
+            </div>
+            <button
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => setStep("pick-pack")}
             >
-              Get Started <ChevronRight className="h-4 w-4 ml-2" />
-            </Button>
+              Skip — I&apos;ll choose myself
+            </button>
           </div>
         )}
 
@@ -481,7 +502,7 @@ const Onboarding = () => {
           </div>
         )}
 
-        {/* ── Done ─────────────────────────────────────────── */}
+        {/* ── Done + Connect EHR ─────────────────────────────── */}
         {step === "done" && (
           <div className="text-center space-y-6">
             <div className="inline-flex items-center justify-center h-20 w-20 rounded-2xl bg-green-500/10 border border-green-500/30 mx-auto">
@@ -489,22 +510,37 @@ const Onboarding = () => {
             </div>
             <h2 className="text-2xl font-bold text-foreground">Your Team is Ready!</h2>
             <p className="text-muted-foreground max-w-md mx-auto">
-              {deployedCount} agents have been deployed with system prompts, skills, and n8n workflow connections.
-              Head to the Command Station to start giving them tasks.
+              {deployedCount} agents deployed with system prompts and workflows.
             </p>
-            <div className="flex gap-3 justify-center">
+
+            {/* EHR Connection Prompt */}
+            <div className="max-w-sm mx-auto p-4 rounded-xl border border-border bg-card text-left space-y-3">
+              <h3 className="text-sm font-semibold text-foreground">Connect Your EHR</h3>
+              <p className="text-xs text-muted-foreground">
+                Link your Electronic Health Records system so agents can access patient data securely.
+              </p>
               <Button
                 variant="outline"
-                className="border-white/10"
+                size="sm"
+                className="w-full"
+                onClick={() => navigate("/dashboard/integrations")}
+              >
+                Connect EHR Now
+              </Button>
+              <button
+                className="text-[11px] text-muted-foreground hover:text-foreground w-full text-center"
                 onClick={() => navigate("/dashboard")}
               >
-                Go to Dashboard
-              </Button>
+                I&apos;ll do this later
+              </button>
+            </div>
+
+            <div className="flex gap-3 justify-center">
               <Button
                 className="gradient-primary text-primary-foreground rounded-xl shadow-glow-sm"
-                onClick={() => navigate("/dashboard/command-station")}
+                onClick={() => navigate("/dashboard")}
               >
-                Open Command Station <ChevronRight className="h-4 w-4 ml-1" />
+                Go to Dashboard <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
             </div>
           </div>
@@ -517,7 +553,7 @@ const Onboarding = () => {
 // ── Helper: build system prompt from template ─────────────────────────
 
 function buildSystemPrompt(template: AgentTemplate): string {
-  const zone = template.category === "healthcare" ? "clinical"
+  const zone = template.category === "healthcare" || template.category === "hospice" ? "clinical"
     : template.category === "marketing" || template.category === "marketing-suite" ? "external"
     : "operations";
 
