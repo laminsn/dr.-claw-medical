@@ -35,13 +35,13 @@ export function usePlatformSkills() {
   return useQuery({
     queryKey: [QUERY_KEY],
     queryFn: async (): Promise<PlatformSkill[]> => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("platform_skills")
         .select("*")
         .order("name");
 
       if (error) throw error;
-      return data as PlatformSkill[];
+      return (data ?? []) as PlatformSkill[];
     },
   });
 }
