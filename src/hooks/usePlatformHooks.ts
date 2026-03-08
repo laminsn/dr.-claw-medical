@@ -41,13 +41,13 @@ export function usePlatformHooks() {
   return useQuery({
     queryKey: [QUERY_KEY],
     queryFn: async (): Promise<PlatformHook[]> => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("platform_hooks")
         .select("*")
         .order("priority", { ascending: true });
 
       if (error) throw error;
-      return data as PlatformHook[];
+      return (data ?? []) as PlatformHook[];
     },
   });
 }
@@ -59,7 +59,7 @@ export function useCreateHook() {
 
   return useMutation({
     mutationFn: async (hook: PlatformHookInsert) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("platform_hooks")
         .insert(hook)
         .select()
@@ -81,7 +81,7 @@ export function useUpdateHook() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: PlatformHookUpdate) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("platform_hooks")
         .update(updates)
         .eq("id", id)
@@ -104,7 +104,7 @@ export function useDeleteHook() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("platform_hooks")
         .delete()
         .eq("id", id);
@@ -124,7 +124,7 @@ export function useToggleHookActive() {
 
   return useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("platform_hooks")
         .update({ is_active })
         .eq("id", id);

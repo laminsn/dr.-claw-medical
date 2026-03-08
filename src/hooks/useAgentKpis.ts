@@ -65,7 +65,7 @@ export function useAgentSummaries() {
   return useQuery({
     queryKey: ["kpi", "agent-summaries"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("mv_agent_summary")
         .select("*")
         .order("lifetime_tasks", { ascending: false });
@@ -83,7 +83,7 @@ export function useAgentPerformanceDaily(days = 30) {
     queryKey: ["kpi", "agent-performance-daily", days],
     queryFn: async () => {
       const since = new Date(Date.now() - days * 86400000).toISOString().split("T")[0];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("mv_agent_performance_daily")
         .select("*")
         .gte("day", since)
@@ -102,7 +102,7 @@ export function useCostDaily(days = 30) {
     queryKey: ["kpi", "cost-daily", days],
     queryFn: async () => {
       const since = new Date(Date.now() - days * 86400000).toISOString().split("T")[0];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("mv_cost_daily")
         .select("*")
         .gte("day", since)
@@ -121,7 +121,7 @@ export function usePhiExposureDaily(days = 30) {
     queryKey: ["kpi", "phi-exposure-daily", days],
     queryFn: async () => {
       const since = new Date(Date.now() - days * 86400000).toISOString().split("T")[0];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("mv_phi_exposure_daily")
         .select("*")
         .gte("day", since)

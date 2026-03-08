@@ -33,13 +33,13 @@ export function usePlatformMcps() {
   return useQuery({
     queryKey: [QUERY_KEY],
     queryFn: async (): Promise<PlatformMcp[]> => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("platform_mcps")
         .select("*")
         .order("name");
 
       if (error) throw error;
-      return data as PlatformMcp[];
+      return (data ?? []) as PlatformMcp[];
     },
   });
 }
@@ -51,7 +51,7 @@ export function useCreateMcp() {
 
   return useMutation({
     mutationFn: async (mcp: PlatformMcpInsert) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("platform_mcps")
         .insert(mcp)
         .select()
@@ -73,7 +73,7 @@ export function useUpdateMcp() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: PlatformMcpUpdate) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("platform_mcps")
         .update(updates)
         .eq("id", id)
@@ -96,7 +96,7 @@ export function useDeleteMcp() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("platform_mcps")
         .delete()
         .eq("id", id);

@@ -188,10 +188,10 @@ const Onboarding = () => {
     setDeployedCount(Math.ceil(templates.length / 2));
 
     // Batch upsert system prompts
-    await supabase
+    await (supabase as any)
       .from("agent_system_prompts")
       .upsert(promptRows, { onConflict: "user_id,agent_key" })
-      .catch((e) => console.error("Batch prompt upsert failed:", e));
+      .then(() => {}).catch((e: any) => console.error("Batch prompt upsert failed:", e));
 
     setDeployedCount(templates.length);
 
@@ -205,22 +205,22 @@ const Onboarding = () => {
         }));
 
       for (const { agentKey, parentKey } of parentUpdates) {
-        await supabase
+        await (supabase as any)
           .from("agent_configs")
           .update({ parent_agent_id: parentKey })
           .eq("user_id", user.id)
           .eq("agent_key", agentKey)
-          .catch(() => {});
+          .then(() => {}).catch(() => {});
       }
     }
 
     // Seed n8n flow configs
     if (pack) {
-      await supabase.rpc("seed_n8n_flows_for_user", { _user_id: user.id }).catch(() => {});
+      await (supabase as any).rpc("seed_n8n_flows_for_user", { _user_id: user.id }).catch(() => {});
     }
 
     // Audit log
-    await supabase.from("audit_log").insert({
+    await (supabase as any).from("audit_log").insert({
       user_id: user.id,
       action: "onboarding.complete",
       resource_type: "onboarding",

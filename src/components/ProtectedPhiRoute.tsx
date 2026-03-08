@@ -36,14 +36,13 @@ const ProtectedPhiRoute = ({
     queryFn: async () => {
       if (!user) return null;
 
-      const { data: profile } = await supabase
+      const { data: profile } = await (supabase as any)
         .from("profiles")
         .select("default_org_id, role")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
       if (!profile?.default_org_id) {
-        // No org yet — derive access from profile role
         const role = profile?.role ?? "user";
         return {
           role,
@@ -53,12 +52,12 @@ const ProtectedPhiRoute = ({
         };
       }
 
-      const { data: member } = await supabase
+      const { data: member } = await (supabase as any)
         .from("organization_members")
         .select("role, phi_access_level")
         .eq("org_id", profile.default_org_id)
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
       return {
         role: member?.role ?? "member",

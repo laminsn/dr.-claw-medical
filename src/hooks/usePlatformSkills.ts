@@ -35,13 +35,13 @@ export function usePlatformSkills() {
   return useQuery({
     queryKey: [QUERY_KEY],
     queryFn: async (): Promise<PlatformSkill[]> => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("platform_skills")
         .select("*")
         .order("name");
 
       if (error) throw error;
-      return data as PlatformSkill[];
+      return (data ?? []) as PlatformSkill[];
     },
   });
 }
@@ -53,7 +53,7 @@ export function useCreateSkill() {
 
   return useMutation({
     mutationFn: async (skill: PlatformSkillInsert) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("platform_skills")
         .insert(skill)
         .select()
@@ -75,7 +75,7 @@ export function useUpdateSkill() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: PlatformSkillUpdate) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("platform_skills")
         .update(updates)
         .eq("id", id)
@@ -98,7 +98,7 @@ export function useDeleteSkill() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("platform_skills")
         .delete()
         .eq("id", id);
@@ -121,7 +121,7 @@ export function useAssignSkillToAgent() {
     mutationFn: async ({ agentKey, skillId }: { agentKey: string; skillId: string }) => {
       if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("agent_skill_assignments")
         .upsert(
           { agent_key: agentKey, skill_id: skillId, user_id: user.id },
@@ -146,7 +146,7 @@ export function useUnassignSkillFromAgent() {
     mutationFn: async ({ agentKey, skillId }: { agentKey: string; skillId: string }) => {
       if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("agent_skill_assignments")
         .delete()
         .eq("agent_key", agentKey)
