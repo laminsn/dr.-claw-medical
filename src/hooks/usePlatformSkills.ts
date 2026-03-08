@@ -75,7 +75,7 @@ export function useUpdateSkill() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: PlatformSkillUpdate) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("platform_skills")
         .update(updates)
         .eq("id", id)
