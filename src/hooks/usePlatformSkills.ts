@@ -121,7 +121,7 @@ export function useAssignSkillToAgent() {
     mutationFn: async ({ agentKey, skillId }: { agentKey: string; skillId: string }) => {
       if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("agent_skill_assignments")
         .upsert(
           { agent_key: agentKey, skill_id: skillId, user_id: user.id },
