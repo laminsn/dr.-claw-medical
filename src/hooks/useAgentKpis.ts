@@ -83,7 +83,7 @@ export function useAgentPerformanceDaily(days = 30) {
     queryKey: ["kpi", "agent-performance-daily", days],
     queryFn: async () => {
       const since = new Date(Date.now() - days * 86400000).toISOString().split("T")[0];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("mv_agent_performance_daily")
         .select("*")
         .gte("day", since)
