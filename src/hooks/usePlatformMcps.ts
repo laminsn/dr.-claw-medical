@@ -73,7 +73,7 @@ export function useUpdateMcp() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: PlatformMcpUpdate) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("platform_mcps")
         .update(updates)
         .eq("id", id)
