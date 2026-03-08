@@ -53,7 +53,7 @@ export function useCreateSkill() {
 
   return useMutation({
     mutationFn: async (skill: PlatformSkillInsert) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("platform_skills")
         .insert(skill)
         .select()
