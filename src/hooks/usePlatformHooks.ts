@@ -104,7 +104,7 @@ export function useDeleteHook() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("platform_hooks")
         .delete()
         .eq("id", id);
