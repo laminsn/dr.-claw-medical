@@ -102,7 +102,7 @@ export function useCostDaily(days = 30) {
     queryKey: ["kpi", "cost-daily", days],
     queryFn: async () => {
       const since = new Date(Date.now() - days * 86400000).toISOString().split("T")[0];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("mv_cost_daily")
         .select("*")
         .gte("day", since)
