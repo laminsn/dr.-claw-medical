@@ -205,12 +205,12 @@ const Onboarding = () => {
         }));
 
       for (const { agentKey, parentKey } of parentUpdates) {
-        await supabase
+        await (supabase as any)
           .from("agent_configs")
           .update({ parent_agent_id: parentKey })
           .eq("user_id", user.id)
           .eq("agent_key", agentKey)
-          .catch(() => {});
+          .then(() => {}).catch(() => {});
       }
     }
 
