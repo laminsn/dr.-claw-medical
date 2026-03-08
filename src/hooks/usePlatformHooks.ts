@@ -124,7 +124,7 @@ export function useToggleHookActive() {
 
   return useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("platform_hooks")
         .update({ is_active })
         .eq("id", id);

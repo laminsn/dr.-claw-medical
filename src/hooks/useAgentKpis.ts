@@ -121,7 +121,7 @@ export function usePhiExposureDaily(days = 30) {
     queryKey: ["kpi", "phi-exposure-daily", days],
     queryFn: async () => {
       const since = new Date(Date.now() - days * 86400000).toISOString().split("T")[0];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("mv_phi_exposure_daily")
         .select("*")
         .gte("day", since)

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { Plus, Zap, Brain } from "lucide-react";
 
-const getGreeting = (t: (key: string, fallback?: string) => string): string => {
+const getGreeting = (t: any): string => {
   const hour = new Date().getHours();
   if (hour < 12) return t("dashboard.welcomeMorning", "Good morning");
   if (hour < 18) return t("dashboard.welcomeAfternoon", "Good afternoon");
