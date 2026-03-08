@@ -96,7 +96,7 @@ export function useDeleteMcp() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("platform_mcps")
         .delete()
         .eq("id", id);

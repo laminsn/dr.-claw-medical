@@ -220,7 +220,7 @@ const Onboarding = () => {
     }
 
     // Audit log
-    await supabase.from("audit_log").insert({
+    await (supabase as any).from("audit_log").insert({
       user_id: user.id,
       action: "onboarding.complete",
       resource_type: "onboarding",
