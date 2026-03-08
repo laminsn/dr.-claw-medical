@@ -188,10 +188,10 @@ const Onboarding = () => {
     setDeployedCount(Math.ceil(templates.length / 2));
 
     // Batch upsert system prompts
-    await supabase
+    await (supabase as any)
       .from("agent_system_prompts")
       .upsert(promptRows, { onConflict: "user_id,agent_key" })
-      .catch((e) => console.error("Batch prompt upsert failed:", e));
+      .then(() => {}).catch((e: any) => console.error("Batch prompt upsert failed:", e));
 
     setDeployedCount(templates.length);
 
