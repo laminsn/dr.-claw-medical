@@ -33,13 +33,13 @@ export function usePlatformMcps() {
   return useQuery({
     queryKey: [QUERY_KEY],
     queryFn: async (): Promise<PlatformMcp[]> => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("platform_mcps")
         .select("*")
         .order("name");
 
       if (error) throw error;
-      return data as PlatformMcp[];
+      return (data ?? []) as PlatformMcp[];
     },
   });
 }
