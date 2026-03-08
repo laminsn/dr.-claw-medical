@@ -51,7 +51,7 @@ export function useCreateMcp() {
 
   return useMutation({
     mutationFn: async (mcp: PlatformMcpInsert) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("platform_mcps")
         .insert(mcp)
         .select()
