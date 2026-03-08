@@ -65,7 +65,7 @@ export function useAgentSummaries() {
   return useQuery({
     queryKey: ["kpi", "agent-summaries"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("mv_agent_summary")
         .select("*")
         .order("lifetime_tasks", { ascending: false });
