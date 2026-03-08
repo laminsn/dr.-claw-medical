@@ -98,7 +98,7 @@ export function useDeleteSkill() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("platform_skills")
         .delete()
         .eq("id", id);
