@@ -81,7 +81,7 @@ export function useUpdateHook() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: PlatformHookUpdate) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("platform_hooks")
         .update(updates)
         .eq("id", id)
