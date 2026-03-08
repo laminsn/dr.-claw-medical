@@ -59,7 +59,7 @@ export function useCreateHook() {
 
   return useMutation({
     mutationFn: async (hook: PlatformHookInsert) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("platform_hooks")
         .insert(hook)
         .select()
