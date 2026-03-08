@@ -41,13 +41,13 @@ export function usePlatformHooks() {
   return useQuery({
     queryKey: [QUERY_KEY],
     queryFn: async (): Promise<PlatformHook[]> => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("platform_hooks")
         .select("*")
         .order("priority", { ascending: true });
 
       if (error) throw error;
-      return data as PlatformHook[];
+      return (data ?? []) as PlatformHook[];
     },
   });
 }
