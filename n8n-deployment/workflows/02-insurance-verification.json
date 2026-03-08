@@ -1,0 +1,44 @@
+{
+  "name": "Insurance Verification",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "insurance-verification",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst payload = body.payload || body;\n\nconst { insuranceProvider, policyId, patientDob, serviceDate } = payload;\n\nif (!insuranceProvider || !policyId) {\n  return [{ json: { eligible: false, error: 'Missing insuranceProvider or policyId' } }];\n}\n\n// Simulated verification (replace with real payer API call)\nconst verificationResult = {\n  eligible: true,\n  provider: insuranceProvider,\n  policyId: policyId,\n  planType: 'PPO',\n  copay: 25.00,\n  deductible: 1500.00,\n  deductibleMet: 750.00,\n  coinsurance: 20,\n  priorAuthRequired: false,\n  effectiveDate: '2026-01-01',\n  terminationDate: '2026-12-31',\n  verifiedAt: new Date().toISOString(),\n  source: 'n8n-insurance-verification'\n};\n\nreturn [{ json: { success: true, verification: verificationResult } }];"
+      },
+      "id": "verify-insurance",
+      "name": "Verify Insurance Eligibility",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}"
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [690, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": { "main": [[{ "node": "Verify Insurance Eligibility", "type": "main", "index": 0 }]] },
+    "Verify Insurance Eligibility": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "healthcare" }, { "name": "clinical" }]
+}

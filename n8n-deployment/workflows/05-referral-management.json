@@ -1,0 +1,44 @@
+{
+  "name": "Referral Management",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "referral-management",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst payload = body.payload || body;\n\nconst { referralType, referringProvider, specialtyNeeded, urgency, notes } = payload;\n\nif (!referralType || !specialtyNeeded) {\n  return [{ json: { success: false, error: 'Missing referralType or specialtyNeeded' } }];\n}\n\nconst referral = {\n  referralId: `REF-${Date.now()}`,\n  type: referralType,\n  referringProvider: referringProvider || 'Unknown',\n  specialtyNeeded,\n  urgency: urgency || 'routine',\n  notes: notes || '',\n  status: 'pending',\n  createdAt: new Date().toISOString(),\n  estimatedResponseDays: urgency === 'urgent' ? 1 : urgency === 'semi-urgent' ? 3 : 7,\n  source: 'n8n-referral-management'\n};\n\nreturn [{ json: { success: true, referral } }];"
+      },
+      "id": "process-referral",
+      "name": "Process Referral",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}"
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [690, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": { "main": [[{ "node": "Process Referral", "type": "main", "index": 0 }]] },
+    "Process Referral": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "healthcare" }, { "name": "clinical" }]
+}

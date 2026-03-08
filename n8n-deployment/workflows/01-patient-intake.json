@@ -1,0 +1,103 @@
+{
+  "name": "Patient Intake Processing",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "patient-intake",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validate required patient intake fields\nconst body = $input.first().json.body || $input.first().json;\nconst payload = body.payload || body;\n\nconst required = ['firstName', 'lastName', 'dateOfBirth', 'phone'];\nconst missing = required.filter(f => !payload[f]);\n\nif (missing.length > 0) {\n  return [{ json: { valid: false, error: `Missing fields: ${missing.join(', ')}`, payload } }];\n}\n\nreturn [{ json: { valid: true, payload } }];"
+      },
+      "id": "validate-data",
+      "name": "Validate Intake Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.valid }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "check-valid",
+      "name": "Is Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format patient data for downstream processing\nconst p = $input.first().json.payload;\n\nconst patient = {\n  fullName: `${p.firstName} ${p.lastName}`,\n  dateOfBirth: p.dateOfBirth,\n  phone: p.phone,\n  email: p.email || null,\n  insuranceProvider: p.insuranceProvider || null,\n  insurancePolicyId: p.insurancePolicyId || null,\n  reasonForVisit: p.reasonForVisit || 'General Checkup',\n  preferredProvider: p.preferredProvider || null,\n  status: 'intake_complete',\n  processedAt: new Date().toISOString(),\n  source: 'n8n-patient-intake'\n};\n\nreturn [{ json: { success: true, patient } }];"
+      },
+      "id": "process-patient",
+      "name": "Process Patient Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [910, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { success: false, error: $input.first().json.error } }];"
+      },
+      "id": "handle-error",
+      "name": "Handle Validation Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [910, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}"
+      },
+      "id": "respond-success",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1130, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "respond-error",
+      "name": "Respond Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1130, 400]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": { "main": [[{ "node": "Validate Intake Data", "type": "main", "index": 0 }]] },
+    "Validate Intake Data": { "main": [[{ "node": "Is Valid?", "type": "main", "index": 0 }]] },
+    "Is Valid?": {
+      "main": [
+        [{ "node": "Process Patient Data", "type": "main", "index": 0 }],
+        [{ "node": "Handle Validation Error", "type": "main", "index": 0 }]
+      ]
+    },
+    "Process Patient Data": { "main": [[{ "node": "Respond Success", "type": "main", "index": 0 }]] },
+    "Handle Validation Error": { "main": [[{ "node": "Respond Error", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "healthcare" }, { "name": "clinical" }]
+}

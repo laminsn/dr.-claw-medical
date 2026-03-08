@@ -1,0 +1,44 @@
+{
+  "name": "Clinical Documentation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "clinical-documentation",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst payload = body.payload || body;\n\nconst { encounterNotes, encounterType, providerName } = payload;\n\nif (!encounterNotes) {\n  return [{ json: { success: false, error: 'Missing encounterNotes' } }];\n}\n\n// Structure the clinical note (LLM summarization would be called via the Dr. Claw llm-router)\nconst structuredNote = {\n  encounterType: encounterType || 'office_visit',\n  provider: providerName || 'Unknown Provider',\n  rawNotes: encounterNotes,\n  sections: {\n    chiefComplaint: 'Extracted from notes by LLM',\n    historyOfPresentIllness: 'Extracted from notes by LLM',\n    assessment: 'Extracted from notes by LLM',\n    plan: 'Extracted from notes by LLM'\n  },\n  suggestedCodes: [],\n  status: 'draft',\n  createdAt: new Date().toISOString(),\n  source: 'n8n-clinical-documentation'\n};\n\nreturn [{ json: { success: true, document: structuredNote } }];"
+      },
+      "id": "structure-notes",
+      "name": "Structure Clinical Notes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}"
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [690, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": { "main": [[{ "node": "Structure Clinical Notes", "type": "main", "index": 0 }]] },
+    "Structure Clinical Notes": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "healthcare" }, { "name": "clinical" }]
+}

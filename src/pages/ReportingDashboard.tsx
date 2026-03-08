@@ -21,7 +21,7 @@ import {
   File,
   Mail,
 } from "lucide-react";
-import DashboardSidebar from "@/components/DashboardSidebar";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -462,8 +462,7 @@ const ReportingDashboard = () => {
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <DashboardSidebar />
+    <DashboardLayout>
 
       <main className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto space-y-8">
@@ -845,7 +844,7 @@ const ReportingDashboard = () => {
           </div>
         </div>
       </main>
-    </div>
+    </DashboardLayout>
   );
 };
 

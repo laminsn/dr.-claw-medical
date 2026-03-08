@@ -39,9 +39,12 @@ import AgentDataCenter from "./pages/AgentDataCenter";
 import CompanyCards from "./pages/CompanyCards";
 import N8nGateway from "./pages/N8nGateway";
 import Webhooks from "./pages/Webhooks";
+import Onboarding from "./pages/Onboarding";
+import PlatformConfig from "./pages/PlatformConfig";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
 
 const queryClient = new QueryClient();
 
@@ -88,6 +91,8 @@ const App = () => (
             <Route path="/dashboard/cards" element={<ProtectedRoute><CompanyCards /></ProtectedRoute>} />
             <Route path="/dashboard/n8n-gateway" element={<ProtectedRoute><N8nGateway /></ProtectedRoute>} />
             <Route path="/dashboard/webhooks" element={<ProtectedRoute><Webhooks /></ProtectedRoute>} />
+            <Route path="/dashboard/admin/platform-config" element={<AdminRoute><PlatformConfig /></AdminRoute>} />
+            <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Terms />} />
             <Route path="/security" element={<Terms />} />

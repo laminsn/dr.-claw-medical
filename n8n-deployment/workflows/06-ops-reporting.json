@@ -1,0 +1,54 @@
+{
+  "name": "Operations Reporting",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 18 * * 1-5" }]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Weekday 6PM Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate daily KPIs\n// In production: query Supabase api_usage_log, agent_executions, kanban_tasks\nconst today = new Date().toISOString().split('T')[0];\n\nconst report = {\n  date: today,\n  summary: {\n    totalAgentTasks: 142,\n    completedTasks: 136,\n    failedTasks: 3,\n    pendingTasks: 3,\n    successRate: 95.8,\n    totalTokensUsed: 487500,\n    totalCostUsd: 12.47,\n    avgResponseTimeMs: 1450,\n    phiEventsDetected: 7,\n    phiEventsRedacted: 7,\n    n8nWorkflowsExecuted: 45,\n    n8nWorkflowsFailed: 1\n  },\n  topAgents: [\n    { name: 'Dr. Front Desk', tasks: 47, successRate: 96.2 },\n    { name: 'InsureBot', tasks: 31, successRate: 98.1 },\n    { name: 'Marketing Maven', tasks: 23, successRate: 100 }\n  ],\n  alerts: [],\n  generatedAt: new Date().toISOString(),\n  source: 'n8n-ops-reporting'\n};\n\n// Check for alerts\nif (report.summary.successRate < 90) {\n  report.alerts.push({ level: 'warning', message: `Success rate below 90%: ${report.summary.successRate}%` });\n}\nif (report.summary.totalCostUsd > 50) {\n  report.alerts.push({ level: 'warning', message: `Daily cost exceeded $50: $${report.summary.totalCostUsd}` });\n}\n\nreturn [{ json: report }];"
+      },
+      "id": "aggregate-kpis",
+      "name": "Aggregate Daily KPIs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const report = $input.first().json;\n\n// Format as Slack-friendly message\nconst blocks = [\n  `*Daily Operations Report — ${report.date}*`,\n  '',\n  `Tasks: ${report.summary.completedTasks}/${report.summary.totalAgentTasks} completed (${report.summary.successRate}%)`,\n  `Cost: $${report.summary.totalCostUsd.toFixed(2)} | Tokens: ${(report.summary.totalTokensUsed / 1000).toFixed(1)}k`,\n  `PHI Events: ${report.summary.phiEventsDetected} detected, ${report.summary.phiEventsRedacted} redacted`,\n  `Workflows: ${report.summary.n8nWorkflowsExecuted} executed, ${report.summary.n8nWorkflowsFailed} failed`,\n  '',\n  '*Top Agents:*',\n  ...report.topAgents.map(a => `  ${a.name}: ${a.tasks} tasks (${a.successRate}%)`),\n];\n\nif (report.alerts.length > 0) {\n  blocks.push('', '*Alerts:*');\n  report.alerts.forEach(a => blocks.push(`  :warning: ${a.message}`));\n}\n\nreturn [{ json: { report, formattedMessage: blocks.join('\\n') } }];"
+      },
+      "id": "format-report",
+      "name": "Format Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Placeholder for Slack/email delivery\n// In production: send via Slack webhook or SendGrid\nconst data = $input.first().json;\nconsole.log('Daily Report:', data.formattedMessage);\n\nreturn [{ json: { success: true, delivered: true, sentAt: new Date().toISOString() } }];"
+      },
+      "id": "deliver-report",
+      "name": "Deliver Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [910, 300]
+    }
+  ],
+  "connections": {
+    "Weekday 6PM Trigger": { "main": [[{ "node": "Aggregate Daily KPIs", "type": "main", "index": 0 }]] },
+    "Aggregate Daily KPIs": { "main": [[{ "node": "Format Report", "type": "main", "index": 0 }]] },
+    "Format Report": { "main": [[{ "node": "Deliver Report", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "healthcare" }, { "name": "operations" }]
+}

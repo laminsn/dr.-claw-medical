@@ -779,7 +779,22 @@
     "taskCompleted": "Tareas Completadas",
     "thisMonth": "este mes",
     "title": "Centro de Mando Clínico",
-    "totalThisMonth": "Total Este Mes"
+    "totalThisMonth": "Total Este Mes",
+    "welcomeMorning": "Buenos días",
+    "welcomeAfternoon": "Buenas tardes",
+    "welcomeEvening": "Buenas noches",
+    "platformHealth": "Salud de la Plataforma",
+    "salesPipeline": "Pipeline de Ventas",
+    "salesPipelineDesc": "Embudo de adquisición de prácticas médicas",
+    "revenuePipeline": "Pipeline de Ingresos",
+    "revenuePipelineDesc": "Valor activo de acuerdos por etapa",
+    "agentWorkload": "Carga de Trabajo de Agentes",
+    "complianceScore": "Cumplimiento HIPAA",
+    "patientSatisfaction": "Satisfacción del Paciente",
+    "agentUptime": "Tiempo Activo de Agentes",
+    "taskSuccessRate": "Tasa de Éxito de Tareas",
+    "less": "Menos",
+    "more": "Más"
   },
   "dataLogs": {
     "actionDetails": "Acción / Detalles",
@@ -1445,7 +1460,14 @@
     "providerProfile": "Perfil del Proveedor",
     "settings": "Configuración",
     "trainingCenter": "Centro de Capacitación",
-    "webhooks": "Webhooks"
+    "webhooks": "Webhooks",
+    "groupOverview": "General",
+    "groupAgents": "Agentes",
+    "groupClinical": "Clínico",
+    "groupAnalytics": "Analítica",
+    "groupOperations": "Operaciones",
+    "groupIntegrations": "Integraciones",
+    "groupSettings": "Configuración"
   },
   "commandStation": {
     "active": "activo",

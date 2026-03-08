@@ -64,7 +64,7 @@ import {
   Database,
   type LucideIcon,
 } from "lucide-react";
-import DashboardSidebar from "@/components/DashboardSidebar";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -644,8 +644,7 @@ const SkillsCenter = () => {
   // RENDER
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="flex min-h-screen bg-background">
-      <DashboardSidebar />
+    <DashboardLayout>
 
       <main className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto space-y-8">
@@ -1190,7 +1189,7 @@ const SkillsCenter = () => {
           </DialogContent>
         )}
       </Dialog>
-    </div>
+    </DashboardLayout>
   );
 };
 

@@ -35,7 +35,7 @@ import {
   ShieldAlert,
   Lock,
 } from "lucide-react";
-import DashboardSidebar from "@/components/DashboardSidebar";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +57,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import {
+  useN8nWorkflows,
+  useN8nExecutions,
+  useN8nActivateWorkflow,
+  useN8nDeactivateWorkflow,
+} from "@/hooks/useN8nApi";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -156,6 +162,13 @@ const nextId = (prefix: string) => `${prefix}-${++idCounter}`;
 const WorkflowBuilder = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
+
+  // ── n8n live data (falls back to mock data when n8n not configured) ──
+  const { data: n8nWorkflows, isError: n8nUnavailable } = useN8nWorkflows();
+  const { data: n8nExecutions } = useN8nExecutions(20);
+  const activateMutation = useN8nActivateWorkflow();
+  const deactivateMutation = useN8nDeactivateWorkflow();
+  const n8nConnected = !n8nUnavailable && !!n8nWorkflows;
 
   // ---------------------------------------------------------------------------
   // Constants (moved inside for i18n access)
@@ -461,24 +474,40 @@ const WorkflowBuilder = () => {
   // ---------------------------------------------------------------------------
 
   const toggleWorkflowStatus = (workflowId: string) => {
-    setWorkflows((prev) =>
-      prev.map((wf) => {
-        if (wf.id !== workflowId) return wf;
-        const newStatus: WorkflowStatus =
-          wf.status === "active" ? "paused" : "active";
-        return { ...wf, status: newStatus };
-      })
-    );
     const wf = workflows.find((w) => w.id === workflowId);
-    if (wf) {
-      const isPausing = wf.status === "active";
-      toast({
-        title: isPausing ? t("workflow.toastWorkflowPausedTitle") : t("workflow.toastWorkflowActivatedTitle"),
-        description: isPausing
-          ? t("workflow.toastWorkflowPausedDesc", { name: wf.name })
-          : t("workflow.toastWorkflowActivatedDesc", { name: wf.name }),
+    if (!wf) return;
+
+    const isPausing = wf.status === "active";
+
+    // Call real n8n API when connected
+    if (n8nConnected) {
+      const mutation = isPausing ? deactivateMutation : activateMutation;
+      mutation.mutate(workflowId, {
+        onError: (err) => {
+          toast({
+            title: "n8n Error",
+            description: err instanceof Error ? err.message : "Failed to toggle workflow",
+            variant: "destructive",
+          });
+        },
       });
     }
+
+    setWorkflows((prev) =>
+      prev.map((w) => {
+        if (w.id !== workflowId) return w;
+        const newStatus: WorkflowStatus =
+          w.status === "active" ? "paused" : "active";
+        return { ...w, status: newStatus };
+      })
+    );
+
+    toast({
+      title: isPausing ? t("workflow.toastWorkflowPausedTitle") : t("workflow.toastWorkflowActivatedTitle"),
+      description: isPausing
+        ? t("workflow.toastWorkflowPausedDesc", { name: wf.name })
+        : t("workflow.toastWorkflowActivatedDesc", { name: wf.name }),
+    });
   };
 
   const runWorkflow = (workflowId: string) => {
@@ -647,8 +676,7 @@ const WorkflowBuilder = () => {
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <DashboardSidebar />
+    <DashboardLayout>
       <main className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto space-y-8">
           {/* ---------------------------------------------------------------- */}
@@ -671,6 +699,14 @@ const WorkflowBuilder = () => {
               <Plus className="h-4 w-4 mr-2" />
               {t("workflow.newWorkflow")}
             </Button>
+          </div>
+
+          {/* n8n Connection Status */}
+          <div className={`flex items-center gap-3 p-3 rounded-xl border ${n8nConnected ? "bg-green-500/5 border-green-500/20" : "bg-amber-500/5 border-amber-500/20"}`}>
+            <div className={`h-2 w-2 rounded-full ${n8nConnected ? "bg-green-400 animate-pulse" : "bg-amber-400"}`} />
+            <span className={`text-xs font-medium ${n8nConnected ? "text-green-400" : "text-amber-400"}`}>
+              {n8nConnected ? `n8n Connected — ${n8nWorkflows?.length ?? 0} workflows` : "n8n Offline — showing demo data"}
+            </span>
           </div>
 
           {/* Zone Enforcement Banner */}
@@ -1228,7 +1264,7 @@ const WorkflowBuilder = () => {
           </Dialog>
         </div>
       </main>
-    </div>
+    </DashboardLayout>
   );
 };
 

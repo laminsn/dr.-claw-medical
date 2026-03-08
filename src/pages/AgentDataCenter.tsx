@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import DashboardSidebar from "@/components/DashboardSidebar";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -1357,8 +1357,7 @@ const AgentDataCenter = () => {
   // ── Main Render ────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <DashboardSidebar />
+    <DashboardLayout>
 
       <main className="flex-1 overflow-y-auto">
         <div className="p-8 max-w-7xl mx-auto">
@@ -1826,7 +1825,7 @@ const AgentDataCenter = () => {
           })()}
         </DialogContent>
       </Dialog>
-    </div>
+    </DashboardLayout>
   );
 };
 

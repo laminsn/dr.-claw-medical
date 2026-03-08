@@ -779,7 +779,22 @@
     "taskCompleted": "Tasks Completed",
     "thisMonth": "this month",
     "title": "Clinical Command Center",
-    "totalThisMonth": "Total This Month"
+    "totalThisMonth": "Total This Month",
+    "welcomeMorning": "Good morning",
+    "welcomeAfternoon": "Good afternoon",
+    "welcomeEvening": "Good evening",
+    "platformHealth": "Platform Health",
+    "salesPipeline": "Sales Pipeline",
+    "salesPipelineDesc": "Healthcare practice acquisition funnel",
+    "revenuePipeline": "Revenue Pipeline",
+    "revenuePipelineDesc": "Active deal value by stage",
+    "agentWorkload": "Agent Workload",
+    "complianceScore": "HIPAA Compliance",
+    "patientSatisfaction": "Patient Satisfaction",
+    "agentUptime": "Agent Uptime",
+    "taskSuccessRate": "Task Success Rate",
+    "less": "Less",
+    "more": "More"
   },
   "dataLogs": {
     "actionDetails": "Action / Details",
@@ -1445,7 +1460,14 @@
     "providerProfile": "Provider Profile",
     "settings": "Settings",
     "trainingCenter": "Training Center",
-    "webhooks": "Webhooks"
+    "webhooks": "Webhooks",
+    "groupOverview": "Overview",
+    "groupAgents": "Agents",
+    "groupClinical": "Clinical",
+    "groupAnalytics": "Analytics",
+    "groupOperations": "Operations",
+    "groupIntegrations": "Integrations",
+    "groupSettings": "Settings"
   },
   "skillsCenter": {
     "addToAgent": "Add to Agent",

@@ -24,7 +24,7 @@ import {
   MousePointerClick,
   RefreshCw,
 } from "lucide-react";
-import DashboardSidebar from "@/components/DashboardSidebar";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -1264,8 +1264,7 @@ const EmailCampaigns = () => {
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <DashboardSidebar />
+    <DashboardLayout>
 
       <main className="flex-1 overflow-y-auto">
         <div className="p-8 max-w-7xl mx-auto">
@@ -1320,7 +1319,7 @@ const EmailCampaigns = () => {
 
       {/* Campaign Editor Dialog */}
       {renderEditorDialog()}
-    </div>
+    </DashboardLayout>
   );
 };
 

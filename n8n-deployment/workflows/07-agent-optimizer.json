@@ -1,0 +1,70 @@
+{
+  "name": "Agent Self-Improvement Loop",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 9 * * 1" }]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Weekly Monday 9AM Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/functions/v1/agent-optimizer",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "daysBack", "value": "7" }
+          ]
+        }
+      },
+      "id": "call-optimizer",
+      "name": "Run Agent Optimizer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $input.first().json;\n\nif (!result.success || !result.reports) {\n  return [{ json: { skip: true, reason: 'No data' } }];\n}\n\nconst reports = result.reports;\nconst criticalAgents = reports.filter(r => r.performance.successRate < 80);\nconst recommendations = reports.flatMap(r => r.recommendations.map(rec => `${r.agentName}: ${rec}`));\n\nconst blocks = [\n  `*Weekly Agent Optimization Report — ${new Date().toISOString().split('T')[0]}*`,\n  '',\n  `Agents Analyzed: ${reports.length}`,\n  `Avg Success Rate: ${result.summary.avgSuccessRate}%`,\n  `Total Recommendations: ${result.summary.totalRecommendations}`,\n  `Error Patterns Found: ${result.summary.totalErrorPatterns}`,\n];\n\nif (criticalAgents.length > 0) {\n  blocks.push('', '*Agents Needing Attention:*');\n  criticalAgents.forEach(a => {\n    blocks.push(`  :warning: ${a.agentName}: ${a.performance.successRate}% success (${a.performance.totalTasks} tasks)`);\n  });\n}\n\nif (recommendations.length > 0) {\n  blocks.push('', '*Top Recommendations:*');\n  recommendations.slice(0, 10).forEach(r => blocks.push(`  • ${r}`));\n}\n\nreturn [{ json: { formattedMessage: blocks.join('\\n'), skip: false, reportCount: reports.length } }];"
+      },
+      "id": "format-report",
+      "name": "Format Weekly Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nif (data.skip) {\n  console.log('Skipping notification — no data');\n  return [{ json: { delivered: false } }];\n}\n\n// In production: send via Slack webhook\nconsole.log('Weekly Optimization Report:', data.formattedMessage);\n\nreturn [{ json: { delivered: true, sentAt: new Date().toISOString() } }];"
+      },
+      "id": "deliver-report",
+      "name": "Deliver Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [910, 300]
+    }
+  ],
+  "connections": {
+    "Weekly Monday 9AM Trigger": { "main": [[{ "node": "Run Agent Optimizer", "type": "main", "index": 0 }]] },
+    "Run Agent Optimizer": { "main": [[{ "node": "Format Weekly Report", "type": "main", "index": 0 }]] },
+    "Format Weekly Report": { "main": [[{ "node": "Deliver Report", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "healthcare" }, { "name": "optimization" }, { "name": "meta-agent" }]
+}

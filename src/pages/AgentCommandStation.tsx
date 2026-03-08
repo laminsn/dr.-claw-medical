@@ -62,13 +62,14 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import DashboardSidebar from "@/components/DashboardSidebar";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useKanbanTasks, KanbanTask, KanbanColumn, KanbanTaskInput, TaskComment, DateFilter } from "@/hooks/useKanbanTasks";
 import { useAuth } from "@/hooks/useAuth";
 import { TaskAnalyticsDashboard } from "@/components/command-station/TaskAnalyticsDashboard";
 import { AgentChatPanel } from "@/components/command-station/AgentChatPanel";
+import { useAgentSummaries } from "@/hooks/useAgentKpis";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface AgentMessage {
@@ -322,6 +323,7 @@ const AgentCommandStation = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [agents, setAgents] = useState<AgentState[]>(MOCK_AGENTS);
+  const { data: agentSummaries } = useAgentSummaries();
   const [viewMode, setViewMode] = useState<ViewMode>("board");
   const [fullscreenMode, setFullscreenMode] = useState(false);
   const [splitScreenIds, setSplitScreenIds] = useState<string[]>(["1", "2"]);
@@ -344,35 +346,55 @@ const AgentCommandStation = () => {
   const [chatAgentId, setChatAgentId] = useState<string | null>("1");
   const activityFeedRef = useRef<HTMLDivElement>(null);
 
+  // ── Enrich agents with real KPI data when available ─────────────────────
+  const enrichedAgents = useMemo(() => {
+    if (!agentSummaries || agentSummaries.length === 0) return agents;
+    return agents.map((agent) => {
+      const summary = agentSummaries.find((s) => s.agent_name === agent.name || s.agent_id === agent.id);
+      if (!summary) return agent;
+      return {
+        ...agent,
+        tasksCompleted: summary.lifetime_completed,
+        tasksFailed: summary.lifetime_failed,
+        tokensUsed: summary.lifetime_tokens,
+        costToday: Number(summary.cost_today),
+        costMonth: Number(summary.cost_month),
+        avgResponseTime: summary.avg_response_ms < 1000
+          ? `${summary.avg_response_ms}ms`
+          : `${(summary.avg_response_ms / 1000).toFixed(1)}s`,
+      };
+    });
+  }, [agents, agentSummaries]);
+
   // ── Fleet health metrics (derived) ─────────────────────────────────────
   const fleetHealth = useMemo(() => {
-    const activeAgents = agents.filter((a) => a.active);
-    const totalAgents = agents.length;
+    const activeAgents = enrichedAgents.filter((a) => a.active);
+    const totalAgents = enrichedAgents.length;
     const avgCpu = activeAgents.length > 0 ? Math.round(activeAgents.reduce((s, a) => s + a.cpu, 0) / activeAgents.length) : 0;
     const avgMemory = activeAgents.length > 0 ? Math.round(activeAgents.reduce((s, a) => s + a.memory, 0) / activeAgents.length) : 0;
-    const totalTokens = agents.reduce((s, a) => s + a.tokensUsed, 0);
-    const totalCostToday = agents.reduce((s, a) => s + a.costToday, 0);
-    const totalCostMonth = agents.reduce((s, a) => s + a.costMonth, 0);
-    const totalCompleted = agents.reduce((s, a) => s + a.tasksCompleted, 0);
-    const totalFailed = agents.reduce((s, a) => s + a.tasksFailed, 0);
+    const totalTokens = enrichedAgents.reduce((s, a) => s + a.tokensUsed, 0);
+    const totalCostToday = enrichedAgents.reduce((s, a) => s + a.costToday, 0);
+    const totalCostMonth = enrichedAgents.reduce((s, a) => s + a.costMonth, 0);
+    const totalCompleted = enrichedAgents.reduce((s, a) => s + a.tasksCompleted, 0);
+    const totalFailed = enrichedAgents.reduce((s, a) => s + a.tasksFailed, 0);
     const avgSuccessRate = totalCompleted + totalFailed > 0 ? Math.round((totalCompleted / (totalCompleted + totalFailed)) * 100) : 100;
-    const hasErrors = agents.some((a) => a.logs.some((l) => l.level === "error"));
-    const hasWarnings = agents.some((a) => a.logs.some((l) => l.level === "warn"));
+    const hasErrors = enrichedAgents.some((a) => a.logs.some((l) => l.level === "error"));
+    const hasWarnings = enrichedAgents.some((a) => a.logs.some((l) => l.level === "warn"));
 
     let status: "healthy" | "warning" | "critical" = "healthy";
     if (activeAgents.length === 0 || avgCpu > 85 || avgMemory > 90 || avgSuccessRate < 80) status = "critical";
     else if (hasErrors || avgCpu > 70 || avgMemory > 75 || avgSuccessRate < 90 || hasWarnings) status = "warning";
 
     return { activeAgents: activeAgents.length, totalAgents, avgCpu, avgMemory, totalTokens, totalCostToday, totalCostMonth, totalCompleted, totalFailed, avgSuccessRate, status };
-  }, [agents]);
+  }, [enrichedAgents]);
 
   // ── Combined activity feed ─────────────────────────────────────────────
   const activityFeed = useMemo(() => {
-    const allLogs = agents.flatMap((a) =>
+    const allLogs = enrichedAgents.flatMap((a) =>
       a.logs.map((log) => ({ ...log, agentName: a.name, agentZone: a.zone, agentId: a.id }))
     );
     return allLogs;
-  }, [agents]);
+  }, [enrichedAgents]);
 
   // Task modal state — uses a local draft separate from DB
   const [taskModal, setTaskModal] = useState<{
@@ -564,9 +586,9 @@ const AgentCommandStation = () => {
   // ── FULLSCREEN MODE ─────────────────────────────────────────────────────
   // ═══════════════════════════════════════════════════════════════════════════
   if (fullscreenMode) {
-    const totalTokens = agents.reduce((s, a) => s + a.tokensUsed, 0);
-    const totalCost = agents.reduce((s, a) => s + a.costToday, 0);
-    const totalTasks = agents.reduce((s, a) => s + a.tasksCompleted, 0);
+    const totalTokens = enrichedAgents.reduce((s, a) => s + a.tokensUsed, 0);
+    const totalCost = enrichedAgents.reduce((s, a) => s + a.costToday, 0);
+    const totalTasks = enrichedAgents.reduce((s, a) => s + a.tasksCompleted, 0);
 
     return (
       <div className="fixed inset-0 z-[9999] bg-black text-green-400 font-mono overflow-auto flex flex-col">
@@ -602,7 +624,7 @@ const AgentCommandStation = () => {
           <div className="flex items-center gap-2 text-[10px]">
             <Server className="h-3 w-3 text-green-600" />
             <span className="text-green-600">Fleet:</span>
-            <span className="text-green-400 font-bold">{agents.filter((a) => a.active).length}/{agents.length}</span>
+            <span className="text-green-400 font-bold">{enrichedAgents.filter((a) => a.active).length}/{enrichedAgents.length}</span>
             <span className="text-green-700">active</span>
           </div>
           <div className="flex items-center gap-2 text-[10px]">
@@ -628,7 +650,7 @@ const AgentCommandStation = () => {
         </div>
 
         <div className="flex-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-0 overflow-auto">
-          {agents.map((ag) => {
+          {enrichedAgents.map((ag) => {
             const sr = getSuccessRate(ag);
             const agTasks = fsTasks.slice(0, ag.active ? 3 : 1);
             return (
@@ -717,7 +739,7 @@ const AgentCommandStation = () => {
 
         <div className="shrink-0 flex items-center justify-between px-6 py-2 border-t border-green-900/60 bg-black/95 text-[10px] text-green-700">
           <span>{t("commandStation.autoRefresh")}</span>
-          <span className="text-green-600">{new Date().toLocaleTimeString()} | {agents.filter((a) => a.active).length}/{agents.length} {t("commandStation.agentsOnline")}</span>
+          <span className="text-green-600">{new Date().toLocaleTimeString()} | {enrichedAgents.filter((a) => a.active).length}/{enrichedAgents.length} {t("commandStation.agentsOnline")}</span>
         </div>
       </div>
     );
@@ -725,7 +747,7 @@ const AgentCommandStation = () => {
 
   // ── SPLIT VIEW ──────────────────────────────────────────────────────────
   const renderSplitScreen = () => {
-    const screenAgents = splitScreenIds.map((id) => agents.find((a) => a.id === id)).filter(Boolean) as AgentState[];
+    const screenAgents = splitScreenIds.map((id) => enrichedAgents.find((a) => a.id === id)).filter(Boolean) as AgentState[];
     const gridCols = screenAgents.length <= 2 ? "md:grid-cols-2" : screenAgents.length <= 4 ? "md:grid-cols-2 xl:grid-cols-2" : "md:grid-cols-2 xl:grid-cols-3";
     return (
       <div className={`flex-1 grid grid-cols-1 ${gridCols} gap-0 overflow-hidden`}>
@@ -807,12 +829,12 @@ const AgentCommandStation = () => {
             </div>
           );
         })}
-        {splitScreenIds.length < agents.length && (
+        {splitScreenIds.length < enrichedAgents.length && (
           <div className="flex flex-col items-center justify-center border-r border-b border-border bg-card/20 min-h-[300px]">
             <Bot className="h-8 w-8 text-muted-foreground/15 mb-3" />
             <p className="text-sm text-muted-foreground mb-3">Add agent screen</p>
             <div className="flex gap-2 flex-wrap justify-center px-4">
-              {agents.filter((a) => !splitScreenIds.includes(a.id)).map((a) => (
+              {enrichedAgents.filter((a) => !splitScreenIds.includes(a.id)).map((a) => (
                 <button key={a.id} onClick={() => setSplitScreenIds((prev) => [...prev, a.id])} className={`flex items-center gap-2 px-3 py-2 rounded-lg border bg-card hover:border-primary/40 transition-colors text-sm ${a.active ? "border-border" : "border-border/50 opacity-60"}`}>
                   <span className="relative flex h-2 w-2">
                     <span className={`relative inline-flex rounded-full h-2 w-2 ${a.active ? "bg-emerald-500" : "bg-gray-600"}`} />
@@ -1332,7 +1354,7 @@ const AgentCommandStation = () => {
 
         {fleetBarExpanded && (
           <div className="px-6 pb-3 flex gap-3 overflow-x-auto">
-            {agents.map((agent) => {
+            {enrichedAgents.map((agent) => {
               const sr = getSuccessRate(agent);
               const zoneColor = agent.zone === "clinical" ? "border-red-500/30 bg-red-500/5" : agent.zone === "operations" ? "border-amber-500/30 bg-amber-500/5" : "border-blue-500/30 bg-blue-500/5";
               const zoneText = agent.zone === "clinical" ? "text-red-400" : agent.zone === "operations" ? "text-amber-400" : "text-blue-400";
@@ -1390,8 +1412,7 @@ const AgentCommandStation = () => {
 
   // ── MAIN LAYOUT ─────────────────────────────────────────────────────────────
   return (
-    <div className="flex min-h-screen bg-background">
-      <DashboardSidebar overdueTaskCount={overdueCount} />
+    <DashboardLayout overdueTaskCount={overdueCount}>
 
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Page Header */}
@@ -1460,10 +1481,10 @@ const AgentCommandStation = () => {
           <div className="flex-1 flex flex-col overflow-hidden min-h-0">
             {viewMode === "split" && renderSplitScreen()}
             {viewMode === "board" && renderTaskBoard()}
-            {viewMode === "analytics" && <TaskAnalyticsDashboard tasks={tasks} agents={agents} />}
+            {viewMode === "analytics" && <TaskAnalyticsDashboard tasks={tasks} agents={enrichedAgents} />}
             {viewMode === "chat" && (
               <AgentChatPanel
-                agents={agents.map((a) => ({ id: a.id, name: a.name, model: a.model, zone: a.zone, active: a.active }))}
+                agents={enrichedAgents.map((a) => ({ id: a.id, name: a.name, model: a.model, zone: a.zone, active: a.active }))}
                 selectedAgentId={chatAgentId}
                 onSelectAgent={setChatAgentId}
               />
@@ -1475,7 +1496,7 @@ const AgentCommandStation = () => {
 
       {renderTaskModal()}
       {renderDeleteConfirm()}
-    </div>
+    </DashboardLayout>
   );
 };
 

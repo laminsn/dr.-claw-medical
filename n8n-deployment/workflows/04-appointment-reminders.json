@@ -1,0 +1,54 @@
+{
+  "name": "Appointment Reminders",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 8 * * *" }]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Daily 8AM Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Simulated: fetch upcoming appointments for next 24-48 hours\n// In production, this would query the EHR/scheduling system\nconst tomorrow = new Date();\ntomorrow.setDate(tomorrow.getDate() + 1);\n\nconst appointments = [\n  {\n    appointmentId: 'apt-001',\n    patientPhone: '+1234567890',\n    patientFirstName: 'Patient',\n    appointmentDate: tomorrow.toISOString().split('T')[0],\n    appointmentTime: '09:00',\n    providerName: 'Dr. Smith',\n    appointmentType: 'Follow-up',\n    location: 'Main Office'\n  }\n];\n\nreturn appointments.map(apt => ({ json: apt }));"
+      },
+      "id": "fetch-appointments",
+      "name": "Fetch Upcoming Appointments",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const apt = $input.first().json;\n\n// Build reminder message (PHI-stripped — no last name, no medical details)\nconst message = `Hi ${apt.patientFirstName}, this is a reminder about your ${apt.appointmentType} appointment tomorrow at ${apt.appointmentTime} with ${apt.providerName} at ${apt.location}. Reply CONFIRM to confirm or call us to reschedule.`;\n\nreturn [{ json: { ...apt, reminderMessage: message, channel: 'sms' } }];"
+      },
+      "id": "build-reminder",
+      "name": "Build Reminder Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Placeholder for SMS/email sending\n// In production: integrate Twilio for SMS, SendGrid for email\nconst data = $input.first().json;\n\nconsole.log(`Would send ${data.channel} to ${data.patientPhone}: ${data.reminderMessage}`);\n\nreturn [{ json: { success: true, appointmentId: data.appointmentId, channel: data.channel, sentAt: new Date().toISOString() } }];"
+      },
+      "id": "send-reminder",
+      "name": "Send Reminder",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [910, 300]
+    }
+  ],
+  "connections": {
+    "Daily 8AM Trigger": { "main": [[{ "node": "Fetch Upcoming Appointments", "type": "main", "index": 0 }]] },
+    "Fetch Upcoming Appointments": { "main": [[{ "node": "Build Reminder Message", "type": "main", "index": 0 }]] },
+    "Build Reminder Message": { "main": [[{ "node": "Send Reminder", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "healthcare" }, { "name": "operations" }]
+}

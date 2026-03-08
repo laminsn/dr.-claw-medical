@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { User, Mail, Phone, Building2, Stethoscope, Globe, Save, Loader2, Camera, Shield } from "lucide-react";
-import DashboardSidebar from "@/components/DashboardSidebar";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -161,8 +161,7 @@ const Profile = () => {
     : email?.[0]?.toUpperCase() ?? "?";
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <DashboardSidebar />
+    <DashboardLayout>
       <main className="flex-1 p-8">
         <div className="max-w-3xl mx-auto">
           {/* Header */}
@@ -327,7 +326,7 @@ const Profile = () => {
           )}
         </div>
       </main>
-    </div>
+    </DashboardLayout>
   );
 };
 

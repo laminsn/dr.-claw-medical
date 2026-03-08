@@ -53,7 +53,7 @@ import {
   Sparkles,
   Edit3,
 } from "lucide-react";
-import DashboardSidebar from "@/components/DashboardSidebar";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -1196,8 +1196,7 @@ const AgentOrgChart = () => {
   // ═════════════════════════════════════════════════════════════════════════
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <DashboardSidebar />
+    <DashboardLayout>
 
       <main className="flex-1 flex flex-col overflow-hidden">
         <div className="p-8 max-w-7xl mx-auto w-full shrink-0">
@@ -2192,7 +2191,7 @@ const AgentOrgChart = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </DashboardLayout>
   );
 };
 

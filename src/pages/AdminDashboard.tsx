@@ -8,7 +8,7 @@ import {
   Loader2,
   ChevronDown,
 } from "lucide-react";
-import DashboardSidebar from "@/components/DashboardSidebar";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -124,8 +124,7 @@ const AdminDashboard = () => {
   const managerCount = roles.filter((r) => r.role === "manager").length;
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <DashboardSidebar />
+    <DashboardLayout>
       <main className="flex-1 p-8">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-start justify-between mb-8">
@@ -281,7 +280,7 @@ const AdminDashboard = () => {
           </div>
         </div>
       </main>
-    </div>
+    </DashboardLayout>
   );
 };
 

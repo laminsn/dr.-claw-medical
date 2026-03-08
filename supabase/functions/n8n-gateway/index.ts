@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { scanObject, sanitizeObject } from "../_shared/phi-scanner.ts";
 
 /**
  * N8N Gateway Edge Function
@@ -16,108 +18,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
  *  6. Returns the response with audit metadata
  */
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
-
-const GATEWAY_VERSION = "1.0.0";
-
-// ── PHI Patterns (mirrored from client-side security.ts) ──────────────
-
-const PHI_PATTERNS = [
-  /\b\d{3}-\d{2}-\d{4}\b/,                        // SSN
-  /\b\d{9}\b/,                                      // 9-digit ID
-  /\b(?:MRN|mrn)[:\s#]*\w{4,}\b/i,                  // Medical Record Number
-  /\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b/,              // DOB-style dates
-  /\b(?:DOB|dob|Date of Birth)[:\s]*\S+/i,           // Labeled DOB
-  /\b(?:patient|pt|member)\s*(?:name|id)[:\s]*\S+/i, // Patient identifiers
-  /\b[A-Z]\d{4,9}\b/,                               // Insurance/policy IDs
-  /\b(?:NPI|npi)[:\s#]*\d{10}\b/i,                  // National Provider Identifier
-  /\b(?:DEA|dea)[:\s#]*[A-Z]{2}\d{7}\b/i,           // DEA number
-];
-
-function containsPhi(text: string): boolean {
-  return PHI_PATTERNS.some((p) => p.test(text));
-}
-
-function redactPhi(text: string): string {
-  let result = text;
-  for (const pattern of PHI_PATTERNS) {
-    result = result.replace(new RegExp(pattern, "g"), "[REDACTED]");
-  }
-  return result;
-}
-
-function classifyPhiRisk(text: string): "none" | "low" | "medium" | "high" {
-  if (/\b\d{3}-\d{2}-\d{4}\b/.test(text)) return "high";
-  if (/\b(?:MRN|mrn)[:\s#]*\w{4,}\b/i.test(text)) return "high";
-  if (/\b(?:patient|pt|member)\s*(?:name|id)[:\s]*\S+/i.test(text.toLowerCase())) return "high";
-  if (/\b(?:DOB|dob|Date of Birth)/i.test(text)) return "medium";
-  if (/\b[A-Z]\d{4,9}\b/.test(text)) return "medium";
-  if (/\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b/.test(text)) return "low";
-  return "none";
-}
-
-// ── Payload scanning & sanitization ───────────────────────────────────
-
-interface ScanResult {
-  fieldsWithPhi: string[];
-  highestRisk: "none" | "low" | "medium" | "high";
-}
-
-function scanObject(obj: Record<string, unknown>, path = ""): ScanResult {
-  const fieldsWithPhi: string[] = [];
-  let highestRisk: "none" | "low" | "medium" | "high" = "none";
-  const order = { none: 0, low: 1, medium: 2, high: 3 };
-
-  for (const [key, value] of Object.entries(obj)) {
-    const fp = path ? `${path}.${key}` : key;
-    if (typeof value === "string" && containsPhi(value)) {
-      fieldsWithPhi.push(fp);
-      const risk = classifyPhiRisk(value);
-      if (order[risk] > order[highestRisk]) highestRisk = risk;
-    } else if (value && typeof value === "object" && !Array.isArray(value)) {
-      const nested = scanObject(value as Record<string, unknown>, fp);
-      fieldsWithPhi.push(...nested.fieldsWithPhi);
-      if (order[nested.highestRisk] > order[highestRisk]) highestRisk = nested.highestRisk;
-    } else if (Array.isArray(value)) {
-      value.forEach((item, i) => {
-        if (typeof item === "string" && containsPhi(item)) {
-          fieldsWithPhi.push(`${fp}[${i}]`);
-          const risk = classifyPhiRisk(item);
-          if (order[risk] > order[highestRisk]) highestRisk = risk;
-        } else if (item && typeof item === "object") {
-          const nested = scanObject(item as Record<string, unknown>, `${fp}[${i}]`);
-          fieldsWithPhi.push(...nested.fieldsWithPhi);
-          if (order[nested.highestRisk] > order[highestRisk]) highestRisk = nested.highestRisk;
-        }
-      });
-    }
-  }
-  return { fieldsWithPhi, highestRisk };
-}
-
-function sanitize(obj: Record<string, unknown>): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(obj)) {
-    if (typeof value === "string") {
-      out[key] = containsPhi(value) ? redactPhi(value) : value;
-    } else if (value && typeof value === "object" && !Array.isArray(value)) {
-      out[key] = sanitize(value as Record<string, unknown>);
-    } else if (Array.isArray(value)) {
-      out[key] = value.map((item) => {
-        if (typeof item === "string") return containsPhi(item) ? redactPhi(item) : item;
-        if (item && typeof item === "object") return sanitize(item as Record<string, unknown>);
-        return item;
-      });
-    } else {
-      out[key] = value;
-    }
-  }
-  return out;
-}
+const GATEWAY_VERSION = "1.1.0";
 
 // ── SHA-256 hashing ───────────────────────────────────────────────────
 
@@ -130,11 +31,12 @@ async function sha256(text: string): Promise<string> {
 // ── Main handler ──────────────────────────────────────────────────────
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const optionsResponse = handleCorsOptions(req);
+  if (optionsResponse) return optionsResponse;
 
   const startTime = Date.now();
+  const requestOrigin = req.headers.get("Origin");
+  const corsHeaders = getCorsHeaders(requestOrigin);
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -143,7 +45,7 @@ serve(async (req) => {
     // ── Auth ────────────────────────────────────────────────────────
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return jsonResponse(401, { error: "Missing authorization" });
+      return jsonResponse(401, { error: "Missing authorization" }, corsHeaders);
     }
 
     const userClient = createClient(supabaseUrl, supabaseServiceKey, {
@@ -152,7 +54,7 @@ serve(async (req) => {
 
     const { data: { user }, error: authError } = await userClient.auth.getUser();
     if (authError || !user) {
-      return jsonResponse(401, { error: "Invalid authentication" });
+      return jsonResponse(401, { error: "Invalid authentication" }, corsHeaders);
     }
 
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
@@ -164,14 +66,35 @@ serve(async (req) => {
       agentId,
       agentName,
       agentZone,
-      webhookUrl,
       payload,
       sessionId,
     } = body;
 
     if (!flowId || !agentId || !agentZone || !payload) {
-      return jsonResponse(400, { error: "Missing required fields: flowId, agentId, agentZone, payload" });
+      return jsonResponse(400, { error: "Missing required fields: flowId, agentId, agentZone, payload" }, corsHeaders);
     }
+
+    // ── Lookup webhook URL from DB (never trust client-provided URLs) ──
+    const { data: flowConfig, error: flowErr } = await adminClient
+      .from("n8n_flow_configs")
+      .select("webhook_url, allowed_agent_ids")
+      .eq("user_id", user.id)
+      .eq("flow_key", flowId)
+      .eq("is_active", true)
+      .single();
+
+    if (flowErr || !flowConfig?.webhook_url) {
+      return jsonResponse(404, { error: `Flow config not found for flowId: ${flowId}` }, corsHeaders);
+    }
+
+    // Validate agent is authorized for this flow
+    if (flowConfig.allowed_agent_ids && flowConfig.allowed_agent_ids.length > 0) {
+      if (!flowConfig.allowed_agent_ids.includes(agentId)) {
+        return jsonResponse(403, { error: `Agent ${agentId} is not authorized for flow ${flowId}` }, corsHeaders);
+      }
+    }
+
+    const webhookUrl = flowConfig.webhook_url;
 
     // ── Zone enforcement ────────────────────────────────────────────
     const clinicalZone = agentZone === "clinical";
@@ -186,7 +109,7 @@ serve(async (req) => {
     let verdict: "allowed" | "blocked" | "sanitized" = "allowed";
 
     if (hasPhi) {
-      sanitizedPayload = sanitize(payload);
+      sanitizedPayload = sanitizeObject(payload);
       verdict = "sanitized";
     }
 
@@ -195,8 +118,21 @@ serve(async (req) => {
 
     // ── Block high-risk PHI from clinical zone leaving unsanitized ──
     if (clinicalZone && highestRisk === "high" && !hasPhi) {
-      // Edge case: risk detected but patterns didn't match — block as precaution
       verdict = "blocked";
+    }
+
+    if (verdict === "blocked") {
+      return jsonResponse(403, {
+        success: false,
+        verdict: "blocked",
+        phiScanResult: {
+          containsPhi: hasPhi,
+          riskLevel: highestRisk,
+          fieldsRedacted: fieldsWithPhi,
+          originalHash,
+          sanitizedHash,
+        },
+      }, corsHeaders);
     }
 
     // ── Execute N8N webhook ─────────────────────────────────────────
@@ -276,8 +212,8 @@ serve(async (req) => {
     });
 
     // ── Response ────────────────────────────────────────────────────
-    return jsonResponse(verdict === "blocked" ? 403 : 200, {
-      success: !errorMessage && verdict !== "blocked",
+    return jsonResponse(200, {
+      success: !errorMessage,
       verdict,
       phiScanResult: {
         containsPhi: hasPhi,
@@ -290,7 +226,7 @@ serve(async (req) => {
       errorMessage,
       durationMs,
       gatewayVersion: GATEWAY_VERSION,
-    });
+    }, corsHeaders);
   } catch (error) {
     console.error("N8N Gateway error:", error);
     const errMsg = error instanceof Error ? error.message : "Unknown error";
@@ -299,13 +235,13 @@ serve(async (req) => {
       verdict: "blocked",
       error: errMsg,
       durationMs: Date.now() - startTime,
-    });
+    }, getCorsHeaders(null));
   }
 });
 
-function jsonResponse(status: number, body: unknown): Response {
+function jsonResponse(status: number, body: unknown, headers: Record<string, string>): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...headers, "Content-Type": "application/json" },
   });
 }

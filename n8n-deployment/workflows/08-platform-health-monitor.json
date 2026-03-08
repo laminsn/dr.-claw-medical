@@ -1,0 +1,96 @@
+{
+  "name": "Platform Health Monitor",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "minutes", "minutesInterval": 5 }]
+        }
+      },
+      "name": "Every 5 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/functions/v1/platform-health",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 15000
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": []
+        },
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_ANON_KEY }}" }
+          ]
+        }
+      },
+      "name": "Fetch Health Metrics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.alerts.length }}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "name": "Has Alerts?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const alerts = $input.first().json.alerts || [];\nconst metrics = $input.first().json.metrics || {};\n\nconst critical = alerts.filter(a => a.severity === 'critical');\nconst warnings = alerts.filter(a => a.severity === 'warning');\n\nconst lines = [];\nif (critical.length > 0) {\n  lines.push('🚨 *CRITICAL ALERTS*');\n  critical.forEach(a => lines.push(`  • ${a.message}`));\n}\nif (warnings.length > 0) {\n  lines.push('⚠️ *WARNINGS*');\n  warnings.forEach(a => lines.push(`  • ${a.message}`));\n}\n\nlines.push('');\nlines.push('📊 *Quick Stats*');\nlines.push(`  Agents: ${metrics.agents?.active}/${metrics.agents?.total} active`);\nlines.push(`  Error Rate: ${metrics.agents?.errorRate24h}%`);\nlines.push(`  Tasks Today: ${metrics.tasks?.completedToday} completed, ${metrics.tasks?.failedToday} failed`);\nlines.push(`  Cost Today: $${metrics.cost?.today?.toFixed(2)}`);\nlines.push(`  PHI Accesses: ${metrics.phi?.accessesToday} (${metrics.phi?.highRiskToday} high-risk)`);\n\nreturn [{ json: { text: lines.join('\\n'), severity: critical.length > 0 ? 'critical' : 'warning' } }];"
+      },
+      "name": "Format Slack Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [910, 200]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL }}/functions/v1/slack-notify",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "channel", "value": "platform-alerts" },
+            { "name": "text", "value": "={{ $json.text }}" },
+            { "name": "severity", "value": "={{ $json.severity }}" }
+          ]
+        },
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_ANON_KEY }}" }
+          ]
+        }
+      },
+      "name": "Send Slack Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1130, 200]
+    }
+  ],
+  "connections": {
+    "Every 5 Minutes": { "main": [[{ "node": "Fetch Health Metrics", "type": "main", "index": 0 }]] },
+    "Fetch Health Metrics": { "main": [[{ "node": "Has Alerts?", "type": "main", "index": 0 }]] },
+    "Has Alerts?": { "main": [[{ "node": "Format Slack Message", "type": "main", "index": 0 }], []] },
+    "Format Slack Message": { "main": [[{ "node": "Send Slack Alert", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

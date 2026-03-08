@@ -15,9 +15,11 @@ import {
   ChevronDown,
   Sparkles,
   Command,
+  Loader2,
 } from "lucide-react";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { useAudioRecorder, formatDuration, type AudioMessage } from "@/hooks/useAudioRecorder";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -103,6 +105,7 @@ export function AgentChatPanel({ agents, selectedAgentId, onSelectAgent }: Agent
   const [inputText, setInputText] = useState("");
   const [showAgentPicker, setShowAgentPicker] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -172,13 +175,14 @@ export function AgentChatPanel({ agents, selectedAgentId, onSelectAgent }: Agent
   }, [voice, recorder]);
 
   // ── Send text message ──────────────────────────────────────────
-  const sendTextMessage = useCallback(() => {
-    if (!selectedAgentId || !inputText.trim()) return;
+  const sendTextMessage = useCallback(async () => {
+    if (!selectedAgentId || !inputText.trim() || isLoading) return;
 
+    const userContent = inputText.trim();
     const userMsg: ChatMessage = {
       id: `msg-${Date.now()}`,
       role: "user",
-      content: inputText.trim(),
+      content: userContent,
       timestamp: new Date(),
       status: "sent",
     };
@@ -190,18 +194,40 @@ export function AgentChatPanel({ agents, selectedAgentId, onSelectAgent }: Agent
       return updated;
     });
 
-    // Reset input and voice transcript
     setInputText("");
     voice.reset();
+    setIsLoading(true);
 
-    // Simulate agent response
-    setTimeout(() => {
+    try {
+      // Build conversation history for context
+      const history = (messages.get(selectedAgentId) ?? []).map((m) => ({
+        role: m.role === "agent" ? "assistant" : "user",
+        content: m.content,
+      }));
+      history.push({ role: "user", content: userContent });
+
+      // Call the LLM router edge function
+      const { data, error } = await supabase.functions.invoke("llm-router", {
+        body: {
+          model: selectedAgent?.model ?? "claude",
+          messages: history.slice(-20), // Last 20 messages for context
+          agentId: selectedAgentId,
+          zone: selectedAgent?.zone ?? "operations",
+          maxTokens: 4096,
+          temperature: 0.7,
+        },
+      });
+
+      const responseContent = error
+        ? `I encountered an error: ${error.message}. Please try again.`
+        : data?.content ?? "I received your message but couldn't generate a response.";
+
       const agentMsg: ChatMessage = {
         id: `msg-${Date.now()}-reply`,
         role: "agent",
-        content: generateAgentResponse(selectedAgent?.name ?? "Agent", userMsg.content),
+        content: responseContent,
         timestamp: new Date(),
-        status: "sent",
+        status: error ? "error" : "sent",
       };
 
       setMessages((prev) => {
@@ -210,8 +236,26 @@ export function AgentChatPanel({ agents, selectedAgentId, onSelectAgent }: Agent
         updated.set(selectedAgentId, [...existing, agentMsg]);
         return updated;
       });
-    }, 800 + Math.random() * 1500);
-  }, [selectedAgentId, inputText, voice, selectedAgent]);
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : "Unknown error";
+      const errorReply: ChatMessage = {
+        id: `msg-${Date.now()}-error`,
+        role: "agent",
+        content: `Connection error: ${errMsg}. Please check your network and try again.`,
+        timestamp: new Date(),
+        status: "error",
+      };
+
+      setMessages((prev) => {
+        const updated = new Map(prev);
+        const existing = updated.get(selectedAgentId) ?? [];
+        updated.set(selectedAgentId, [...existing, errorReply]);
+        return updated;
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedAgentId, inputText, voice, selectedAgent, messages, isLoading]);
 
   // ── Send audio message ─────────────────────────────────────────
   const handleStopRecording = useCallback(async () => {
@@ -460,6 +504,19 @@ export function AgentChatPanel({ agents, selectedAgentId, onSelectAgent }: Agent
             );
           })
         )}
+        {isLoading && (
+          <div className="flex gap-3">
+            <div className="h-8 w-8 rounded-full shrink-0 flex items-center justify-center bg-primary/20 text-primary border border-primary/30">
+              <Bot className="h-4 w-4" />
+            </div>
+            <div className="max-w-[70%] rounded-2xl px-4 py-3 bg-card border border-border/50 rounded-tl-sm">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground/60">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span>{selectedAgent?.name} is thinking...</span>
+              </div>
+            </div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 
@@ -565,11 +622,11 @@ export function AgentChatPanel({ agents, selectedAgentId, onSelectAgent }: Agent
             {/* Send button */}
             <button
               onClick={sendTextMessage}
-              disabled={!inputText.trim()}
+              disabled={!inputText.trim() || isLoading}
               className="p-2.5 rounded-xl bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/30 transition-all disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
               title="Send (Enter)"
             >
-              <Send className="h-4 w-4" />
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </button>
           </div>
 
@@ -596,22 +653,3 @@ export function AgentChatPanel({ agents, selectedAgentId, onSelectAgent }: Agent
   );
 }
 
-// ── Simulated agent responses ──────────────────────────────────────
-function generateAgentResponse(agentName: string, userMessage: string): string {
-  const lower = userMessage.toLowerCase();
-
-  if (lower.includes("status") || lower.includes("working on")) {
-    return `Currently processing 3 active tasks in my queue. Top priority: insurance verification for the morning batch. All systems operating within normal parameters. CPU at 34%, memory at 52%. No errors in the last hour.`;
-  }
-  if (lower.includes("issue") || lower.includes("problem") || lower.includes("error")) {
-    return `I noticed one minor issue: the Availity API has been responding slower than usual today (avg 2.8s vs normal 0.9s). This is affecting insurance verification turnaround. I've already switched to batch mode to compensate. No data loss or failures — just slightly longer processing times.`;
-  }
-  if (lower.includes("help") || lower.includes("can you")) {
-    return `Of course! I'm here to help. You can ask me to:\n\n• Process specific tasks or patient records\n• Generate reports on my activity\n• Check status on pending verifications\n• Review flagged items\n• Adjust my priority queue\n\nWhat would you like me to do?`;
-  }
-  if (lower.includes("report") || lower.includes("summary")) {
-    return `Here's my daily summary:\n\n• Tasks completed: 47\n• Success rate: 96.2%\n• Avg response time: 1.4s\n• Tokens used: 12,450\n• Cost today: $1.87\n• Flagged items: 2 (sent to review queue)\n\nNeed me to drill into any of these?`;
-  }
-
-  return `Understood. I'll look into "${userMessage}" right away. Let me process this and I'll update you with my findings. Is there anything specific you'd like me to focus on?`;
-}

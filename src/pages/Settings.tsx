@@ -19,7 +19,7 @@ import {
   Clock,
   Languages,
 } from "lucide-react";
-import DashboardSidebar from "@/components/DashboardSidebar";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -80,8 +80,7 @@ const Settings = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <DashboardSidebar />
+    <DashboardLayout>
       <main className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-3xl mx-auto">
           <div className="mb-8">
@@ -329,7 +328,7 @@ const Settings = () => {
           </div>
         </div>
       </main>
-    </div>
+    </DashboardLayout>
   );
 };
 

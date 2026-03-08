@@ -20,6 +20,10 @@ export interface AgentTemplate {
   suggestedModel: string;
   tier: "starter" | "professional" | "advanced" | "enterprise";
   metrics: { label: string; value: string }[];
+  // Org chart hierarchy (optional — backward-compatible)
+  level?: "ceo" | "director" | "department-head" | "worker";
+  parentTemplateId?: string;
+  department?: string;
 }
 
 export const agentTemplates: AgentTemplate[] = [

@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { scanObject, sanitizeObject } from "../_shared/phi-scanner.ts";
 
 /**
  * Webhook Dispatch Edge Function
@@ -17,82 +19,15 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
  *   POST /webhook-dispatch/test     — Send a test ping to a specific webhook
  */
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
-
 const GATEWAY_VERSION = "1.0.0";
-
-// ── PHI Patterns (mirrored from client-side security.ts) ──────────────
-
-const PHI_PATTERNS = [
-  /\b\d{3}-\d{2}-\d{4}\b/,
-  /\b\d{9}\b/,
-  /\b(?:MRN|mrn)[:\s#]*\w{4,}\b/i,
-  /\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b/,
-  /\b(?:DOB|dob|Date of Birth)[:\s]*\S+/i,
-  /\b(?:patient|pt|member)\s*(?:name|id)[:\s]*\S+/i,
-  /\b[A-Z]\d{4,9}\b/,
-  /\b(?:NPI|npi)[:\s#]*\d{10}\b/i,
-  /\b(?:DEA|dea)[:\s#]*[A-Z]{2}\d{7}\b/i,
-];
-
-function containsPhi(text: string): boolean {
-  return PHI_PATTERNS.some((p) => p.test(text));
-}
-
-function redactPhi(text: string): string {
-  let result = text;
-  for (const pattern of PHI_PATTERNS) {
-    result = result.replace(new RegExp(pattern, "g"), "[REDACTED]");
-  }
-  return result;
-}
 
 function sanitize(obj: Record<string, unknown>): {
   sanitized: Record<string, unknown>;
   fieldsRedacted: string[];
 } {
-  const fieldsRedacted: string[] = [];
-
-  function walk(o: Record<string, unknown>, path: string): Record<string, unknown> {
-    const out: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(o)) {
-      const fp = path ? `${path}.${key}` : key;
-      if (typeof value === "string") {
-        if (containsPhi(value)) {
-          fieldsRedacted.push(fp);
-          out[key] = redactPhi(value);
-        } else {
-          out[key] = value;
-        }
-      } else if (value && typeof value === "object" && !Array.isArray(value)) {
-        out[key] = walk(value as Record<string, unknown>, fp);
-      } else if (Array.isArray(value)) {
-        out[key] = value.map((item, i) => {
-          if (typeof item === "string") {
-            if (containsPhi(item)) {
-              fieldsRedacted.push(`${fp}[${i}]`);
-              return redactPhi(item);
-            }
-            return item;
-          }
-          if (item && typeof item === "object") {
-            return walk(item as Record<string, unknown>, `${fp}[${i}]`);
-          }
-          return item;
-        });
-      } else {
-        out[key] = value;
-      }
-    }
-    return out;
-  }
-
-  const sanitized = walk(obj, "");
-  return { sanitized, fieldsRedacted };
+  const scan = scanObject(obj);
+  const sanitized = sanitizeObject(obj);
+  return { sanitized, fieldsRedacted: scan.fieldsWithPhi };
 }
 
 // ── HMAC-SHA256 ────────────────────────────────────────────────────────
@@ -178,9 +113,11 @@ async function deliverWebhook(
 // ── Main handler ───────────────────────────────────────────────────────
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const optionsResponse = handleCorsOptions(req);
+  if (optionsResponse) return optionsResponse;
+
+  const requestOrigin = req.headers.get("Origin");
+  const corsHeaders = getCorsHeaders(requestOrigin);
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -517,9 +454,10 @@ serve(async (req) => {
   }
 });
 
-function jsonResponse(status: number, body: unknown): Response {
+function jsonResponse(status: number, body: unknown, headers?: Record<string, string>): Response {
+  const responseHeaders = headers ?? getCorsHeaders(null);
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...responseHeaders, "Content-Type": "application/json" },
   });
 }
