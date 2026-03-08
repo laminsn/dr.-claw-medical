@@ -216,7 +216,7 @@ const Onboarding = () => {
 
     // Seed n8n flow configs
     if (pack) {
-      await supabase.rpc("seed_n8n_flows_for_user", { _user_id: user.id }).catch(() => {});
+      await (supabase as any).rpc("seed_n8n_flows_for_user", { _user_id: user.id }).catch(() => {});
     }
 
     // Audit log
